@@ -23,7 +23,7 @@ The project follows a layered architecture with strict separation of concerns an
 - `app/static/`: CSS, JavaScript, and image assets.
 - `tests/`: Automated unit and integration tests.
 
-> **Project Status:** Initial project structure and configuration (Phase 1). Domain features, routes, database schemas, and shop capabilities will be added in upcoming phases.
+> **Project Status:** Database Layer implemented (Phase 3). Domain entities, SQLite schema, connection lifecycle, and CLI database initialization are active. Shop routes and repositories will follow.
 
 ## Prerequisites
 
@@ -59,8 +59,39 @@ The project follows a layered architecture with strict separation of concerns an
    pip install -r requirements.txt
    ```
 
-4. **Start the development server:**
+4. **Initialize the SQLite database:**
+   To create or ensure all tables and indexes exist safely and idempotently without deleting existing data:
+   ```bash
+   flask --app run.py init-db
+   ```
+   Alternatively, you can run the connection module directly:
+   ```bash
+   python -m app.database.connection
+   ```
+
+5. **Run the automated test suite:**
+   ```bash
+   pytest
+   ```
+
+6. **Start the development server:**
    ```bash
    python run.py
    ```
    Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
+
+## Database Design & Conventions
+
+The SQLite database is managed via `app/database/connection.py` and `app/database/schema.sql`:
+
+- **Tables:** `categories`, `products`, `customers`, `orders`, `order_items`. Carts remain transient/in-memory domain models.
+- **Identifiers:** Standard `INTEGER PRIMARY KEY`.
+- **Foreign Keys:** Enforced on every connection (`PRAGMA foreign_keys = ON;`).
+  - `products.category_id`: `ON DELETE SET NULL`
+  - `orders.customer_id`: `ON DELETE RESTRICT`
+  - `order_items.order_id`: `ON DELETE CASCADE`
+  - `order_items.product_id`: `ON DELETE RESTRICT`
+- **Monetary Values:** Stored as integer minor currency units (e.g. cents, $10.00 = `1000`) matching domain entities.
+- **Timestamps:** ISO 8601 UTC text strings (`YYYY-MM-DDTHH:MM:SSZ`).
+- **Connection Scope:** Request-scoped via Flask `g`, automatically closed via `teardown_appcontext`.
+- **Transactions:** Handled explicitly with `with transaction():` or standard connection context manager.
