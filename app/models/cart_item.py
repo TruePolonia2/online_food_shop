@@ -12,7 +12,11 @@ class CartItem:
     quantity: int = 1
 
     def __post_init__(self) -> None:
-        if self.quantity <= 0:
+        if (
+            isinstance(self.quantity, bool)
+            or not isinstance(self.quantity, int)
+            or self.quantity <= 0
+        ):
             raise ValueError("Cart item quantity must be greater than zero.")
 
     @property
@@ -22,6 +26,10 @@ class CartItem:
 
     def update_quantity(self, quantity: int) -> None:
         """Update item quantity enforcing domain validation."""
-        if quantity <= 0:
+        if (
+            isinstance(quantity, bool)
+            or not isinstance(quantity, int)
+            or quantity <= 0
+        ):
             raise ValueError("Cart item quantity must be greater than zero.")
         self.quantity = quantity

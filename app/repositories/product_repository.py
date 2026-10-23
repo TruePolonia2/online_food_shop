@@ -2,7 +2,7 @@
 from typing import Optional
 import sqlite3
 
-from app.database.connection import get_db
+from app.database.connection import get_db, transaction
 from app.models.product import Product
 
 
@@ -115,7 +115,7 @@ class ProductRepository:
         Returns:
             The persisted Product entity with its newly generated ID.
         """
-        with self.conn:
+        with transaction(self.conn):
             cursor = self.conn.execute(
                 """INSERT INTO products (name, price, stock_quantity, description, category_id, is_active)
                    VALUES (?, ?, ?, ?, ?, ?)""",
@@ -143,7 +143,7 @@ class ProductRepository:
         if product.id is None:
             raise ValueError("Product ID cannot be None when updating.")
 
-        with self.conn:
+        with transaction(self.conn):
             cursor = self.conn.execute(
                 """UPDATE products
                    SET name = ?, price = ?, stock_quantity = ?, description = ?,
@@ -173,7 +173,7 @@ class ProductRepository:
         Returns:
             True if the product was deleted, False if not found.
         """
-        with self.conn:
+        with transaction(self.conn):
             cursor = self.conn.execute(
                 "DELETE FROM products WHERE id = ?",
                 (product_id,),

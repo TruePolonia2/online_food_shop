@@ -2,7 +2,7 @@
 from typing import Optional
 import sqlite3
 
-from app.database.connection import get_db
+from app.database.connection import get_db, transaction
 from app.models.customer import Customer
 
 
@@ -87,7 +87,7 @@ class CustomerRepository:
         Returns:
             The persisted Customer entity with its generated ID.
         """
-        with self.conn:
+        with transaction(self.conn):
             cursor = self.conn.execute(
                 "INSERT INTO customers (name, email, phone, address) VALUES (?, ?, ?, ?)",
                 (customer.name, customer.email, customer.phone, customer.address),
@@ -107,7 +107,7 @@ class CustomerRepository:
         if customer.id is None:
             raise ValueError("Customer ID cannot be None when updating.")
 
-        with self.conn:
+        with transaction(self.conn):
             cursor = self.conn.execute(
                 "UPDATE customers SET name = ?, email = ?, phone = ?, address = ? WHERE id = ?",
                 (customer.name, customer.email, customer.phone, customer.address, customer.id),
@@ -126,7 +126,7 @@ class CustomerRepository:
         Returns:
             True if the customer was deleted, False if not found.
         """
-        with self.conn:
+        with transaction(self.conn):
             cursor = self.conn.execute(
                 "DELETE FROM customers WHERE id = ?",
                 (customer_id,),

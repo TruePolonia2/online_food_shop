@@ -18,7 +18,11 @@ class Cart:
 
     def add_item(self, product: Product, quantity: int = 1) -> None:
         """Add a product to the cart or increment quantity if already present."""
-        if quantity <= 0:
+        if (
+            isinstance(quantity, bool)
+            or not isinstance(quantity, int)
+            or quantity <= 0
+        ):
             raise ValueError("Quantity to add must be greater than zero.")
 
         for item in self.items:
@@ -34,6 +38,9 @@ class Cart:
 
     def update_quantity(self, product_id: int, quantity: int) -> None:
         """Update quantity for a product, removing it if quantity is zero or less."""
+        if isinstance(quantity, bool) or not isinstance(quantity, int):
+            raise ValueError("Quantity must be an integer.")
+
         if quantity <= 0:
             self.remove_item(product_id)
             return

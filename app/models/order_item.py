@@ -19,9 +19,17 @@ class OrderItem:
     order_id: Optional[int] = None
 
     def __post_init__(self) -> None:
-        if self.unit_price < 0:
+        if (
+            isinstance(self.unit_price, bool)
+            or not isinstance(self.unit_price, int)
+            or self.unit_price < 0
+        ):
             raise ValueError("Unit price cannot be negative.")
-        if self.quantity <= 0:
+        if (
+            isinstance(self.quantity, bool)
+            or not isinstance(self.quantity, int)
+            or self.quantity <= 0
+        ):
             raise ValueError("Order item quantity must be greater than zero.")
         if not self.product_name or not self.product_name.strip():
             raise ValueError("Product name cannot be empty.")

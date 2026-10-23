@@ -374,6 +374,30 @@ class TestConnectionAndLifecycle(unittest.TestCase):
             tables = {row["name"] for row in cursor.fetchall()}
             self.assertIn("products", tables)
 
+    def test_transaction_savepoint_creation_failure_does_not_corrupt_state(self):
+        closed_conn = create_connection(":memory:")
+        closed_conn.close()
+        closed_id = id(closed_conn)
+
+        # Attempting transaction on a closed connection fails at SAVEPOINT execution
+        with self.assertRaises(sqlite3.ProgrammingError):
+            with transaction(closed_conn):
+                pass
+
+        # Verify transaction depth for closed_conn was cleaned up and not left corrupted
+        from app.database.connection import _transaction_depths
+        self.assertNotIn(closed_id, _transaction_depths)
+
+        # Subsequent transaction on a valid connection works normally
+        valid_conn = create_connection(":memory:")
+        init_db(valid_conn)
+        with transaction(valid_conn):
+            valid_conn.execute("INSERT INTO categories (name) VALUES ('Clean')")
+
+        row = valid_conn.execute("SELECT name FROM categories WHERE name = 'Clean'").fetchone()
+        self.assertIsNotNone(row)
+        valid_conn.close()
+
 
 if __name__ == "__main__":
     unittest.main()

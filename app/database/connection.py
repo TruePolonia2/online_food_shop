@@ -88,14 +88,19 @@ def close_db(e: Optional[BaseException] = None) -> None:
         db.close()
 
 
+_transaction_depths: dict[int, int] = {}
+
+
 @contextmanager
 def transaction(
     conn: Optional[sqlite3.Connection] = None,
 ) -> Generator[sqlite3.Connection, None, None]:
-    """Context manager for explicit transaction handling.
+    """Context manager for explicit transaction and savepoint handling.
 
-    Executes operations within an SQLite transaction. Automatically commits changes
-    when exiting cleanly, or issues a rollback if an unhandled exception occurs.
+    Supports nested transactions via SQLite SAVEPOINTs. When entering the outermost
+    transaction, creates 'sp_0'. Inner transactions create nested savepoints ('sp_1', etc.).
+    Releases savepoints on clean exit or rolls back to the savepoint if an exception occurs,
+    allowing service-level transactions to coordinate multiple repository operations atomically.
 
     Args:
         conn: Optional SQLite connection. If omitted, uses the active request connection
@@ -111,8 +116,31 @@ def transaction(
     if conn is None:
         conn = get_db()
 
-    with conn:
+    conn_id = id(conn)
+    depth = _transaction_depths.get(conn_id, 0)
+    _transaction_depths[conn_id] = depth + 1
+    sp_name = f"sp_{depth}"
+
+    savepoint_created = False
+    try:
+        conn.execute(f"SAVEPOINT {sp_name};")
+        savepoint_created = True
         yield conn
+    except Exception:
+        if savepoint_created:
+            try:
+                conn.execute(f"ROLLBACK TO SAVEPOINT {sp_name};")
+            finally:
+                conn.execute(f"RELEASE SAVEPOINT {sp_name};")
+        raise
+    else:
+        conn.execute(f"RELEASE SAVEPOINT {sp_name};")
+    finally:
+        current = _transaction_depths.get(conn_id, 1)
+        if current <= 1:
+            _transaction_depths.pop(conn_id, None)
+        else:
+            _transaction_depths[conn_id] = current - 1
 
 
 def init_db(

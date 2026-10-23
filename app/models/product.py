@@ -23,9 +23,13 @@ class Product:
         if not self.name or not self.name.strip():
             raise ValueError("Product name cannot be empty.")
         self.name = self.name.strip()
-        if self.price < 0:
+        if isinstance(self.price, bool) or not isinstance(self.price, int) or self.price < 0:
             raise ValueError("Product price cannot be negative.")
-        if self.stock_quantity < 0:
+        if (
+            isinstance(self.stock_quantity, bool)
+            or not isinstance(self.stock_quantity, int)
+            or self.stock_quantity < 0
+        ):
             raise ValueError("Stock quantity cannot be negative.")
 
     @property

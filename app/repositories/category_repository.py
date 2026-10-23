@@ -2,7 +2,7 @@
 from typing import Optional
 import sqlite3
 
-from app.database.connection import get_db
+from app.database.connection import get_db, transaction
 from app.models.category import Category
 
 
@@ -85,7 +85,7 @@ class CategoryRepository:
         Returns:
             The persisted Category entity with its assigned ID.
         """
-        with self.conn:
+        with transaction(self.conn):
             cursor = self.conn.execute(
                 "INSERT INTO categories (name, description) VALUES (?, ?)",
                 (category.name, category.description),
@@ -105,7 +105,7 @@ class CategoryRepository:
         if category.id is None:
             raise ValueError("Category ID cannot be None when updating.")
 
-        with self.conn:
+        with transaction(self.conn):
             cursor = self.conn.execute(
                 "UPDATE categories SET name = ?, description = ? WHERE id = ?",
                 (category.name, category.description, category.id),
@@ -123,7 +123,7 @@ class CategoryRepository:
         Returns:
             True if a category was deleted, False if not found.
         """
-        with self.conn:
+        with transaction(self.conn):
             cursor = self.conn.execute(
                 "DELETE FROM categories WHERE id = ?",
                 (category_id,),

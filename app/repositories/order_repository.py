@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Optional, Union
 import sqlite3
 
-from app.database.connection import get_db
+from app.database.connection import get_db, transaction
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
 
@@ -147,7 +147,7 @@ class OrderRepository:
         Returns:
             The persisted Order entity with updated order and item IDs.
         """
-        with self.conn:
+        with transaction(self.conn):
             # Format timestamp to ISO 8601 UTC string format: 'YYYY-MM-DDTHH:MM:SSZ'
             if order.created_at:
                 dt = order.created_at
@@ -199,7 +199,7 @@ class OrderRepository:
         # Validate that status is an acceptable OrderStatus enum value
         OrderStatus(status_val)
 
-        with self.conn:
+        with transaction(self.conn):
             cursor = self.conn.execute(
                 "UPDATE orders SET status = ? WHERE id = ?",
                 (status_val, order_id),
@@ -218,7 +218,7 @@ class OrderRepository:
         Returns:
             True if the order was deleted, False if not found.
         """
-        with self.conn:
+        with transaction(self.conn):
             cursor = self.conn.execute(
                 "DELETE FROM orders WHERE id = ?",
                 (order_id,),

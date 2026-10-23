@@ -47,6 +47,13 @@ class TestProductModel(unittest.TestCase):
         inactive = Product(name="Cheese", price=500, stock_quantity=10, is_active=False)
         self.assertFalse(inactive.is_in_stock)
 
+    def test_product_model_rejects_booleans(self):
+        for val in [True, False]:
+            with self.assertRaises(ValueError):
+                Product(name="Bread", price=val, stock_quantity=10)
+            with self.assertRaises(ValueError):
+                Product(name="Bread", price=100, stock_quantity=val)
+
 
 class TestCategoryModel(unittest.TestCase):
     """Tests for Category domain invariants."""
@@ -148,6 +155,26 @@ class TestCartAndCartItem(unittest.TestCase):
         self.assertTrue(cart.is_empty)
         self.assertEqual(cart.total, 0)
 
+    def test_cart_and_cart_item_reject_booleans(self):
+        for val in [True, False]:
+            with self.assertRaises(ValueError):
+                CartItem(product=self.apple, quantity=val)
+
+        item = CartItem(product=self.apple, quantity=2)
+        for val in [True, False]:
+            with self.assertRaises(ValueError):
+                item.update_quantity(val)
+
+        cart = Cart()
+        for val in [True, False]:
+            with self.assertRaises(ValueError):
+                cart.add_item(self.apple, quantity=val)
+
+        cart.add_item(self.apple, quantity=2)
+        for val in [True, False]:
+            with self.assertRaises(ValueError):
+                cart.update_quantity(self.apple.id, val)
+
 
 class TestOrderAndOrderItem(unittest.TestCase):
     """Tests for Order and OrderItem calculations and price snapshot preservation."""
@@ -166,6 +193,13 @@ class TestOrderAndOrderItem(unittest.TestCase):
             OrderItem(product_id=1, product_name="Olive Oil", unit_price=-10, quantity=1)
         with self.assertRaises(ValueError):
             OrderItem(product_id=1, product_name="Olive Oil", unit_price=100, quantity=0)
+
+    def test_order_item_rejects_booleans(self):
+        for val in [True, False]:
+            with self.assertRaises(ValueError):
+                OrderItem(product_id=1, product_name="Milk", unit_price=val, quantity=2)
+            with self.assertRaises(ValueError):
+                OrderItem(product_id=1, product_name="Milk", unit_price=250, quantity=val)
 
     def test_order_total_calculation(self):
         item1 = OrderItem(product_id=1, product_name="Milk", unit_price=250, quantity=2)  # 500
