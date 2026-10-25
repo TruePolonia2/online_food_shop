@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Products - Online Food Shop{% endblock %}
+
+{% block content %}
+<h1>Product Catalog</h1>
+
+<nav aria-label="Categories">
+    <ul>
+        <li><a href="{{ url_for('catalog.index') }}">All Categories</a></li>
+        {% for cat in categories %}
+        <li><a href="{{ url_for('catalog.index', category_id=cat.id) }}">{{ cat.name }}</a></li>
+        {% endfor %}
+    </ul>
+</nav>
+
+<section>
+    {% if selected_category %}
+    <h2>Category: {{ selected_category.name }}</h2>
+    {% endif %}
+
+    <ul>
+        {% for product in products %}
+        <li>
+            <a href="{{ url_for('catalog.product_detail', product_id=product.id) }}">{{ product.name }}</a>
+            <span>{{ product.price }} cents</span>
+            <span>Stock: {{ product.stock_quantity }}</span>
+            <form action="{{ url_for('cart.add_item') }}" method="post">
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <input type="number" name="quantity" value="1" min="1">
+                <button type="submit">Add to Cart</button>
+            </form>
+        </li>
+        {% else %}
+        <li>No products found.</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}

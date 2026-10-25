@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - Online Food Shop{% endblock %}
+
+{% block content %}
+<article>
+    <h1>{{ product.name }}</h1>
+    {% if category %}
+    <p>Category: {{ category.name }}</p>
+    {% endif %}
+    <p>Price: {{ product.price }} cents</p>
+    <p>Stock: {{ product.stock_quantity }}</p>
+    {% if product.description %}
+    <p>{{ product.description }}</p>
+    {% endif %}
+
+    <form action="{{ url_for('cart.add_item') }}" method="post">
+        <input type="hidden" name="product_id" value="{{ product.id }}">
+        <label for="quantity">Quantity:</label>
+        <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ product.stock_quantity }}">
+        <button type="submit">Add to Cart</button>
+    </form>
+</article>
+{% endblock %}

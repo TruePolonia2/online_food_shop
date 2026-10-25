@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - Online Food Shop{% endblock %}
+
+{% block content %}
+<h1>Checkout</h1>
+
+<section>
+    <h2>Order Summary</h2>
+    <ul>
+        {% for item in cart.items %}
+        <li>{{ item.product.name }} x {{ item.quantity }} - {{ item.subtotal }} cents</li>
+        {% endfor %}
+    </ul>
+    <p>Total: {{ cart.total }} cents</p>
+</section>
+
+<section>
+    <h2>Customer Information</h2>
+    <form action="{{ url_for('order.process_checkout') }}" method="post">
+        <div>
+            <label for="name">Full Name *</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div>
+            <label for="email">Email *</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div>
+            <label for="phone">Phone</label>
+            <input type="tel" id="phone" name="phone">
+        </div>
+        <div>
+            <label for="address">Delivery Address</label>
+            <textarea id="address" name="address"></textarea>
+        </div>
+        <button type="submit">Place Order</button>
+    </form>
+</section>
+{% endblock %}

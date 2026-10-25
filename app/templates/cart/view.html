@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Shopping Cart - Online Food Shop{% endblock %}
+
+{% block content %}
+<h1>Your Shopping Cart</h1>
+
+{% if validation_errors %}
+<ul>
+    {% for err in validation_errors %}
+    <li>{{ err }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if cart.is_empty %}
+<p>Your cart is empty.</p>
+<a href="{{ url_for('catalog.index') }}">Continue Shopping</a>
+{% else %}
+<table>
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Unit Price</th>
+            <th>Quantity</th>
+            <th>Subtotal</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in cart.items %}
+        <tr>
+            <td>{{ item.product.name }}</td>
+            <td>{{ item.product.price }} cents</td>
+            <td>
+                <form action="{{ url_for('cart.update_item') }}" method="post">
+                    <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                    <input type="number" name="quantity" value="{{ item.quantity }}" min="0">
+                    <button type="submit">Update</button>
+                </form>
+            </td>
+            <td>{{ item.subtotal }} cents</td>
+            <td>
+                <form action="{{ url_for('cart.remove_item') }}" method="post">
+                    <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                    <button type="submit">Remove</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="3">Total</td>
+            <td colspan="2">{{ cart.total }} cents</td>
+        </tr>
+    </tfoot>
+</table>
+
+<form action="{{ url_for('cart.clear') }}" method="post">
+    <button type="submit">Clear Cart</button>
+</form>
+
+<a href="{{ url_for('order.checkout_form') }}">Proceed to Checkout</a>
+{% endif %}
+{% endblock %}

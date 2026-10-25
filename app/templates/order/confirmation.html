@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Order Confirmation - Online Food Shop{% endblock %}
+
+{% block content %}
+<h1>Order Confirmation</h1>
+<p>Thank you for your order!</p>
+
+<section>
+    <h2>Order #{{ order.id }}</h2>
+    <p>Status: {{ order.status.value }}</p>
+    <p>Date: {{ order.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if order.created_at else '' }}</p>
+
+    {% if customer %}
+    <h3>Customer Details</h3>
+    <p>Name: {{ customer.name }}</p>
+    <p>Email: {{ customer.email }}</p>
+    {% if customer.phone %}<p>Phone: {{ customer.phone }}</p>{% endif %}
+    {% if customer.address %}<p>Address: {{ customer.address }}</p>{% endif %}
+    {% endif %}
+
+    <h3>Items Ordered</h3>
+    <ul>
+        {% for item in order.items %}
+        <li>
+            {{ item.product_name }} - {{ item.quantity }} x {{ item.unit_price }} cents = {{ item.subtotal }} cents
+        </li>
+        {% endfor %}
+    </ul>
+
+    <p><strong>Total: {{ order.total }} cents</strong></p>
+</section>
+
+<a href="{{ url_for('catalog.index') }}">Return to Shop</a>
+{% endblock %}
