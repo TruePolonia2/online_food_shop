@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Resend Verification Link - Online Food Shop{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto py-8">
+    <div class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-gray-200">
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Resend Verification Link</h1>
+            <p class="text-sm text-gray-600 mt-1">
+                Enter your account email to request a new verification link.
+            </p>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.resend_verification') }}" class="space-y-4" novalidate>
+            {{ csrf_input() }}
+
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+                    Email address <span class="text-red-600" aria-hidden="true">*</span>
+                </label>
+                <input type="email"
+                       id="email"
+                       name="email"
+                       required
+                       autocomplete="email"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                       placeholder="you@example.com">
+            </div>
+
+            <div class="pt-2">
+                <button type="submit"
+                        class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-emerald-700 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors">
+                    Request Verification Link
+                </button>
+            </div>
+            <p class="text-xs text-gray-500 text-center mt-2">
+                Note: In this development environment, verification links are simulated in-memory and not dispatched across external networks.
+            </p>
+        </form>
+
+        <div class="mt-6 border-t border-gray-200 pt-4 text-center">
+            <a href="{{ url_for('auth.login') }}" class="text-sm font-medium text-emerald-700 hover:text-emerald-800 underline focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded">
+                Back to sign in
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

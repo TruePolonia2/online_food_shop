@@ -1,11 +1,17 @@
+{% from '_macros.html' import csrf_input %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% block meta_referrer %}
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    {% endblock %}
     <title>{% block title %}Online Food Shop{% endblock %}</title>
+    {% block head_scripts %}
     <!-- Tailwind CSS CDN for development -->
     <script src="https://cdn.tailwindcss.com"></script>
+    {% endblock %}
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col antialiased">
@@ -43,11 +49,48 @@
                         </span>
                     </a>
 
+                    <!-- Authentication Links -->
+                    {% if current_user %}
+                    <span id="user-badge" class="text-xs sm:text-sm text-gray-700 font-medium px-2.5 py-1 rounded-full bg-gray-100 max-w-[140px] sm:max-w-xs truncate" title="{{ current_user.email }}">
+                        {{ current_user.email }}
+                    </span>
+                    <form action="{{ url_for('auth.logout') }}" method="POST" class="inline">
+                        {{ csrf_input() }}
+                        <button type="submit" id="logout-button" class="text-sm font-medium text-gray-700 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded-md px-2 py-1.5 transition-colors">
+                            Logout
+                        </button>
+                    </form>
+                    {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="text-sm font-medium text-gray-700 hover:text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 rounded-md px-2 py-1.5 transition-colors">
+                        Login
+                    </a>
+                    <a href="{{ url_for('auth.register') }}" class="text-sm font-medium text-white bg-emerald-700 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 rounded-md px-3 py-1.5 transition-colors">
+                        Register
+                    </a>
+                    {% endif %}
+
                     {% block nav %}{% endblock %}
                 </nav>
             </div>
         </div>
     </header>
+
+    <!-- Verification Notice Banner for Authenticated Unverified Users -->
+    {% if current_user and not current_user.is_verified %}
+    <div id="unverified-email-banner" class="bg-amber-50 border-b border-amber-200 px-4 py-2.5 sm:px-6" role="region" aria-label="Account verification notice">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 text-sm text-amber-900 font-medium">
+            <div class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-amber-600 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+                <span>Your email address is unverified. Please verify your email or request a new verification link.</span>
+            </div>
+            <a href="{{ url_for('auth.resend_verification_form') }}" class="underline hover:text-amber-950 whitespace-nowrap text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 rounded">
+                Resend link
+            </a>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Main Content -->
     <main id="main-content" class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 focus:outline-none" tabindex="-1">

@@ -39,14 +39,16 @@ def create_app(config_class=None) -> Flask:
     init_csrf(app)
     app.jinja_env.filters["format_euro"] = format_euro
 
+    from app.routes.auth import auth_bp, get_current_user
     from app.routes.cart_session import get_cart_item_count
 
     @app.context_processor
-    def inject_cart_count() -> dict[str, int]:
+    def inject_template_context() -> dict:
         count = get_cart_item_count()
         return {
             "cart_item_count": count,
             "cart_count": count,
+            "current_user": get_current_user(),
         }
 
     from app.routes.cart import cart_bp
@@ -56,5 +58,6 @@ def create_app(config_class=None) -> Flask:
     app.register_blueprint(catalog_bp)
     app.register_blueprint(cart_bp, url_prefix="/cart")
     app.register_blueprint(order_bp)
+    app.register_blueprint(auth_bp)
 
     return app

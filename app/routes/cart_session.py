@@ -63,6 +63,36 @@ def get_session_cart_data() -> dict[str, int]:
     return data
 
 
+def extract_sanitized_cart_data(data: object) -> dict[str, int]:
+    """Extract a validated, safe cart dictionary mapping string product IDs to positive integer quantities.
+
+    Explicitly rejects booleans, non-integer quantities, non-positive quantities,
+    and invalid product ID keys. Does not mutate the input object.
+
+    Args:
+        data: Raw cart mapping, typically retrieved from session.
+
+    Returns:
+        A sanitized dictionary mapping normalized string product IDs to integer quantities.
+    """
+    if not isinstance(data, dict):
+        return {}
+
+    sanitized: dict[str, int] = {}
+    for pid_raw, qty in data.items():
+        if isinstance(qty, bool) or not isinstance(qty, int) or qty <= 0:
+            continue
+        try:
+            pid_int = int(pid_raw)
+            if pid_int <= 0:
+                continue
+            sanitized[str(pid_int)] = qty
+        except (ValueError, TypeError):
+            continue
+
+    return sanitized
+
+
 def load_cart_from_session(
     cart_service: CartService, product_service: ProductService
 ) -> Cart:
