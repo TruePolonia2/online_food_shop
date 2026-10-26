@@ -30,12 +30,22 @@ def _row_to_order(row: sqlite3.Row, items: Optional[list[OrderItem]] = None) -> 
     else:
         created_at = datetime.now(timezone.utc)
 
+    row_keys = row.keys() if hasattr(row, "keys") else ()
+    customer_name = row["customer_name"] if "customer_name" in row_keys else None
+    customer_email = row["customer_email"] if "customer_email" in row_keys else None
+    customer_phone = row["customer_phone"] if "customer_phone" in row_keys else None
+    customer_address = row["customer_address"] if "customer_address" in row_keys else None
+
     return Order(
         id=row["id"],
         customer_id=row["customer_id"],
         status=OrderStatus(row["status"]),
         created_at=created_at,
         items=items if items is not None else [],
+        customer_name=customer_name,
+        customer_email=customer_email,
+        customer_phone=customer_phone,
+        customer_address=customer_address,
     )
 
 
@@ -67,7 +77,9 @@ class OrderRepository:
             The Order entity with its items populated, or None if not found.
         """
         cursor = self.conn.execute(
-            "SELECT id, customer_id, status, created_at FROM orders WHERE id = ?",
+            """SELECT id, customer_id, status, created_at,
+                      customer_name, customer_email, customer_phone, customer_address
+               FROM orders WHERE id = ?""",
             (order_id,),
         )
         order_row = cursor.fetchone()
@@ -92,7 +104,8 @@ class OrderRepository:
             A list of Order entities with their items populated.
         """
         cursor = self.conn.execute(
-            """SELECT id, customer_id, status, created_at
+            """SELECT id, customer_id, status, created_at,
+                      customer_name, customer_email, customer_phone, customer_address
                FROM orders WHERE customer_id = ? ORDER BY created_at DESC, id DESC""",
             (customer_id,),
         )
@@ -109,7 +122,9 @@ class OrderRepository:
             A list of Order entities with their items populated.
         """
         cursor = self.conn.execute(
-            "SELECT id, customer_id, status, created_at FROM orders ORDER BY created_at DESC, id DESC"
+            """SELECT id, customer_id, status, created_at,
+                      customer_name, customer_email, customer_phone, customer_address
+               FROM orders ORDER BY created_at DESC, id DESC"""
         )
         order_rows = cursor.fetchall()
         if not order_rows:
@@ -166,8 +181,19 @@ class OrderRepository:
             )
 
             cursor = self.conn.execute(
-                "INSERT INTO orders (customer_id, status, created_at) VALUES (?, ?, ?)",
-                (order.customer_id, status_str, created_at_str),
+                """INSERT INTO orders (
+                       customer_id, status, created_at,
+                       customer_name, customer_email, customer_phone, customer_address
+                   ) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    order.customer_id,
+                    status_str,
+                    created_at_str,
+                    order.customer_name,
+                    order.customer_email,
+                    order.customer_phone,
+                    order.customer_address,
+                ),
             )
             order.id = cursor.lastrowid
 

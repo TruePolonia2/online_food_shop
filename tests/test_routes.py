@@ -2,6 +2,7 @@
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from app import create_app
 from app.config import Config
@@ -510,6 +511,162 @@ class TestCheckoutAndOrderRoutes(BaseRouteTestCase):
 
         response = self.client.get("/orders/99999")
         self.assertEqual(response.status_code, 404)
+
+    def test_checkout_post_concurrent_registration_conflict_recovers_gracefully(self) -> None:
+        """Simulate concurrent registration collision where register_customer raises duplicate ValueError
+
+        and checkout safely recovers by re-fetching the customer rather than failing with 500.
+        """
+        self.client.post(
+            "/cart/add",
+            data={"product_id": str(self.bread.id), "quantity": "1"},
+        )
+
+        with self.app.app_context():
+            # Pre-seed existing customer
+            self.customer_repo.create(
+                Customer(name="Concurrent User", email="racer@example.com")
+            )
+
+        # In checkout, simulate get_by_email initially returning None, then register_customer
+        # raising ValueError (due to collision), followed by get_by_email succeeding
+        from app.services.customer_service import CustomerService
+
+        with patch.object(
+            CustomerService,
+            "register_customer",
+            side_effect=ValueError("Customer with email 'racer@example.com' already exists."),
+        ):
+            resp = self.client.post(
+                "/checkout",
+                data={
+                    "name": "Concurrent User",
+                    "email": "racer@example.com",
+                    "phone": "912345678",
+                    "address": "Street 1",
+                },
+                follow_redirects=True,
+            )
+
+        self.assertEqual(resp.status_code, 200)
+        html = resp.get_data(as_text=True)
+        self.assertIn("Order Confirmation", html)
+        self.assertIn("Concurrent User", html)
+
+        # Inventory decremented and order persisted
+        with self.app.app_context():
+            orders = self.order_repo.get_all()
+            self.assertEqual(len(orders), 1)
+            updated_bread = self.product_repo.get_by_id(self.bread.id)
+            self.assertEqual(updated_bread.stock_quantity, 9)  # 10 - 1
+
+    def test_checkout_post_unresolvable_registration_error_redirects_and_preserves_cart(self) -> None:
+        """Verify that an unresolvable customer registration error redirects back with error
+
+        without creating orders, decrementing inventory, or clearing the cart.
+        """
+        self.client.post(
+            "/cart/add",
+            data={"product_id": str(self.apple.id), "quantity": "2"},
+        )
+
+        from app.services.customer_service import CustomerService
+
+        with patch.object(
+            CustomerService,
+            "register_customer",
+            side_effect=ValueError("Unexpected registration error."),
+        ):
+            resp = self.client.post(
+                "/checkout",
+                data={
+                    "name": "Failing User",
+                    "email": "failing@example.com",
+                },
+                follow_redirects=True,
+            )
+
+        self.assertEqual(resp.status_code, 200)
+        html = resp.get_data(as_text=True)
+        self.assertIn("Unexpected registration error", html)
+        self.assertIn("Checkout", html)
+
+        # Cart is preserved
+        with self.client.session_transaction() as sess:
+            self.assertEqual(sess.get("cart"), {str(self.apple.id): 2})
+            self.assertNotIn("last_order_id", sess)
+
+        # No order created, inventory untouched
+        with self.app.app_context():
+            self.assertEqual(len(self.order_repo.get_all()), 0)
+            self.assertEqual(self.product_repo.get_by_id(self.apple.id).stock_quantity, 25)
+
+    def test_guest_checkout_does_not_leak_existing_customer_pii_on_confirmation(self) -> None:
+        """Security test: A guest submits an existing customer's email.
+
+        The confirmation page must display the guest's submitted delivery snapshot
+        and must NOT leak the existing customer's saved phone or address.
+        """
+        with self.app.app_context():
+            alice = self.customer_repo.create(
+                Customer(
+                    name="Alice Target",
+                    email="alice.target@example.pt",
+                    phone="911-SECRET",
+                    address="Alice Private Street 77, Porto",
+                )
+            )
+
+        self.client.post(
+            "/cart/add",
+            data={"product_id": str(self.bread.id), "quantity": "1"},
+        )
+
+        # Guest attacker uses Alice's email with attacker's name and dropoff address
+        resp = self.client.post(
+            "/checkout",
+            data={
+                "name": "Attacker Imposter",
+                "email": "alice.target@example.pt",
+                "phone": "999-PUBLIC",
+                "address": "Attacker Dropoff 99, Lisboa",
+            },
+            follow_redirects=True,
+        )
+        self.assertEqual(resp.status_code, 200)
+        html = resp.get_data(as_text=True)
+
+        # Confirmation displays only the order's submitted snapshot
+        self.assertIn("Order Confirmation", html)
+        self.assertIn("Attacker Imposter", html)
+        self.assertIn("alice.target@example.pt", html)
+        self.assertIn("999-PUBLIC", html)
+        self.assertIn("Attacker Dropoff 99, Lisboa", html)
+
+        # CRITICAL PRIVACY ASSERTIONS: Alice's personal data is NOT leaked
+        self.assertNotIn("Alice Target", html)
+        self.assertNotIn("911-SECRET", html)
+        self.assertNotIn("Alice Private Street 77, Porto", html)
+
+        # Alice's stored customer record in database remains unmodified
+        with self.app.app_context():
+            alice_db = self.customer_repo.get_by_id(alice.id)
+            self.assertEqual(alice_db.name, "Alice Target")
+            self.assertEqual(alice_db.phone, "911-SECRET")
+            self.assertEqual(alice_db.address, "Alice Private Street 77, Porto")
+
+            # The order itself holds the delivery snapshot
+            orders = self.order_repo.get_all()
+            self.assertEqual(len(orders), 1)
+            order = orders[0]
+            self.assertEqual(order.customer_name, "Attacker Imposter")
+            self.assertEqual(order.customer_phone, "999-PUBLIC")
+            self.assertEqual(order.customer_address, "Attacker Dropoff 99, Lisboa")
+
+        # Session access control: another client cannot view this order
+        other_client = self.app.test_client()
+        resp_idor = other_client.get(f"/orders/{order.id}")
+        self.assertEqual(resp_idor.status_code, 404)
 
 
 if __name__ == "__main__":

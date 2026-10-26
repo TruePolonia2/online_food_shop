@@ -32,29 +32,33 @@
             </span>
         </div>
 
-        <!-- Customer Details (if present) -->
-        {% if customer %}
+        <!-- Customer & Delivery Details (from order immutable snapshot) -->
+        {% set delivery_name = order.customer_name or (customer.name if customer else '') %}
+        {% set delivery_email = order.customer_email or (customer.email if customer else '') %}
+        {% set delivery_phone = order.customer_phone or (customer.phone if customer else None) %}
+        {% set delivery_address = order.customer_address or (customer.address if customer else None) %}
+        {% if delivery_name or delivery_email %}
         <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
             <h3 class="text-xs font-semibold uppercase text-gray-500 tracking-wider mb-2">Customer &amp; Delivery Details</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                 <div>
                     <span class="text-gray-500">Name:</span>
-                    <span class="font-medium text-gray-900 ml-1">{{ customer.name }}</span>
+                    <span class="font-medium text-gray-900 ml-1">{{ delivery_name }}</span>
                 </div>
                 <div>
                     <span class="text-gray-500">Email:</span>
-                    <span class="font-medium text-gray-900 ml-1">{{ customer.email }}</span>
+                    <span class="font-medium text-gray-900 ml-1">{{ delivery_email }}</span>
                 </div>
-                {% if customer.phone %}
+                {% if delivery_phone %}
                 <div>
                     <span class="text-gray-500">Phone:</span>
-                    <span class="font-medium text-gray-900 ml-1">{{ customer.phone }}</span>
+                    <span class="font-medium text-gray-900 ml-1">{{ delivery_phone }}</span>
                 </div>
                 {% endif %}
-                {% if customer.address %}
+                {% if delivery_address %}
                 <div class="sm:col-span-2">
                     <span class="text-gray-500">Address:</span>
-                    <span class="font-medium text-gray-900 ml-1">{{ customer.address }}</span>
+                    <span class="font-medium text-gray-900 ml-1">{{ delivery_address }}</span>
                 </div>
                 {% endif %}
             </div>

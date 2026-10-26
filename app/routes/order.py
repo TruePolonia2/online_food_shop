@@ -70,16 +70,26 @@ def process_checkout():
                 name=name, email=email, phone=phone, address=address
             )
         except ValueError as err:
-            flash(str(err), "error")
-            return redirect(url_for("order.checkout_form"))
+            # Handle concurrent conflict safely: if another request registered the email, reuse it
+            customer = customer_service.get_by_email(email)
+            if customer is None:
+                flash(str(err), "error")
+                return redirect(url_for("order.checkout_form"))
 
     if customer.id is None:
         flash("Customer account could not be resolved.", "error")
         return redirect(url_for("order.checkout_form"))
 
-    # Execute atomic checkout
+    # Execute atomic checkout with immutable delivery snapshot
     try:
-        order = order_service.checkout(customer.id, cart)
+        order = order_service.checkout(
+            customer_id=customer.id,
+            cart=cart,
+            customer_name=name,
+            customer_email=email,
+            customer_phone=phone,
+            customer_address=address,
+        )
     except ValueError as err:
         flash(f"Checkout could not be completed: {err}", "error")
         # On checkout failure, cart contents are preserved in session
@@ -106,11 +116,7 @@ def order_confirmation(order_id: int):
     if order is None:
         abort(404)
 
-    customer_service = CustomerService()
-    customer = customer_service.get_by_id(order.customer_id)
-
     return render_template(
         "order/confirmation.html",
         order=order,
-        customer=customer,
     )

@@ -64,11 +64,17 @@ CREATE TABLE IF NOT EXISTS customers (
 -- to preserve historical financial and order records.
 -- Status is restricted to valid OrderStatus enumeration values.
 -- Timestamps are recorded in ISO 8601 UTC format.
+-- Preserves immutable customer/delivery snapshot captured at checkout time
+-- to protect privacy and preserve historical records against profile changes.
 CREATE TABLE IF NOT EXISTS orders (
     id INTEGER PRIMARY KEY,
     customer_id INTEGER NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'confirmed', 'paid', 'shipped', 'delivered', 'cancelled')),
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    customer_name TEXT,
+    customer_email TEXT,
+    customer_phone TEXT,
+    customer_address TEXT,
     FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE RESTRICT
 );
 

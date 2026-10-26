@@ -143,6 +143,27 @@ def transaction(
             _transaction_depths[conn_id] = current - 1
 
 
+def _migrate_orders_table_if_needed(conn: sqlite3.Connection) -> None:
+    """Safely and idempotently ensure the orders table has snapshot delivery columns.
+
+    Non-destructive: Uses ALTER TABLE ADD COLUMN only if columns are missing.
+    """
+    cursor = conn.execute("PRAGMA table_info(orders);")
+    existing_cols = {row["name"] for row in cursor.fetchall()}
+    if not existing_cols:
+        return
+
+    columns_to_add = [
+        ("customer_name", "TEXT"),
+        ("customer_email", "TEXT"),
+        ("customer_phone", "TEXT"),
+        ("customer_address", "TEXT"),
+    ]
+    for col_name, col_type in columns_to_add:
+        if col_name not in existing_cols:
+            conn.execute(f"ALTER TABLE orders ADD COLUMN {col_name} {col_type};")
+
+
 def init_db(
     conn: Optional[sqlite3.Connection] = None,
     schema_path: Optional[Union[str, Path]] = None,
@@ -168,6 +189,7 @@ def init_db(
         schema_sql = f.read()
 
     conn.executescript(schema_sql)
+    _migrate_orders_table_if_needed(conn)
     conn.commit()
 
 

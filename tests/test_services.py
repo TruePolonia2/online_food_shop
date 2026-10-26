@@ -243,6 +243,25 @@ class TestCustomerService(BaseServiceTestCase):
         with self.assertRaises(ValueError):
             self.customer_service.register_customer("Bob 2", "BOB@EXAMPLE.COM")
 
+    def test_register_customer_concurrent_duplicate_email_integrity_error_converted_to_value_error(self) -> None:
+        # Simulate a race condition where get_by_email returns None (pre-check passes),
+        # but the database raises a duplicate email IntegrityError on insert.
+        self.customer_service.register_customer("Existing User", "racer@example.com")
+        with patch.object(self.customer_repo, "get_by_email", return_value=None):
+            with self.assertRaises(ValueError) as ctx:
+                self.customer_service.register_customer("Concurrent User", "racer@example.com")
+            self.assertIn("already exists", str(ctx.exception))
+
+    def test_register_customer_unrelated_integrity_error_is_not_silently_converted(self) -> None:
+        # Verify that non-email-uniqueness database errors are not converted to ValueError
+        with patch.object(
+            self.customer_repo,
+            "create",
+            side_effect=sqlite3.IntegrityError("CHECK constraint failed: customers"),
+        ):
+            with self.assertRaises(sqlite3.IntegrityError):
+                self.customer_service.register_customer("Valid User", "valid@example.com")
+
     def test_get_by_email(self) -> None:
         self.customer_service.register_customer("Charlie", "charlie@example.com")
         found = self.customer_service.get_by_email("CHARLIE@EXAMPLE.COM")
@@ -402,6 +421,38 @@ class TestOrderService(BaseServiceTestCase):
         updated_bread = self.product_service.get_by_id(self.bread.id)
         self.assertEqual(updated_apple.stock_quantity, 8)
         self.assertEqual(updated_bread.stock_quantity, 4)
+
+    def test_checkout_captures_explicit_delivery_snapshot_independently_of_customer_profile(self) -> None:
+        cart = self.cart_service.create_cart(self.customer.id)
+        self.cart_service.add_item(cart, self.apple.id, quantity=1)
+
+        order = self.order_service.checkout(
+            self.customer.id,
+            cart,
+            customer_name="Recipient Specific",
+            customer_email="recipient@example.com",
+            customer_phone="912000000",
+            customer_address="Delivery Address 789, Coimbra",
+        )
+
+        self.assertEqual(order.customer_name, "Recipient Specific")
+        self.assertEqual(order.customer_email, "recipient@example.com")
+        self.assertEqual(order.customer_phone, "912000000")
+        self.assertEqual(order.customer_address, "Delivery Address 789, Coimbra")
+
+        # Mutate the customer profile in the database
+        self.customer.name = "Mutated Customer Name"
+        self.customer.phone = "999-999-999"
+        self.customer.address = "Completely Different Address"
+        self.customer_repo.update(self.customer)
+
+        # Refetched order must maintain its historical immutable delivery snapshot
+        refetched = self.order_service.get_by_id(order.id)
+        self.assertIsNotNone(refetched)
+        self.assertEqual(refetched.customer_name, "Recipient Specific")
+        self.assertEqual(refetched.customer_email, "recipient@example.com")
+        self.assertEqual(refetched.customer_phone, "912000000")
+        self.assertEqual(refetched.customer_address, "Delivery Address 789, Coimbra")
 
     def test_checkout_empty_cart_raises(self) -> None:
         empty_cart = self.cart_service.create_cart()

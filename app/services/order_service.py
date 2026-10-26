@@ -76,16 +76,30 @@ class OrderService:
         """
         return self.order_repo.get_all()
 
-    def checkout(self, customer_id: int, cart: Cart) -> Order:
+    def checkout(
+        self,
+        customer_id: int,
+        cart: Cart,
+        customer_name: str | None = None,
+        customer_email: str | None = None,
+        customer_phone: str | None = None,
+        customer_address: str | None = None,
+    ) -> Order:
         """Execute atomic checkout: validates stock, creates order, and decrements inventory.
 
         Saves each product's unit price as a permanent snapshot in order_items.
+        Preserves customer/delivery snapshot on the order independently from the
+        customer profile to guarantee privacy and historical accuracy.
         If any item has insufficient stock, is inactive, or fails to persist,
         the entire transaction is rolled back leaving stock and orders unmodified.
 
         Args:
             customer_id: The purchasing customer ID.
             cart: The in-memory Cart instance containing items to order.
+            customer_name: Optional delivery recipient name. Defaults to customer.name.
+            customer_email: Optional contact email. Defaults to customer.email.
+            customer_phone: Optional contact phone. Defaults to customer.phone.
+            customer_address: Optional delivery address. Defaults to customer.address.
 
         Returns:
             The newly created and persisted Order entity.
@@ -100,6 +114,28 @@ class OrderService:
         customer = self.customer_repo.get_by_id(customer_id)
         if customer is None:
             raise ValueError(f"Customer with ID {customer_id} not found.")
+
+        # Determine delivery snapshot details, defaulting to customer record if omitted
+        snap_name = (
+            customer_name.strip()
+            if customer_name and customer_name.strip()
+            else customer.name
+        )
+        snap_email = (
+            customer_email.strip().lower()
+            if customer_email and customer_email.strip()
+            else customer.email
+        )
+        snap_phone = (
+            customer_phone.strip()
+            if customer_phone and customer_phone.strip()
+            else customer.phone
+        )
+        snap_address = (
+            customer_address.strip()
+            if customer_address and customer_address.strip()
+            else customer.address
+        )
 
         with transaction(self.conn):
             order_items: list[OrderItem] = []
@@ -144,11 +180,15 @@ class OrderService:
                 )
                 order_items.append(order_item)
 
-            # Persist order and line items
+            # Persist order and line items with immutable delivery snapshot
             order = Order(
                 customer_id=customer_id,
                 status=OrderStatus.PENDING,
                 items=order_items,
+                customer_name=snap_name,
+                customer_email=snap_email,
+                customer_phone=snap_phone,
+                customer_address=snap_address,
             )
             saved_order = self.order_repo.create(order)
 

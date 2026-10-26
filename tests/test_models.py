@@ -232,6 +232,25 @@ class TestOrderAndOrderItem(unittest.TestCase):
         self.assertEqual(item.unit_price, 1200)
         self.assertEqual(order.total, 2400)
 
+    def test_order_delivery_snapshot_fields_and_properties(self):
+        order = Order(
+            customer_id=1,
+            customer_name="Beatriz Lima",
+            customer_email="beatriz@example.pt",
+            customer_phone="912345678",
+            customer_address="Avenida Central 10, Braga",
+        )
+        self.assertEqual(order.customer_name, "Beatriz Lima")
+        self.assertEqual(order.customer_email, "beatriz@example.pt")
+        self.assertEqual(order.customer_phone, "912345678")
+        self.assertEqual(order.customer_address, "Avenida Central 10, Braga")
+
+        # Test delivery aliases
+        self.assertEqual(order.delivery_name, "Beatriz Lima")
+        self.assertEqual(order.delivery_email, "beatriz@example.pt")
+        self.assertEqual(order.delivery_phone, "912345678")
+        self.assertEqual(order.delivery_address, "Avenida Central 10, Braga")
+
 
 if __name__ == "__main__":
     unittest.main()

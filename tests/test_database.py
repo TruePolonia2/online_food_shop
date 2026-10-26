@@ -169,6 +169,35 @@ class TestDatabaseSchemaAndConstraints(unittest.TestCase):
                 (cust_id, "unknown_status"),
             )
 
+    def test_order_snapshot_columns_and_idempotent_migration(self):
+        # Verify snapshot columns exist in initialized schema
+        cursor = self.conn.execute("PRAGMA table_info(orders);")
+        col_names = {row["name"] for row in cursor.fetchall()}
+        self.assertTrue(
+            {"customer_name", "customer_email", "customer_phone", "customer_address"}.issubset(
+                col_names
+            )
+        )
+
+        # Test idempotent migration on a connection simulating an older table without snapshot columns
+        old_conn = create_connection(":memory:")
+        old_conn.execute(
+            """CREATE TABLE orders (
+                   id INTEGER PRIMARY KEY,
+                   customer_id INTEGER NOT NULL,
+                   status TEXT NOT NULL DEFAULT 'pending',
+                   created_at TEXT NOT NULL DEFAULT '2026-01-01T00:00:00Z'
+               );"""
+        )
+        init_db(old_conn)
+        migrated_cols = {row["name"] for row in old_conn.execute("PRAGMA table_info(orders);").fetchall()}
+        self.assertTrue(
+            {"customer_name", "customer_email", "customer_phone", "customer_address"}.issubset(
+                migrated_cols
+            )
+        )
+        old_conn.close()
+
     def test_order_item_constraints_and_price_preservation(self):
         # Setup customer, product, order
         self.conn.execute("INSERT INTO customers (name, email) VALUES (?, ?)", ("Buyer", "buyer@example.com"))

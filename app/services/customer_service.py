@@ -1,4 +1,6 @@
 """Customer service coordinating customer registration, profile updates, and email validation."""
+import sqlite3
+
 from app.models.customer import Customer
 from app.repositories.customer_repository import CustomerRepository
 
@@ -82,7 +84,15 @@ class CustomerService:
             phone=phone.strip() if phone else None,
             address=address.strip() if address else None,
         )
-        return self.customer_repo.create(customer)
+        try:
+            return self.customer_repo.create(customer)
+        except sqlite3.IntegrityError as err:
+            err_msg = str(err).lower()
+            if "unique" in err_msg and ("customers.email" in err_msg or "email" in err_msg):
+                raise ValueError(
+                    f"Customer with email '{cleaned_email}' already exists."
+                ) from err
+            raise
 
     def update_customer(
         self,

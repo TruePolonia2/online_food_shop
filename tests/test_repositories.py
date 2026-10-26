@@ -284,6 +284,11 @@ class TestCustomerRepository(BaseRepositoryTestCase):
         with self.assertRaises(sqlite3.IntegrityError):
             self.customer_repo.delete(cust.id)
 
+    def test_customer_repo_create_duplicate_email_raises_integrity_error(self) -> None:
+        self.customer_repo.create(Customer(name="Original", email="conflict@example.com"))
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.customer_repo.create(Customer(name="Duplicate", email="conflict@example.com"))
+
 
 class TestOrderRepository(BaseRepositoryTestCase):
     """Tests for OrderRepository atomic creation, queries, transactions, and price snapshots."""
@@ -337,6 +342,41 @@ class TestOrderRepository(BaseRepositoryTestCase):
         # Total: (2 * 400) + (1 * 650) = 1450 cents ($14.50)
         self.assertEqual(fetched.total, 1450)
         self.assertIsNotNone(fetched.created_at.tzinfo)
+
+    def test_order_repo_create_and_fetch_with_delivery_snapshot(self) -> None:
+        order = Order(
+            customer_id=self.customer.id,
+            status=OrderStatus.PENDING,
+            customer_name="Recipient Name",
+            customer_email="recipient@example.com",
+            customer_phone="919999999",
+            customer_address="Rua do Destino 123, Lisboa",
+            items=[
+                OrderItem(
+                    product_id=self.product1.id,
+                    product_name=self.product1.name,
+                    unit_price=self.product1.price,
+                    quantity=1,
+                )
+            ],
+        )
+        saved = self.order_repo.create(order)
+        self.assertIsNotNone(saved.id)
+
+        fetched = self.order_repo.get_by_id(saved.id)
+        self.assertIsNotNone(fetched)
+        self.assertEqual(fetched.customer_name, "Recipient Name")
+        self.assertEqual(fetched.customer_email, "recipient@example.com")
+        self.assertEqual(fetched.customer_phone, "919999999")
+        self.assertEqual(fetched.customer_address, "Rua do Destino 123, Lisboa")
+
+        by_cust = self.order_repo.get_by_customer_id(self.customer.id)
+        self.assertEqual(len(by_cust), 1)
+        self.assertEqual(by_cust[0].customer_name, "Recipient Name")
+
+        all_orders = self.order_repo.get_all()
+        self.assertEqual(len(all_orders), 1)
+        self.assertEqual(all_orders[0].customer_name, "Recipient Name")
 
     def test_get_by_id_missing_returns_none(self) -> None:
         self.assertIsNone(self.order_repo.get_by_id(9999))
