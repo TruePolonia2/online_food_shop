@@ -2,6 +2,7 @@
 from datetime import datetime, timezone
 import sqlite3
 import unittest
+from unittest.mock import patch
 
 from app import create_app
 from app.config import Config
@@ -11,10 +12,12 @@ from app.models.customer import Customer
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
 from app.models.product import Product
+from app.models.user import User, UserRole
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.customer_repository import CustomerRepository
 from app.repositories.order_repository import OrderRepository
 from app.repositories.product_repository import ProductRepository
+from app.repositories.user_repository import UserRepository
 
 
 class BaseRepositoryTestCase(unittest.TestCase):
@@ -27,6 +30,7 @@ class BaseRepositoryTestCase(unittest.TestCase):
         self.product_repo = ProductRepository(self.conn)
         self.customer_repo = CustomerRepository(self.conn)
         self.order_repo = OrderRepository(self.conn)
+        self.user_repo = UserRepository(self.conn)
 
     def tearDown(self) -> None:
         self.conn.close()
@@ -515,6 +519,185 @@ class TestOrderRepository(BaseRepositoryTestCase):
         ).fetchone()["c"]
         self.assertEqual(items_remaining, 0)
 
+    def test_create_order_with_user_id_and_retrieve_by_user_id(self) -> None:
+        user = self.user_repo.create(User(email="buyer@example.com"))
+        order = Order(
+            customer_id=self.customer.id,
+            user_id=user.id,
+            items=[
+                OrderItem(
+                    product_id=self.product1.id,
+                    product_name=self.product1.name,
+                    unit_price=self.product1.price,
+                    quantity=2,
+                )
+            ],
+            customer_name="Delivery Recipient",
+            customer_email="delivery@example.com",
+        )
+        saved = self.order_repo.create(order)
+        self.assertEqual(saved.user_id, user.id)
+
+        fetched = self.order_repo.get_by_id(saved.id)
+        self.assertIsNotNone(fetched)
+        self.assertEqual(fetched.user_id, user.id)
+        self.assertEqual(fetched.customer_name, "Delivery Recipient")
+
+        user_orders = self.order_repo.get_by_user_id(user.id)
+        self.assertEqual(len(user_orders), 1)
+        self.assertEqual(user_orders[0].id, saved.id)
+        self.assertEqual(user_orders[0].user_id, user.id)
+
+    def test_create_guest_order_persists_null_user_id(self) -> None:
+        order = Order(
+            customer_id=self.customer.id,
+            items=[
+                OrderItem(
+                    product_id=self.product1.id,
+                    product_name=self.product1.name,
+                    unit_price=self.product1.price,
+                    quantity=1,
+                )
+            ],
+        )
+        saved = self.order_repo.create(order)
+        self.assertIsNone(saved.user_id)
+
+        fetched = self.order_repo.get_by_id(saved.id)
+        self.assertIsNotNone(fetched)
+        self.assertIsNone(fetched.user_id)
+
+    def test_get_by_user_id_isolates_orders_between_accounts_and_guests(self) -> None:
+        u1 = self.user_repo.create(User(email="u1@example.com"))
+        u2 = self.user_repo.create(User(email="u2@example.com"))
+
+        o1 = self.order_repo.create(Order(customer_id=self.customer.id, user_id=u1.id))
+        o2 = self.order_repo.create(Order(customer_id=self.customer.id, user_id=u2.id))
+        o_guest = self.order_repo.create(Order(customer_id=self.customer.id, user_id=None))
+
+        u1_orders = self.order_repo.get_by_user_id(u1.id)
+        self.assertEqual(len(u1_orders), 1)
+        self.assertEqual(u1_orders[0].id, o1.id)
+
+        u2_orders = self.order_repo.get_by_user_id(u2.id)
+        self.assertEqual(len(u2_orders), 1)
+        self.assertEqual(u2_orders[0].id, o2.id)
+
+        # Non-matching user has empty list
+        u3 = self.user_repo.create(User(email="u3@example.com"))
+        self.assertEqual(self.order_repo.get_by_user_id(u3.id), [])
+
+
+class TestUserRepository(BaseRepositoryTestCase):
+    """Tests for UserRepository CRUD operations, case-insensitive uniqueness, and transactions."""
+
+    def test_create_and_get_by_id(self) -> None:
+        user = User(email="test@example.com", role=UserRole.CUSTOMER, is_verified=False)
+        saved = self.user_repo.create(user)
+
+        self.assertIsNotNone(saved.id)
+        self.assertEqual(saved.email, "test@example.com")
+        self.assertEqual(saved.role, UserRole.CUSTOMER)
+        self.assertFalse(saved.is_verified)
+
+        fetched = self.user_repo.get_by_id(saved.id)
+        self.assertIsNotNone(fetched)
+        self.assertEqual(fetched.id, saved.id)
+        self.assertEqual(fetched.email, "test@example.com")
+        self.assertEqual(fetched.role, UserRole.CUSTOMER)
+        self.assertFalse(fetched.is_verified)
+        self.assertIsNotNone(fetched.created_at)
+
+    def test_get_by_email_normalized(self) -> None:
+        self.user_repo.create(User(email="maria.silva@example.com", role=UserRole.OWNER, is_verified=True))
+
+        found = self.user_repo.get_by_email("  MARIA.SILVA@EXAMPLE.COM  ")
+        self.assertIsNotNone(found)
+        self.assertEqual(found.email, "maria.silva@example.com")
+        self.assertEqual(found.role, UserRole.OWNER)
+        self.assertTrue(found.is_verified)
+
+        self.assertIsNone(self.user_repo.get_by_email("unknown@example.com"))
+        self.assertIsNone(self.user_repo.get_by_email(""))
+
+    def test_email_exists(self) -> None:
+        self.user_repo.create(User(email="active@example.com"))
+
+        self.assertTrue(self.user_repo.email_exists("active@example.com"))
+        self.assertTrue(self.user_repo.email_exists("ACTIVE@EXAMPLE.COM"))
+        self.assertFalse(self.user_repo.email_exists("notfound@example.com"))
+        self.assertFalse(self.user_repo.email_exists(""))
+
+    def test_duplicate_email_raises_value_error(self) -> None:
+        self.user_repo.create(User(email="duplicate@example.com"))
+
+        with self.assertRaises(ValueError) as ctx:
+            self.user_repo.create(User(email="duplicate@example.com"))
+        self.assertIn("already exists", str(ctx.exception))
+
+    def test_duplicate_email_case_insensitive_raises_value_error(self) -> None:
+        self.user_repo.create(User(email="user@example.com"))
+
+        with self.assertRaises(ValueError) as ctx:
+            self.user_repo.create(User(email="USER@EXAMPLE.COM"))
+        self.assertIn("already exists", str(ctx.exception))
+
+    def test_get_all(self) -> None:
+        self.user_repo.create(User(email="first@example.com"))
+        self.user_repo.create(User(email="second@example.com"))
+
+        users = self.user_repo.get_all()
+        self.assertEqual(len(users), 2)
+        self.assertEqual(users[0].email, "first@example.com")
+        self.assertEqual(users[1].email, "second@example.com")
+
+    def test_update_user(self) -> None:
+        user = self.user_repo.create(User(email="orig@example.com", is_verified=False))
+        user.email = "updated@example.com"
+        user.is_verified = True
+        user.role = UserRole.OWNER
+
+        updated = self.user_repo.update(user)
+        self.assertTrue(updated)
+
+        fetched = self.user_repo.get_by_id(user.id)
+        self.assertIsNotNone(fetched)
+        self.assertEqual(fetched.email, "updated@example.com")
+        self.assertTrue(fetched.is_verified)
+        self.assertEqual(fetched.role, UserRole.OWNER)
+
+    def test_update_user_duplicate_email_raises(self) -> None:
+        u1 = self.user_repo.create(User(email="user1@example.com"))
+        u2 = self.user_repo.create(User(email="user2@example.com"))
+
+        u2.email = "USER1@EXAMPLE.COM"
+        with self.assertRaises(ValueError):
+            self.user_repo.update(u2)
+
+    def test_delete_user(self) -> None:
+        user = self.user_repo.create(User(email="todelete@example.com"))
+        self.assertTrue(self.user_repo.delete(user.id))
+        self.assertIsNone(self.user_repo.get_by_id(user.id))
+        self.assertFalse(self.user_repo.delete(user.id))
+
+    def test_unrelated_integrity_error_is_not_silently_converted(self) -> None:
+        user = User(email="test@example.com")
+        mock_conn = unittest.mock.MagicMock()
+        mock_conn.execute.side_effect = sqlite3.IntegrityError("CHECK constraint failed: users")
+        repo = UserRepository(mock_conn)
+        with self.assertRaises(sqlite3.IntegrityError):
+            repo.create(user)
+
+    def test_concurrent_duplicate_insert_handling(self) -> None:
+        # Pre-insert a user with lowercase email
+        self.user_repo.create(User(email="concurrent@example.com"))
+
+        # Attempting to insert duplicate user with same email (mixed case) triggers ValueError
+        user2 = User(email="CONCURRENT@EXAMPLE.COM")
+        with self.assertRaises(ValueError) as ctx:
+            self.user_repo.create(user2)
+        self.assertIn("already exists", str(ctx.exception))
+
 
 class TestRepositoryFlaskContext(unittest.TestCase):
     """Test that repositories default to Flask's get_db() when no connection is provided."""
@@ -534,6 +717,10 @@ class TestRepositoryFlaskContext(unittest.TestCase):
             prod_repo = ProductRepository()
             cust_repo = CustomerRepository()
             order_repo = OrderRepository()
+            user_repo = UserRepository()
+
+            user = user_repo.create(User(email="ctx_user@example.com"))
+            self.assertIsNotNone(user.id)
 
             cat = cat_repo.create(Category(name="Apples"))
             self.assertIsNotNone(cat.id)
@@ -547,10 +734,12 @@ class TestRepositoryFlaskContext(unittest.TestCase):
             order = order_repo.create(
                 Order(
                     customer_id=cust.id,
+                    user_id=user.id,
                     items=[OrderItem(product_id=prod.id, product_name=prod.name, unit_price=299, quantity=2)],
                 )
             )
             self.assertIsNotNone(order.id)
+            self.assertEqual(order.user_id, user.id)
             self.assertEqual(order.total, 598)
 
 

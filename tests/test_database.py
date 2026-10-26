@@ -41,7 +41,7 @@ class TestDatabaseSchemaAndConstraints(unittest.TestCase):
             "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
         )
         table_names = {row["name"] for row in cursor.fetchall()}
-        expected_tables = {"categories", "products", "customers", "orders", "order_items"}
+        expected_tables = {"categories", "products", "customers", "orders", "order_items", "users"}
         self.assertTrue(expected_tables.issubset(table_names))
         # Ensure no cart tables exist in database
         self.assertNotIn("carts", table_names)
@@ -56,6 +56,58 @@ class TestDatabaseSchemaAndConstraints(unittest.TestCase):
         self.assertIn("idx_orders_customer_id", index_names)
         self.assertIn("idx_order_items_order_id", index_names)
         self.assertIn("idx_order_items_product_id", index_names)
+        self.assertIn("idx_orders_user_id", index_names)
+        self.assertIn("idx_customers_user_id", index_names)
+
+    def test_user_constraints(self):
+        # Successful insert of customer user
+        cursor = self.conn.execute(
+            "INSERT INTO users (email, role, is_verified) VALUES (?, ?, ?)",
+            ("client@example.com", "customer", 0),
+        )
+        self.assertIsInstance(cursor.lastrowid, int)
+
+        # Successful insert of owner user
+        cursor = self.conn.execute(
+            "INSERT INTO users (email, role, is_verified) VALUES (?, ?, ?)",
+            ("owner@example.com", "owner", 1),
+        )
+        self.assertIsInstance(cursor.lastrowid, int)
+
+        # Case-insensitive duplicate email rejected (COLLATE NOCASE)
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.conn.execute(
+                "INSERT INTO users (email, role) VALUES (?, ?)",
+                ("CLIENT@EXAMPLE.COM", "customer"),
+            )
+
+        # Empty email rejected by CHECK constraint
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.conn.execute(
+                "INSERT INTO users (email) VALUES (?)",
+                ("   ",),
+            )
+
+        # Email without @ rejected by CHECK constraint
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.conn.execute(
+                "INSERT INTO users (email) VALUES (?)",
+                ("no-at-sign",),
+            )
+
+        # Invalid role rejected by CHECK constraint
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.conn.execute(
+                "INSERT INTO users (email, role) VALUES (?, ?)",
+                ("hacker@example.com", "admin"),
+            )
+
+        # Invalid is_verified rejected by CHECK constraint
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.conn.execute(
+                "INSERT INTO users (email, is_verified) VALUES (?, ?)",
+                ("test@example.com", 2),
+            )
 
     def test_category_constraints(self):
         # Successful insert
@@ -170,17 +222,30 @@ class TestDatabaseSchemaAndConstraints(unittest.TestCase):
             )
 
     def test_order_snapshot_columns_and_idempotent_migration(self):
-        # Verify snapshot columns exist in initialized schema
+        # Verify snapshot and user_id columns exist in initialized schema
         cursor = self.conn.execute("PRAGMA table_info(orders);")
         col_names = {row["name"] for row in cursor.fetchall()}
         self.assertTrue(
-            {"customer_name", "customer_email", "customer_phone", "customer_address"}.issubset(
+            {"customer_name", "customer_email", "customer_phone", "customer_address", "user_id"}.issubset(
                 col_names
             )
         )
 
-        # Test idempotent migration on a connection simulating an older table without snapshot columns
+        cust_cursor = self.conn.execute("PRAGMA table_info(customers);")
+        cust_cols = {row["name"] for row in cust_cursor.fetchall()}
+        self.assertIn("user_id", cust_cols)
+
+        # Test idempotent migration on a connection simulating older tables without snapshot or user_id columns
         old_conn = create_connection(":memory:")
+        old_conn.execute(
+            """CREATE TABLE customers (
+                   id INTEGER PRIMARY KEY,
+                   name TEXT NOT NULL,
+                   email TEXT NOT NULL UNIQUE,
+                   phone TEXT,
+                   address TEXT
+               );"""
+        )
         old_conn.execute(
             """CREATE TABLE orders (
                    id INTEGER PRIMARY KEY,
@@ -189,13 +254,40 @@ class TestDatabaseSchemaAndConstraints(unittest.TestCase):
                    created_at TEXT NOT NULL DEFAULT '2026-01-01T00:00:00Z'
                );"""
         )
+        # Pre-populate legacy data to verify rows are preserved
+        old_conn.execute("INSERT INTO customers (id, name, email) VALUES (1, 'Legacy Customer', 'legacy@example.com')")
+        old_conn.execute("INSERT INTO orders (id, customer_id, status) VALUES (10, 1, 'confirmed')")
+
+        # First run: performs migration
         init_db(old_conn)
-        migrated_cols = {row["name"] for row in old_conn.execute("PRAGMA table_info(orders);").fetchall()}
+
+        migrated_order_cols = {row["name"] for row in old_conn.execute("PRAGMA table_info(orders);").fetchall()}
         self.assertTrue(
-            {"customer_name", "customer_email", "customer_phone", "customer_address"}.issubset(
-                migrated_cols
+            {"customer_name", "customer_email", "customer_phone", "customer_address", "user_id"}.issubset(
+                migrated_order_cols
             )
         )
+
+        migrated_cust_cols = {row["name"] for row in old_conn.execute("PRAGMA table_info(customers);").fetchall()}
+        self.assertIn("user_id", migrated_cust_cols)
+
+        # Verify legacy data preserved
+        order_row = old_conn.execute("SELECT * FROM orders WHERE id = 10").fetchone()
+        self.assertEqual(order_row["customer_id"], 1)
+        self.assertEqual(order_row["status"], "confirmed")
+        self.assertIsNone(order_row["user_id"])
+
+        cust_row = old_conn.execute("SELECT * FROM customers WHERE id = 1").fetchone()
+        self.assertEqual(cust_row["name"], "Legacy Customer")
+        self.assertIsNone(cust_row["user_id"])
+
+        # Second run: must be safe and idempotent
+        init_db(old_conn)
+
+        # Verify foreign keys are enforced on migrated database
+        with self.assertRaises(sqlite3.IntegrityError):
+            old_conn.execute("INSERT INTO orders (id, customer_id, user_id) VALUES (11, 1, 99999)")
+
         old_conn.close()
 
     def test_order_item_constraints_and_price_preservation(self):
@@ -300,6 +392,39 @@ class TestDatabaseSchemaAndConstraints(unittest.TestCase):
         # Deleting product referenced in order_items is restricted
         with self.assertRaises(sqlite3.IntegrityError):
             self.conn.execute("DELETE FROM products WHERE id = ?", (prod_id,))
+
+    def test_foreign_keys_user_on_delete_set_null(self):
+        # Insert user
+        self.conn.execute("INSERT INTO users (email) VALUES ('user@example.com')")
+        user_id = self.conn.execute("SELECT id FROM users WHERE email = 'user@example.com'").fetchone()["id"]
+
+        # Insert customer and order referencing this user
+        self.conn.execute(
+            "INSERT INTO customers (name, email, user_id) VALUES ('User Profile', 'user@example.com', ?)",
+            (user_id,),
+        )
+        cust_id = self.conn.execute("SELECT id FROM customers WHERE email = 'user@example.com'").fetchone()["id"]
+
+        self.conn.execute("INSERT INTO orders (customer_id, user_id) VALUES (?, ?)", (cust_id, user_id))
+        order_id = self.conn.execute("SELECT id FROM orders WHERE customer_id = ?", (cust_id,)).fetchone()["id"]
+
+        # Deleting user sets user_id to NULL on both customer and order without deleting the records
+        self.conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+
+        cust_row = self.conn.execute("SELECT user_id FROM customers WHERE id = ?", (cust_id,)).fetchone()
+        self.assertIsNone(cust_row["user_id"])
+
+        order_row = self.conn.execute("SELECT user_id FROM orders WHERE id = ?", (order_id,)).fetchone()
+        self.assertIsNone(order_row["user_id"])
+
+        # Foreign key restriction on non-existent user_id
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.conn.execute("INSERT INTO orders (customer_id, user_id) VALUES (?, ?)", (cust_id, 99999))
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.conn.execute(
+                "INSERT INTO customers (name, email, user_id) VALUES ('Fake', 'fake@example.com', ?)",
+                (99999,),
+            )
 
 
 class TestConnectionAndLifecycle(unittest.TestCase):

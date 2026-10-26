@@ -35,6 +35,7 @@ def _row_to_order(row: sqlite3.Row, items: Optional[list[OrderItem]] = None) -> 
     customer_email = row["customer_email"] if "customer_email" in row_keys else None
     customer_phone = row["customer_phone"] if "customer_phone" in row_keys else None
     customer_address = row["customer_address"] if "customer_address" in row_keys else None
+    user_id = row["user_id"] if "user_id" in row_keys else None
 
     return Order(
         id=row["id"],
@@ -46,6 +47,7 @@ def _row_to_order(row: sqlite3.Row, items: Optional[list[OrderItem]] = None) -> 
         customer_email=customer_email,
         customer_phone=customer_phone,
         customer_address=customer_address,
+        user_id=user_id,
     )
 
 
@@ -77,7 +79,7 @@ class OrderRepository:
             The Order entity with its items populated, or None if not found.
         """
         cursor = self.conn.execute(
-            """SELECT id, customer_id, status, created_at,
+            """SELECT id, customer_id, user_id, status, created_at,
                       customer_name, customer_email, customer_phone, customer_address
                FROM orders WHERE id = ?""",
             (order_id,),
@@ -104,10 +106,31 @@ class OrderRepository:
             A list of Order entities with their items populated.
         """
         cursor = self.conn.execute(
-            """SELECT id, customer_id, status, created_at,
+            """SELECT id, customer_id, user_id, status, created_at,
                       customer_name, customer_email, customer_phone, customer_address
                FROM orders WHERE customer_id = ? ORDER BY created_at DESC, id DESC""",
             (customer_id,),
+        )
+        order_rows = cursor.fetchall()
+        if not order_rows:
+            return []
+
+        return self._populate_orders_with_items(order_rows)
+
+    def get_by_user_id(self, user_id: int) -> list[Order]:
+        """Retrieve all orders placed by an authenticated user account, ordered by newest first.
+
+        Args:
+            user_id: The ID of the authenticated user.
+
+        Returns:
+            A list of Order entities with their items populated.
+        """
+        cursor = self.conn.execute(
+            """SELECT id, customer_id, user_id, status, created_at,
+                      customer_name, customer_email, customer_phone, customer_address
+               FROM orders WHERE user_id = ? ORDER BY created_at DESC, id DESC""",
+            (user_id,),
         )
         order_rows = cursor.fetchall()
         if not order_rows:
@@ -122,7 +145,7 @@ class OrderRepository:
             A list of Order entities with their items populated.
         """
         cursor = self.conn.execute(
-            """SELECT id, customer_id, status, created_at,
+            """SELECT id, customer_id, user_id, status, created_at,
                       customer_name, customer_email, customer_phone, customer_address
                FROM orders ORDER BY created_at DESC, id DESC"""
         )
@@ -182,11 +205,12 @@ class OrderRepository:
 
             cursor = self.conn.execute(
                 """INSERT INTO orders (
-                       customer_id, status, created_at,
+                       customer_id, user_id, status, created_at,
                        customer_name, customer_email, customer_phone, customer_address
-                   ) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     order.customer_id,
+                    order.user_id,
                     status_str,
                     created_at_str,
                     order.customer_name,

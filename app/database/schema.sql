@@ -46,22 +46,42 @@ CREATE TABLE IF NOT EXISTS products (
 CREATE INDEX IF NOT EXISTS idx_products_category_id ON products (category_id);
 
 -- -----------------------------------------------------------------------------
--- 3. customers
+-- 3. users
+-- -----------------------------------------------------------------------------
+-- User accounts for authentication identity and authorization roles.
+-- Email has case-insensitive uniqueness (COLLATE NOCASE) and structural validation.
+-- Role is restricted to 'customer' or 'owner'.
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE COLLATE NOCASE CHECK(length(trim(email)) > 0 AND instr(email, '@') > 0),
+    role TEXT NOT NULL DEFAULT 'customer' CHECK(role IN ('customer', 'owner')),
+    is_verified INTEGER NOT NULL DEFAULT 0 CHECK(is_verified IN (0, 1)),
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+
+-- -----------------------------------------------------------------------------
+-- 4. customers
 -- -----------------------------------------------------------------------------
 -- Customer records. Email is unique and normalized lowercase at the application layer.
+-- user_id is an optional link to an authenticated User account (NULL for guest profiles).
+-- Deleting a user sets user_id to NULL to preserve contact/delivery profile history.
 CREATE TABLE IF NOT EXISTS customers (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL CHECK(length(trim(name)) > 0),
     email TEXT NOT NULL UNIQUE CHECK(length(trim(email)) > 0 AND instr(email, '@') > 0),
     phone TEXT,
-    address TEXT
+    address TEXT,
+    user_id INTEGER,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
 );
 
 -- -----------------------------------------------------------------------------
--- 4. orders
+-- 5. orders
 -- -----------------------------------------------------------------------------
 -- Customer orders. Deleting a customer is restricted if they have existing orders
 -- to preserve historical financial and order records.
+-- user_id optionally identifies the authenticated user account (NULL for guest orders).
+-- Deleting a user account sets user_id to NULL to preserve historical order records.
 -- Status is restricted to valid OrderStatus enumeration values.
 -- Timestamps are recorded in ISO 8601 UTC format.
 -- Preserves immutable customer/delivery snapshot captured at checkout time
@@ -69,20 +89,22 @@ CREATE TABLE IF NOT EXISTS customers (
 CREATE TABLE IF NOT EXISTS orders (
     id INTEGER PRIMARY KEY,
     customer_id INTEGER NOT NULL,
+    user_id INTEGER,
     status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'confirmed', 'paid', 'shipped', 'delivered', 'cancelled')),
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     customer_name TEXT,
     customer_email TEXT,
     customer_phone TEXT,
     customer_address TEXT,
-    FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE RESTRICT
+    FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE RESTRICT,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
 );
 
 -- Index to optimize querying customer order history and foreign key checks
 CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders (customer_id);
 
 -- -----------------------------------------------------------------------------
--- 5. order_items
+-- 6. order_items
 -- -----------------------------------------------------------------------------
 -- Individual line items in an order.
 -- Preserves snapshot of product name and unit price (minor currency units) at purchase

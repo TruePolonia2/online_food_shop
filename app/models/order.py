@@ -37,6 +37,7 @@ class Order:
     customer_email: Optional[str] = None
     customer_phone: Optional[str] = None
     customer_address: Optional[str] = None
+    user_id: Optional[int] = None
 
     def __post_init__(self) -> None:
         if isinstance(self.status, str) and not isinstance(self.status, OrderStatus):

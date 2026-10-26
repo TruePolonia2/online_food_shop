@@ -144,7 +144,7 @@ def transaction(
 
 
 def _migrate_orders_table_if_needed(conn: sqlite3.Connection) -> None:
-    """Safely and idempotently ensure the orders table has snapshot delivery columns.
+    """Safely and idempotently ensure the orders table has snapshot delivery and user_id columns.
 
     Non-destructive: Uses ALTER TABLE ADD COLUMN only if columns are missing.
     """
@@ -162,6 +162,29 @@ def _migrate_orders_table_if_needed(conn: sqlite3.Connection) -> None:
     for col_name, col_type in columns_to_add:
         if col_name not in existing_cols:
             conn.execute(f"ALTER TABLE orders ADD COLUMN {col_name} {col_type};")
+
+    if "user_id" not in existing_cols:
+        conn.execute(
+            "ALTER TABLE orders ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;"
+        )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders (user_id);")
+
+
+def _migrate_customers_table_if_needed(conn: sqlite3.Connection) -> None:
+    """Safely and idempotently ensure the customers table has the optional user_id column.
+
+    Non-destructive: Uses ALTER TABLE ADD COLUMN only if user_id is missing.
+    """
+    cursor = conn.execute("PRAGMA table_info(customers);")
+    existing_cols = {row["name"] for row in cursor.fetchall()}
+    if not existing_cols:
+        return
+
+    if "user_id" not in existing_cols:
+        conn.execute(
+            "ALTER TABLE customers ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;"
+        )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_customers_user_id ON customers (user_id);")
 
 
 def init_db(
@@ -190,6 +213,7 @@ def init_db(
 
     conn.executescript(schema_sql)
     _migrate_orders_table_if_needed(conn)
+    _migrate_customers_table_if_needed(conn)
     conn.commit()
 
 

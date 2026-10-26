@@ -8,6 +8,7 @@ from app.models.customer import Customer
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
 from app.models.product import Product
+from app.models.user import User, UserRole
 
 
 class TestProductModel(unittest.TestCase):
@@ -250,6 +251,73 @@ class TestOrderAndOrderItem(unittest.TestCase):
         self.assertEqual(order.delivery_email, "beatriz@example.pt")
         self.assertEqual(order.delivery_phone, "912345678")
         self.assertEqual(order.delivery_address, "Avenida Central 10, Braga")
+
+    def test_order_user_id_field_defaults_to_none_and_accepts_int(self):
+        guest_order = Order(customer_id=1)
+        self.assertIsNone(guest_order.user_id)
+
+        user_order = Order(customer_id=1, user_id=42)
+        self.assertEqual(user_order.user_id, 42)
+
+
+class TestUserModel(unittest.TestCase):
+    """Tests for User domain invariants, normalization, and role validation."""
+
+    def test_valid_user_creation_and_defaults(self):
+        user = User(email="customer@example.com")
+        self.assertEqual(user.email, "customer@example.com")
+        self.assertIsNone(user.id)
+        self.assertEqual(user.role, UserRole.CUSTOMER)
+        self.assertFalse(user.is_verified)
+        self.assertIsNotNone(user.created_at)
+
+    def test_email_normalization(self):
+        user = User(email="  Customer.Name@Sub.Example.COM  ")
+        self.assertEqual(user.email, "customer.name@sub.example.com")
+
+    def test_invalid_and_empty_email_rejection(self):
+        invalid_emails = [
+            "",
+            "   ",
+            "not-an-email",
+            "@domain.com",
+            "user@",
+            "user@@domain.com",
+            None,
+            123,
+        ]
+        for val in invalid_emails:
+            with self.subTest(email=val):
+                with self.assertRaises(ValueError):
+                    User(email=val)  # type: ignore[arg-type]
+
+    def test_role_validation_and_normalization(self):
+        user_cust = User(email="c@example.com", role="customer")
+        self.assertEqual(user_cust.role, UserRole.CUSTOMER)
+
+        user_owner = User(email="o@example.com", role="owner")
+        self.assertEqual(user_owner.role, UserRole.OWNER)
+
+        user_upper = User(email="u@example.com", role="OWNER")
+        self.assertEqual(user_upper.role, UserRole.OWNER)
+
+        invalid_roles = ["admin", "root", "guest", "", 123]
+        for val in invalid_roles:
+            with self.subTest(role=val):
+                with self.assertRaises(ValueError):
+                    User(email="test@example.com", role=val)  # type: ignore[arg-type]
+
+    def test_is_verified_validation(self):
+        self.assertFalse(User(email="u1@example.com", is_verified=False).is_verified)
+        self.assertTrue(User(email="u2@example.com", is_verified=True).is_verified)
+        self.assertFalse(User(email="u3@example.com", is_verified=0).is_verified)
+        self.assertTrue(User(email="u4@example.com", is_verified=1).is_verified)
+
+        invalid_verified = ["true", "false", 2, -1, None]
+        for val in invalid_verified:
+            with self.subTest(is_verified=val):
+                with self.assertRaises(ValueError):
+                    User(email="test@example.com", is_verified=val)  # type: ignore[arg-type]
 
 
 if __name__ == "__main__":
