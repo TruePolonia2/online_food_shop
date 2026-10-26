@@ -1,5 +1,5 @@
 """Focused tests for repository layer persistence, transactions, and foreign-key behaviors."""
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import sqlite3
 import unittest
 from unittest.mock import patch
@@ -9,12 +9,14 @@ from app.config import Config
 from app.database.connection import create_connection, init_db
 from app.models.category import Category
 from app.models.customer import Customer
+from app.models.email_verification_token import EmailVerificationToken
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
 from app.models.product import Product
 from app.models.user import User, UserRole
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.customer_repository import CustomerRepository
+from app.repositories.email_verification_token_repository import EmailVerificationTokenRepository
 from app.repositories.order_repository import OrderRepository
 from app.repositories.product_repository import ProductRepository
 from app.repositories.user_repository import UserRepository
@@ -31,6 +33,7 @@ class BaseRepositoryTestCase(unittest.TestCase):
         self.customer_repo = CustomerRepository(self.conn)
         self.order_repo = OrderRepository(self.conn)
         self.user_repo = UserRepository(self.conn)
+        self.token_repo = EmailVerificationTokenRepository(self.conn)
 
     def tearDown(self) -> None:
         self.conn.close()
@@ -698,6 +701,162 @@ class TestUserRepository(BaseRepositoryTestCase):
             self.user_repo.create(user2)
         self.assertIn("already exists", str(ctx.exception))
 
+    def test_create_and_fetch_with_password_hash(self) -> None:
+        fake_hash = "scrypt:32768:8:1$salt123$hashcontent456"
+        user = User(email="hashed@example.com", password_hash=fake_hash)
+        saved = self.user_repo.create(user)
+        self.assertEqual(saved.password_hash, fake_hash)
+
+        fetched = self.user_repo.get_by_id(saved.id)
+        self.assertIsNotNone(fetched)
+        self.assertEqual(fetched.password_hash, fake_hash)
+
+        fetched_by_email = self.user_repo.get_by_email("hashed@example.com")
+        self.assertIsNotNone(fetched_by_email)
+        self.assertEqual(fetched_by_email.password_hash, fake_hash)
+
+    def test_set_verified(self) -> None:
+        user = self.user_repo.create(User(email="verify_test@example.com", is_verified=False))
+        self.assertFalse(user.is_verified)
+
+        success = self.user_repo.set_verified(user.id, True)
+        self.assertTrue(success)
+
+        fetched = self.user_repo.get_by_id(user.id)
+        self.assertTrue(fetched.is_verified)
+
+        # Nonexistent user
+        self.assertFalse(self.user_repo.set_verified(999999, True))
+
+    def test_set_password_hash(self) -> None:
+        user = self.user_repo.create(User(email="update_pwd@example.com"))
+        self.assertIsNone(user.password_hash)
+
+        new_hash = "scrypt:32768:8:1$newsalt$newhash"
+        success = self.user_repo.set_password_hash(user.id, new_hash)
+        self.assertTrue(success)
+
+        fetched = self.user_repo.get_by_id(user.id)
+        self.assertEqual(fetched.password_hash, new_hash)
+
+        # Invalid password hash raises ValueError
+        for bad_hash in ["", "   ", None]:
+            with self.subTest(bad_hash=bad_hash):
+                with self.assertRaises(ValueError):
+                    self.user_repo.set_password_hash(user.id, bad_hash)  # type: ignore[arg-type]
+
+        # Nonexistent user
+        self.assertFalse(self.user_repo.set_password_hash(999999, "valid_hash_string"))
+
+
+class TestEmailVerificationTokenRepository(BaseRepositoryTestCase):
+    """Tests for EmailVerificationTokenRepository persistence, lookup, and atomic single-use consumption."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.user = self.user_repo.create(User(email="tokentest@example.com"))
+
+    def test_create_and_get_by_token_hash(self) -> None:
+        expires = datetime.now(timezone.utc) + timedelta(hours=24)
+        token = EmailVerificationToken(
+            user_id=self.user.id,
+            token_hash="f" * 64,
+            expires_at=expires,
+        )
+        saved = self.token_repo.create(token)
+        self.assertIsNotNone(saved.id)
+        self.assertEqual(saved.user_id, self.user.id)
+
+        fetched = self.token_repo.get_by_token_hash("f" * 64)
+        self.assertIsNotNone(fetched)
+        self.assertEqual(fetched.id, saved.id)
+        self.assertEqual(fetched.user_id, self.user.id)
+        self.assertEqual(fetched.token_hash, "f" * 64)
+        self.assertFalse(fetched.is_used)
+
+        # Case-insensitive lookup
+        fetched_upper = self.token_repo.get_by_token_hash(("f" * 64).upper())
+        self.assertIsNotNone(fetched_upper)
+        self.assertEqual(fetched_upper.id, saved.id)
+
+        # Missing token returns None
+        self.assertIsNone(self.token_repo.get_by_token_hash("0" * 64))
+        self.assertIsNone(self.token_repo.get_by_token_hash(""))
+
+    def test_get_latest_for_user(self) -> None:
+        # None when no tokens exist
+        self.assertIsNone(self.token_repo.get_latest_for_user(self.user.id))
+
+        t1 = self.token_repo.create(
+            EmailVerificationToken(
+                user_id=self.user.id,
+                token_hash="1" * 64,
+                created_at="2026-10-26T10:00:00Z",
+                expires_at="2026-10-27T10:00:00Z",
+            )
+        )
+        t2 = self.token_repo.create(
+            EmailVerificationToken(
+                user_id=self.user.id,
+                token_hash="2" * 64,
+                created_at="2026-10-26T11:00:00Z",
+                expires_at="2026-10-27T11:00:00Z",
+            )
+        )
+
+        latest = self.token_repo.get_latest_for_user(self.user.id)
+        self.assertIsNotNone(latest)
+        self.assertEqual(latest.id, t2.id)
+        self.assertEqual(latest.token_hash, "2" * 64)
+
+    def test_mark_as_used_atomic_single_use(self) -> None:
+        token = self.token_repo.create(
+            EmailVerificationToken(
+                user_id=self.user.id,
+                token_hash="3" * 64,
+                expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+            )
+        )
+        self.assertFalse(token.is_used)
+
+        # First consumption succeeds
+        consume_success = self.token_repo.mark_as_used(token.id)
+        self.assertTrue(consume_success)
+
+        fetched = self.token_repo.get_by_token_hash("3" * 64)
+        self.assertIsNotNone(fetched)
+        self.assertTrue(fetched.is_used)
+        self.assertIsNotNone(fetched.used_at)
+
+        # Concurrent / second consumption attempt returns False (race condition defense)
+        second_attempt = self.token_repo.mark_as_used(token.id)
+        self.assertFalse(second_attempt)
+
+    def test_invalidate_pending_for_user(self) -> None:
+        t1 = self.token_repo.create(
+            EmailVerificationToken(
+                user_id=self.user.id,
+                token_hash="4" * 64,
+                expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+            )
+        )
+        t2 = self.token_repo.create(
+            EmailVerificationToken(
+                user_id=self.user.id,
+                token_hash="5" * 64,
+                expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+            )
+        )
+
+        count = self.token_repo.invalidate_pending_for_user(self.user.id)
+        self.assertEqual(count, 2)
+
+        self.assertTrue(self.token_repo.get_by_token_hash("4" * 64).is_used)
+        self.assertTrue(self.token_repo.get_by_token_hash("5" * 64).is_used)
+
+        # Second call returns 0 since none are pending
+        self.assertEqual(self.token_repo.invalidate_pending_for_user(self.user.id), 0)
+
 
 class TestRepositoryFlaskContext(unittest.TestCase):
     """Test that repositories default to Flask's get_db() when no connection is provided."""
@@ -718,9 +877,19 @@ class TestRepositoryFlaskContext(unittest.TestCase):
             cust_repo = CustomerRepository()
             order_repo = OrderRepository()
             user_repo = UserRepository()
+            token_repo = EmailVerificationTokenRepository()
 
             user = user_repo.create(User(email="ctx_user@example.com"))
             self.assertIsNotNone(user.id)
+
+            token = token_repo.create(
+                EmailVerificationToken(
+                    user_id=user.id,
+                    token_hash="a" * 64,
+                    expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+                )
+            )
+            self.assertIsNotNone(token.id)
 
             cat = cat_repo.create(Category(name="Apples"))
             self.assertIsNotNone(cat.id)

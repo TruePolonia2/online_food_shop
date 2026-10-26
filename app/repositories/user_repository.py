@@ -17,12 +17,15 @@ def _row_to_user(row: sqlite3.Row) -> User:
     else:
         created_at = datetime.now(timezone.utc)
 
+    password_hash = row["password_hash"] if "password_hash" in row.keys() else None
+
     return User(
         id=row["id"],
         email=row["email"],
         role=UserRole(row["role"]),
         is_verified=bool(row["is_verified"]),
         created_at=created_at,
+        password_hash=password_hash,
     )
 
 
@@ -54,7 +57,7 @@ class UserRepository:
             The User entity if found, None otherwise.
         """
         cursor = self.conn.execute(
-            "SELECT id, email, role, is_verified, created_at FROM users WHERE id = ?",
+            "SELECT id, email, password_hash, role, is_verified, created_at FROM users WHERE id = ?",
             (user_id,),
         )
         row = cursor.fetchone()
@@ -74,7 +77,7 @@ class UserRepository:
 
         cleaned_email = email.strip().lower()
         cursor = self.conn.execute(
-            "SELECT id, email, role, is_verified, created_at FROM users WHERE email = ? COLLATE NOCASE",
+            "SELECT id, email, password_hash, role, is_verified, created_at FROM users WHERE email = ? COLLATE NOCASE",
             (cleaned_email,),
         )
         row = cursor.fetchone()
@@ -106,7 +109,7 @@ class UserRepository:
             A list of User entities.
         """
         cursor = self.conn.execute(
-            "SELECT id, email, role, is_verified, created_at FROM users ORDER BY id ASC"
+            "SELECT id, email, password_hash, role, is_verified, created_at FROM users ORDER BY id ASC"
         )
         return [_row_to_user(row) for row in cursor.fetchall()]
 
@@ -142,8 +145,8 @@ class UserRepository:
         with transaction(self.conn):
             try:
                 cursor = self.conn.execute(
-                    "INSERT INTO users (email, role, is_verified, created_at) VALUES (?, ?, ?, ?)",
-                    (cleaned_email, role_str, is_verified_int, created_at_str),
+                    "INSERT INTO users (email, password_hash, role, is_verified, created_at) VALUES (?, ?, ?, ?, ?)",
+                    (cleaned_email, user.password_hash, role_str, is_verified_int, created_at_str),
                 )
                 user.id = cursor.lastrowid
                 user.email = cleaned_email
@@ -176,8 +179,8 @@ class UserRepository:
         with transaction(self.conn):
             try:
                 cursor = self.conn.execute(
-                    "UPDATE users SET email = ?, role = ?, is_verified = ? WHERE id = ?",
-                    (cleaned_email, role_str, is_verified_int, user.id),
+                    "UPDATE users SET email = ?, password_hash = ?, role = ?, is_verified = ? WHERE id = ?",
+                    (cleaned_email, user.password_hash, role_str, is_verified_int, user.id),
                 )
                 return cursor.rowcount > 0
             except sqlite3.IntegrityError as err:
@@ -185,6 +188,44 @@ class UserRepository:
                 if "unique" in err_msg and ("users.email" in err_msg or "email" in err_msg):
                     raise ValueError(f"User with email '{cleaned_email}' already exists.") from err
                 raise
+
+    def set_verified(self, user_id: int, is_verified: bool = True) -> bool:
+        """Update only the is_verified status for a user.
+
+        Args:
+            user_id: The ID of the user.
+            is_verified: Verification status to set (defaults to True).
+
+        Returns:
+            True if user was found and updated, False otherwise.
+        """
+        is_verified_int = 1 if is_verified else 0
+        with transaction(self.conn):
+            cursor = self.conn.execute(
+                "UPDATE users SET is_verified = ? WHERE id = ?",
+                (is_verified_int, user_id),
+            )
+            return cursor.rowcount > 0
+
+    def set_password_hash(self, user_id: int, password_hash: str) -> bool:
+        """Update the password hash for a user.
+
+        Args:
+            user_id: The ID of the user.
+            password_hash: The new password hash (must be non-empty).
+
+        Returns:
+            True if user was found and updated, False otherwise.
+        """
+        if not password_hash or not isinstance(password_hash, str) or not password_hash.strip():
+            raise ValueError("Password hash must be a non-empty string.")
+
+        with transaction(self.conn):
+            cursor = self.conn.execute(
+                "UPDATE users SET password_hash = ? WHERE id = ?",
+                (password_hash.strip(), user_id),
+            )
+            return cursor.rowcount > 0
 
     def delete(self, user_id: int) -> bool:
         """Delete a user by their primary key ID.

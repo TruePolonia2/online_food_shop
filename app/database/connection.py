@@ -143,6 +143,20 @@ def transaction(
             _transaction_depths[conn_id] = current - 1
 
 
+def _migrate_users_table_if_needed(conn: sqlite3.Connection) -> None:
+    """Safely and idempotently ensure the users table has the password_hash column.
+
+    Non-destructive: Uses ALTER TABLE ADD COLUMN only if password_hash is missing.
+    """
+    cursor = conn.execute("PRAGMA table_info(users);")
+    existing_cols = {row["name"] for row in cursor.fetchall()}
+    if not existing_cols:
+        return
+
+    if "password_hash" not in existing_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN password_hash TEXT;")
+
+
 def _migrate_orders_table_if_needed(conn: sqlite3.Connection) -> None:
     """Safely and idempotently ensure the orders table has snapshot delivery and user_id columns.
 
@@ -212,6 +226,7 @@ def init_db(
         schema_sql = f.read()
 
     conn.executescript(schema_sql)
+    _migrate_users_table_if_needed(conn)
     _migrate_orders_table_if_needed(conn)
     _migrate_customers_table_if_needed(conn)
     conn.commit()

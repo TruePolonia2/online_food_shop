@@ -1,10 +1,12 @@
 """Unit tests for domain models and business invariants."""
+from datetime import datetime, timedelta, timezone
 import unittest
 
 from app.models.cart import Cart
 from app.models.cart_item import CartItem
 from app.models.category import Category
 from app.models.customer import Customer
+from app.models.email_verification_token import EmailVerificationToken
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
 from app.models.product import Product
@@ -318,6 +320,119 @@ class TestUserModel(unittest.TestCase):
             with self.subTest(is_verified=val):
                 with self.assertRaises(ValueError):
                     User(email="test@example.com", is_verified=val)  # type: ignore[arg-type]
+
+    def test_user_password_hash_validation_and_repr(self):
+        # Default without credentials
+        user_no_cred = User(email="cred@example.com")
+        self.assertIsNone(user_no_cred.password_hash)
+        self.assertFalse(user_no_cred.has_credentials)
+
+        # Valid password hash
+        fake_hash = "scrypt:32768:8:1$randomsalt$hashedvalue"
+        user_with_cred = User(email="cred@example.com", password_hash=fake_hash)
+        self.assertEqual(user_with_cred.password_hash, fake_hash)
+        self.assertTrue(user_with_cred.has_credentials)
+
+        # Security invariant: password_hash must be excluded from repr to avoid log leaks
+        self.assertNotIn(fake_hash, repr(user_with_cred))
+        self.assertNotIn("password_hash", repr(user_with_cred))
+
+        # Rejection of invalid password hashes
+        invalid_hashes = ["", "   ", 12345, []]
+        for bad_hash in invalid_hashes:
+            with self.subTest(bad_hash=bad_hash):
+                with self.assertRaises(ValueError):
+                    User(email="cred@example.com", password_hash=bad_hash)  # type: ignore[arg-type]
+
+
+class TestEmailVerificationTokenModel(unittest.TestCase):
+    """Tests for EmailVerificationToken domain invariants and lifecycle properties."""
+
+    def test_valid_token_creation(self):
+        now_utc = datetime.now(timezone.utc)
+        expires_at = now_utc + timedelta(hours=24)
+        token = EmailVerificationToken(
+            id=1,
+            user_id=42,
+            token_hash="a" * 64,
+            expires_at=expires_at,
+            created_at=now_utc,
+        )
+        self.assertEqual(token.user_id, 42)
+        self.assertEqual(token.token_hash, "a" * 64)
+        self.assertFalse(token.is_used)
+        self.assertFalse(token.is_expired)
+        self.assertTrue(token.is_valid)
+
+    def test_invalid_user_id_raises_value_error(self):
+        now_utc = datetime.now(timezone.utc)
+        expires_at = now_utc + timedelta(hours=24)
+        invalid_ids = [0, -1, None, "42", True, False]
+        for uid in invalid_ids:
+            with self.subTest(uid=uid):
+                with self.assertRaises(ValueError):
+                    EmailVerificationToken(
+                        user_id=uid,  # type: ignore[arg-type]
+                        token_hash="a" * 64,
+                        expires_at=expires_at,
+                    )
+
+    def test_empty_or_whitespace_token_hash_raises_value_error(self):
+        now_utc = datetime.now(timezone.utc)
+        expires_at = now_utc + timedelta(hours=24)
+        for bad_hash in ["", "   ", None, 123]:
+            with self.subTest(bad_hash=bad_hash):
+                with self.assertRaises(ValueError):
+                    EmailVerificationToken(
+                        user_id=1,
+                        token_hash=bad_hash,  # type: ignore[arg-type]
+                        expires_at=expires_at,
+                    )
+
+    def test_timestamp_parsing_and_utc_normalization(self):
+        token = EmailVerificationToken(
+            user_id=5,
+            token_hash="b" * 64,
+            expires_at="2026-10-27T12:00:00Z",
+            created_at="2026-10-26T12:00:00Z",
+            used_at="2026-10-26T13:00:00Z",
+        )
+        self.assertEqual(token.expires_at.tzinfo, timezone.utc)
+        self.assertEqual(token.created_at.tzinfo, timezone.utc)
+        self.assertEqual(token.used_at.tzinfo, timezone.utc)
+        self.assertTrue(token.is_used)
+
+    def test_is_expired_and_is_valid_lifecycle(self):
+        now_utc = datetime.now(timezone.utc)
+
+        # Future token: valid and not expired
+        token_active = EmailVerificationToken(
+            user_id=1,
+            token_hash="c" * 64,
+            expires_at=now_utc + timedelta(hours=1),
+        )
+        self.assertFalse(token_active.is_expired)
+        self.assertFalse(token_active.is_used)
+        self.assertTrue(token_active.is_valid)
+
+        # Past token: expired and invalid
+        token_past = EmailVerificationToken(
+            user_id=1,
+            token_hash="d" * 64,
+            expires_at=now_utc - timedelta(seconds=10),
+        )
+        self.assertTrue(token_past.is_expired)
+        self.assertFalse(token_past.is_valid)
+
+        # Consumed token: used and invalid even if not expired
+        token_consumed = EmailVerificationToken(
+            user_id=1,
+            token_hash="e" * 64,
+            expires_at=now_utc + timedelta(hours=1),
+            used_at=now_utc,
+        )
+        self.assertTrue(token_consumed.is_used)
+        self.assertFalse(token_consumed.is_valid)
 
 
 if __name__ == "__main__":

@@ -50,17 +50,39 @@ CREATE INDEX IF NOT EXISTS idx_products_category_id ON products (category_id);
 -- -----------------------------------------------------------------------------
 -- User accounts for authentication identity and authorization roles.
 -- Email has case-insensitive uniqueness (COLLATE NOCASE) and structural validation.
+-- password_hash stores cryptographic hash (scrypt). Nullable to support existing rows
+-- without credentials; non-null values must be non-empty strings.
 -- Role is restricted to 'customer' or 'owner'.
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY,
     email TEXT NOT NULL UNIQUE COLLATE NOCASE CHECK(length(trim(email)) > 0 AND instr(email, '@') > 0),
+    password_hash TEXT CHECK(password_hash IS NULL OR length(trim(password_hash)) > 0),
     role TEXT NOT NULL DEFAULT 'customer' CHECK(role IN ('customer', 'owner')),
     is_verified INTEGER NOT NULL DEFAULT 0 CHECK(is_verified IN (0, 1)),
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 
 -- -----------------------------------------------------------------------------
--- 4. customers
+-- 4. email_verification_tokens
+-- -----------------------------------------------------------------------------
+-- Single-use tokens for email address verification.
+-- Stores SHA-256 hash of the token, never the raw token string.
+-- Automatically deleted if the parent user is deleted (ON DELETE CASCADE).
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    expires_at TEXT NOT NULL,
+    used_at TEXT,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+-- Index to optimize querying recent tokens for a user (e.g. cooldown checks)
+CREATE INDEX IF NOT EXISTS idx_verification_tokens_user_id ON email_verification_tokens (user_id);
+
+-- -----------------------------------------------------------------------------
+-- 5. customers
 -- -----------------------------------------------------------------------------
 -- Customer records. Email is unique and normalized lowercase at the application layer.
 -- user_id is an optional link to an authenticated User account (NULL for guest profiles).

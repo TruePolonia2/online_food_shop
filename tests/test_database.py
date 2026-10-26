@@ -41,7 +41,15 @@ class TestDatabaseSchemaAndConstraints(unittest.TestCase):
             "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
         )
         table_names = {row["name"] for row in cursor.fetchall()}
-        expected_tables = {"categories", "products", "customers", "orders", "order_items", "users"}
+        expected_tables = {
+            "categories",
+            "products",
+            "customers",
+            "orders",
+            "order_items",
+            "users",
+            "email_verification_tokens",
+        }
         self.assertTrue(expected_tables.issubset(table_names))
         # Ensure no cart tables exist in database
         self.assertNotIn("carts", table_names)
@@ -58,6 +66,7 @@ class TestDatabaseSchemaAndConstraints(unittest.TestCase):
         self.assertIn("idx_order_items_product_id", index_names)
         self.assertIn("idx_orders_user_id", index_names)
         self.assertIn("idx_customers_user_id", index_names)
+        self.assertIn("idx_verification_tokens_user_id", index_names)
 
     def test_user_constraints(self):
         # Successful insert of customer user
@@ -108,6 +117,115 @@ class TestDatabaseSchemaAndConstraints(unittest.TestCase):
                 "INSERT INTO users (email, is_verified) VALUES (?, ?)",
                 ("test@example.com", 2),
             )
+
+        # Successful insert with valid password_hash
+        cursor = self.conn.execute(
+            "INSERT INTO users (email, password_hash) VALUES (?, ?)",
+            ("pwd_user@example.com", "scrypt:32768:8:1$salt$hash"),
+        )
+        self.assertIsInstance(cursor.lastrowid, int)
+
+        # Empty/whitespace password_hash rejected by CHECK constraint
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.conn.execute(
+                "INSERT INTO users (email, password_hash) VALUES (?, ?)",
+                ("bad_pwd@example.com", "   "),
+            )
+
+    def test_verification_tokens_constraints_and_cascade_delete(self):
+        # Insert parent user
+        user_cursor = self.conn.execute(
+            "INSERT INTO users (email) VALUES ('token_parent@example.com')"
+        )
+        user_id = user_cursor.lastrowid
+
+        # Insert verification token
+        token_cursor = self.conn.execute(
+            """
+            INSERT INTO email_verification_tokens (user_id, token_hash, expires_at)
+            VALUES (?, ?, ?)
+            """,
+            (user_id, "hash_12345", "2026-10-27T12:00:00Z"),
+        )
+        token_id = token_cursor.lastrowid
+        self.assertIsInstance(token_id, int)
+
+        # Duplicate token_hash rejected by UNIQUE constraint
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.conn.execute(
+                """
+                INSERT INTO email_verification_tokens (user_id, token_hash, expires_at)
+                VALUES (?, ?, ?)
+                """,
+                (user_id, "hash_12345", "2026-10-27T12:00:00Z"),
+            )
+
+        # Non-existent user_id rejected by foreign key constraint
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.conn.execute(
+                """
+                INSERT INTO email_verification_tokens (user_id, token_hash, expires_at)
+                VALUES (?, ?, ?)
+                """,
+                (999999, "other_hash", "2026-10-27T12:00:00Z"),
+            )
+
+        # Deleting parent user cascades to delete verification token
+        self.conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        token_row = self.conn.execute(
+            "SELECT id FROM email_verification_tokens WHERE id = ?",
+            (token_id,),
+        ).fetchone()
+        self.assertIsNone(token_row)
+
+    def test_migrate_users_table_if_needed(self):
+        from app.database.connection import _migrate_users_table_if_needed
+
+        # Create isolated connection with legacy schema (users table without password_hash)
+        legacy_conn = create_connection(":memory:")
+        legacy_conn.execute(
+            """
+            CREATE TABLE users (
+                id INTEGER PRIMARY KEY,
+                email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                role TEXT NOT NULL DEFAULT 'customer',
+                is_verified INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT '2026-10-26T00:00:00Z'
+            );
+            """
+        )
+        legacy_conn.execute(
+            "INSERT INTO users (email, role) VALUES ('legacy@example.com', 'customer');"
+        )
+        legacy_conn.commit()
+
+        # Run migration helper
+        _migrate_users_table_if_needed(legacy_conn)
+
+        # Verify password_hash column is now present
+        info_cursor = legacy_conn.execute("PRAGMA table_info(users);")
+        cols = {row["name"] for row in info_cursor.fetchall()}
+        self.assertIn("password_hash", cols)
+
+        # Verify existing row was preserved intact with NULL password_hash
+        legacy_user = legacy_conn.execute(
+            "SELECT email, password_hash, role FROM users WHERE email = 'legacy@example.com'"
+        ).fetchone()
+        self.assertEqual(legacy_user["email"], "legacy@example.com")
+        self.assertIsNone(legacy_user["password_hash"])
+
+        # Verify new row can be added with password_hash
+        legacy_conn.execute(
+            "INSERT INTO users (email, password_hash) VALUES ('migrated@example.com', 'scrypt:test')"
+        )
+        migrated_user = legacy_conn.execute(
+            "SELECT email, password_hash FROM users WHERE email = 'migrated@example.com'"
+        ).fetchone()
+        self.assertEqual(migrated_user["password_hash"], "scrypt:test")
+
+        # Idempotence: running migration again does nothing
+        _migrate_users_table_if_needed(legacy_conn)
+        legacy_conn.close()
 
     def test_category_constraints(self):
         # Successful insert

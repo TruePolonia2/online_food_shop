@@ -25,6 +25,7 @@ class User:
     role: UserRole = UserRole.CUSTOMER
     is_verified: bool = False
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    password_hash: Optional[str] = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         if not self.email or not isinstance(self.email, str) or not self.email.strip() or "@" not in self.email:
@@ -56,6 +57,11 @@ class User:
         else:
             raise ValueError("is_verified must be a boolean.")
 
+        # Validate password_hash if present
+        if self.password_hash is not None:
+            if not isinstance(self.password_hash, str) or not self.password_hash.strip():
+                raise ValueError("Password hash must be a non-empty string when provided.")
+
         # Ensure created_at is a timezone-aware UTC datetime
         if isinstance(self.created_at, str):
             self.created_at = datetime.fromisoformat(self.created_at)
@@ -63,3 +69,8 @@ class User:
             self.created_at = self.created_at.replace(tzinfo=timezone.utc)
         else:
             self.created_at = self.created_at.astimezone(timezone.utc)
+
+    @property
+    def has_credentials(self) -> bool:
+        """Indicate whether the user has configured password credentials."""
+        return self.password_hash is not None and bool(self.password_hash.strip())
