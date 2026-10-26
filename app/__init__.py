@@ -1,12 +1,33 @@
 """Application factory for the online food shop application."""
 from flask import Flask
 
-from app.config import Config
+from app.config import CONFIG_MAP, Config, get_config_by_name
 from app.database.connection import init_app as init_db_app
 
 
-def create_app(config_class=Config) -> Flask:
+def create_app(config_class=None) -> Flask:
     """Create and configure an instance of the Flask application."""
+    if config_class is None:
+        config_class = get_config_by_name()
+    elif isinstance(config_class, str):
+        normalized = config_class.strip().lower()
+        if normalized in CONFIG_MAP:
+            config_class = CONFIG_MAP[normalized]
+        elif "." in config_class:
+            try:
+                from werkzeug.utils import import_string
+
+                config_class = import_string(config_class)
+            except (ImportError, AttributeError) as exc:
+                raise ValueError(
+                    f"Could not import configuration '{config_class}': {exc}"
+                ) from exc
+        else:
+            valid_options = ", ".join(f"'{k}'" for k in sorted(CONFIG_MAP.keys()))
+            raise ValueError(
+                f"Unknown configuration name '{config_class}'. Valid options are: {valid_options}."
+            )
+
     app = Flask(__name__)
     app.config.from_object(config_class)
 
