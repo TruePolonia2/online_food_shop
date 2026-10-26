@@ -15,3 +15,4 @@ class Config:
     )
     TESTING = False
     DEBUG = True
+    CSRF_ENABLED = True

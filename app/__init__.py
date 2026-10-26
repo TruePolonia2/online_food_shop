@@ -12,6 +12,22 @@ def create_app(config_class=Config) -> Flask:
 
     init_db_app(app)
 
+    from app.csrf import init_csrf
+    from app.formatting import format_euro
+
+    init_csrf(app)
+    app.jinja_env.filters["format_euro"] = format_euro
+
+    from app.routes.cart_session import get_cart_item_count
+
+    @app.context_processor
+    def inject_cart_count() -> dict[str, int]:
+        count = get_cart_item_count()
+        return {
+            "cart_item_count": count,
+            "cart_count": count,
+        }
+
     from app.routes.cart import cart_bp
     from app.routes.catalog import catalog_bp
     from app.routes.order import order_bp

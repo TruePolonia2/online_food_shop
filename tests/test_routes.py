@@ -26,6 +26,7 @@ class BaseRouteTestCase(unittest.TestCase):
             DATABASE_PATH = str(self.db_path)
             TESTING = True
             SECRET_KEY = "test-route-secret-key"
+            CSRF_ENABLED = False
 
         self.app = create_app(TestConfig)
         self.client = self.app.test_client()
@@ -119,7 +120,7 @@ class TestCatalogRoutes(BaseRouteTestCase):
 
         self.assertIn("Sourdough Bread", html)
         self.assertIn("Artisan loaf", html)
-        self.assertIn("450 cents", html)
+        self.assertIn("4,50 €", html)
         self.assertIn("Bakery", html)
 
     def test_product_detail_not_found(self) -> None:
@@ -151,7 +152,7 @@ class TestCartRoutes(BaseRouteTestCase):
 
         self.assertIn("Item added to cart", html)
         self.assertIn("Sourdough Bread", html)
-        self.assertIn("900 cents", html)  # 2 * 450
+        self.assertIn("9,00 €", html)  # 2 * 450
 
         # Verify session contains expected data
         with self.client.session_transaction() as sess:
@@ -214,7 +215,7 @@ class TestCartRoutes(BaseRouteTestCase):
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
         self.assertIn("Cart updated successfully", html)
-        self.assertIn("2250 cents", html)  # 5 * 450
+        self.assertIn("22,50 €", html)  # 5 * 450
 
         with self.client.session_transaction() as sess:
             self.assertEqual(sess.get("cart"), {str(self.bread.id): 5})
@@ -362,7 +363,7 @@ class TestCheckoutAndOrderRoutes(BaseRouteTestCase):
         self.assertIn("bob@example.com", html)
         self.assertIn("Sourdough Bread", html)
         self.assertIn("Gala Apple", html)
-        self.assertIn("1020 cents", html)  # 900 + 120
+        self.assertIn("10,20 €", html)  # 900 + 120
 
         # Verify cart session was cleared
         with self.client.session_transaction() as sess:

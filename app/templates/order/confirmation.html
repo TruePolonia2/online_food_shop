@@ -3,33 +3,102 @@
 {% block title %}Order Confirmation - Online Food Shop{% endblock %}
 
 {% block content %}
-<h1>Order Confirmation</h1>
-<p>Thank you for your order!</p>
+<div class="max-w-3xl mx-auto space-y-8">
+    <!-- Success Banner -->
+    <div class="bg-white rounded-2xl border border-emerald-200 p-8 text-center shadow-xs">
+        <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+        </div>
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Order Confirmation</h1>
+        <p class="text-base text-gray-600 mt-2">Thank you for your order! Your purchase has been placed successfully.</p>
+        <div class="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-sm font-semibold text-emerald-800">
+            <span>Status: {{ order.status.value | capitalize }}</span>
+        </div>
+    </div>
 
-<section>
-    <h2>Order #{{ order.id }}</h2>
-    <p>Status: {{ order.status.value }}</p>
-    <p>Date: {{ order.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if order.created_at else '' }}</p>
+    <!-- Order Overview Card -->
+    <section class="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-xs space-y-6">
+        <div class="flex flex-wrap items-center justify-between pb-4 border-b border-gray-100 gap-2">
+            <div>
+                <h2 class="text-xl font-bold text-gray-900">Order #{{ order.id }}</h2>
+                <p class="text-xs text-gray-500 mt-0.5">
+                    Date: {{ order.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if order.created_at else '' }}
+                </p>
+            </div>
+            <span class="text-xs font-medium px-2.5 py-1 rounded bg-gray-100 text-gray-700">
+                Payment: Standard
+            </span>
+        </div>
 
-    {% if customer %}
-    <h3>Customer Details</h3>
-    <p>Name: {{ customer.name }}</p>
-    <p>Email: {{ customer.email }}</p>
-    {% if customer.phone %}<p>Phone: {{ customer.phone }}</p>{% endif %}
-    {% if customer.address %}<p>Address: {{ customer.address }}</p>{% endif %}
-    {% endif %}
+        <!-- Customer Details (if present) -->
+        {% if customer %}
+        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+            <h3 class="text-xs font-semibold uppercase text-gray-500 tracking-wider mb-2">Customer &amp; Delivery Details</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                <div>
+                    <span class="text-gray-500">Name:</span>
+                    <span class="font-medium text-gray-900 ml-1">{{ customer.name }}</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">Email:</span>
+                    <span class="font-medium text-gray-900 ml-1">{{ customer.email }}</span>
+                </div>
+                {% if customer.phone %}
+                <div>
+                    <span class="text-gray-500">Phone:</span>
+                    <span class="font-medium text-gray-900 ml-1">{{ customer.phone }}</span>
+                </div>
+                {% endif %}
+                {% if customer.address %}
+                <div class="sm:col-span-2">
+                    <span class="text-gray-500">Address:</span>
+                    <span class="font-medium text-gray-900 ml-1">{{ customer.address }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
 
-    <h3>Items Ordered</h3>
-    <ul>
-        {% for item in order.items %}
-        <li>
-            {{ item.product_name }} - {{ item.quantity }} x {{ item.unit_price }} cents = {{ item.subtotal }} cents
-        </li>
-        {% endfor %}
-    </ul>
+        <!-- Items Ordered Table -->
+        <div>
+            <h3 class="text-sm font-bold text-gray-900 mb-3">Items Ordered</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm border-collapse">
+                    <thead>
+                        <tr class="border-b border-gray-200 text-xs font-semibold uppercase text-gray-500">
+                            <th scope="col" class="py-2.5">Item</th>
+                            <th scope="col" class="py-2.5 text-center">Quantity</th>
+                            <th scope="col" class="py-2.5 text-right">Unit Price</th>
+                            <th scope="col" class="py-2.5 text-right">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for item in order.items %}
+                        <tr>
+                            <td class="py-3 font-medium text-gray-900">{{ item.product_name }}</td>
+                            <td class="py-3 text-center text-gray-600">{{ item.quantity }}</td>
+                            <td class="py-3 text-right text-gray-600 whitespace-nowrap">{{ item.unit_price | format_euro }}</td>
+                            <td class="py-3 text-right font-semibold text-gray-900 whitespace-nowrap">{{ item.subtotal | format_euro }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="border-t-2 border-gray-200">
+                            <td colspan="3" class="py-4 text-base font-bold text-gray-900">Total</td>
+                            <td class="py-4 text-right text-xl font-extrabold text-emerald-700 whitespace-nowrap">{{ order.total | format_euro }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
 
-    <p><strong>Total: {{ order.total }} cents</strong></p>
-</section>
-
-<a href="{{ url_for('catalog.index') }}">Return to Shop</a>
+        <div class="pt-4 border-t border-gray-100 text-center">
+            <a href="{{ url_for('catalog.index') }}" class="inline-flex items-center px-6 py-3 rounded-xl text-base font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors">
+                Return to Shop
+            </a>
+        </div>
+    </section>
+</div>
 {% endblock %}

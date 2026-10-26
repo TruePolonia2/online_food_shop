@@ -8,6 +8,49 @@ from app.services.product_service import ProductService
 SESSION_CART_KEY = "cart"
 
 
+def count_cart_items(data: object) -> int:
+    """Calculate the total quantity of items from raw cart data.
+
+    Safely sums positive integer quantities, explicitly rejecting booleans
+    and non-integer values. Does not mutate inputs or query the database.
+
+    Args:
+        data: Raw cart mapping, expected to map product IDs to integer quantities.
+
+    Returns:
+        The total count of valid items as a non-negative integer.
+    """
+    if not isinstance(data, dict):
+        return 0
+
+    total = 0
+    for qty in data.values():
+        # In Python, bool is a subclass of int (isinstance(True, int) is True).
+        # We must explicitly reject booleans.
+        if isinstance(qty, bool) or not isinstance(qty, int):
+            continue
+        if qty > 0:
+            total += qty
+
+    return total
+
+
+def get_cart_item_count() -> int:
+    """Return the total quantity of valid items in the session cart.
+
+    Safe to call within or outside a request context. Does not mutate the session
+    or perform database queries.
+
+    Returns:
+        The total number of items in the current session cart.
+    """
+    from flask import has_request_context
+
+    if not has_request_context():
+        return 0
+    return count_cart_items(session.get(SESSION_CART_KEY))
+
+
 def get_session_cart_data() -> dict[str, int]:
     """Retrieve raw cart mapping from the Flask session.
 

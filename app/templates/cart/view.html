@@ -3,64 +3,150 @@
 {% block title %}Shopping Cart - Online Food Shop{% endblock %}
 
 {% block content %}
-<h1>Your Shopping Cart</h1>
+<div class="space-y-6">
+    <div class="flex items-center justify-between pb-4 border-b border-gray-200">
+        <div>
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Your Shopping Cart</h1>
+            <p class="text-sm text-gray-500 mt-1">Review your selected items and update quantities.</p>
+        </div>
+        {% if not cart.is_empty %}
+        <form action="{{ url_for('cart.clear') }}" method="post">
+            {% from "_macros.html" import csrf_input %}
+            {{ csrf_input() }}
+            <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-800 focus:outline-none focus:underline transition-colors">
+                Clear Cart
+            </button>
+        </form>
+        {% endif %}
+    </div>
 
-{% if validation_errors %}
-<ul>
-    {% for err in validation_errors %}
-    <li>{{ err }}</li>
-    {% endfor %}
-</ul>
-{% endif %}
+    <!-- Validation errors (e.g. stock adjustments) -->
+    {% if validation_errors %}
+    <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900" role="alert">
+        <div class="flex items-center gap-2 font-semibold text-sm mb-1">
+            <svg class="w-5 h-5 text-amber-600 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+            <span>Notice regarding your cart items:</span>
+        </div>
+        <ul class="list-disc list-inside text-sm space-y-1 ml-5">
+            {% for err in validation_errors %}
+            <li>{{ err }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
 
-{% if cart.is_empty %}
-<p>Your cart is empty.</p>
-<a href="{{ url_for('catalog.index') }}">Continue Shopping</a>
-{% else %}
-<table>
-    <thead>
-        <tr>
-            <th>Product</th>
-            <th>Unit Price</th>
-            <th>Quantity</th>
-            <th>Subtotal</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for item in cart.items %}
-        <tr>
-            <td>{{ item.product.name }}</td>
-            <td>{{ item.product.price }} cents</td>
-            <td>
-                <form action="{{ url_for('cart.update_item') }}" method="post">
-                    <input type="hidden" name="product_id" value="{{ item.product.id }}">
-                    <input type="number" name="quantity" value="{{ item.quantity }}" min="0">
-                    <button type="submit">Update</button>
-                </form>
-            </td>
-            <td>{{ item.subtotal }} cents</td>
-            <td>
-                <form action="{{ url_for('cart.remove_item') }}" method="post">
-                    <input type="hidden" name="product_id" value="{{ item.product.id }}">
-                    <button type="submit">Remove</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-    <tfoot>
-        <tr>
-            <td colspan="3">Total</td>
-            <td colspan="2">{{ cart.total }} cents</td>
-        </tr>
-    </tfoot>
-</table>
+    {% if cart.is_empty %}
+    <!-- Empty Cart State -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-12 text-center max-w-lg mx-auto shadow-xs">
+        <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900">Your cart is empty</h2>
+        <p class="mt-2 text-sm text-gray-500">Looks like you haven't added any fresh food or groceries to your cart yet.</p>
+        <div class="mt-6">
+            <a href="{{ url_for('catalog.index') }}" class="inline-flex items-center px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors">
+                Continue Shopping
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <!-- Non-Empty Cart: Items Table & Checkout Sidebar -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <!-- Cart Items List -->
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold uppercase text-gray-500 tracking-wider">
+                            <th scope="col" class="py-3.5 px-4 sm:px-6">Product</th>
+                            <th scope="col" class="py-3.5 px-3">Unit Price</th>
+                            <th scope="col" class="py-3.5 px-3">Quantity</th>
+                            <th scope="col" class="py-3.5 px-3 text-right">Subtotal</th>
+                            <th scope="col" class="py-3.5 px-4 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-sm">
+                        {% for item in cart.items %}
+                        <tr class="hover:bg-gray-50/50 transition-colors">
+                            <td class="py-4 px-4 sm:px-6">
+                                <a href="{{ url_for('catalog.product_detail', product_id=item.product.id) }}" class="font-semibold text-gray-900 hover:text-emerald-700 transition-colors focus:outline-none focus:underline">
+                                    {{ item.product.name }}
+                                </a>
+                            </td>
+                            <td class="py-4 px-3 text-gray-700 whitespace-nowrap">
+                                {{ item.product.price | format_euro }}
+                            </td>
+                            <td class="py-4 px-3">
+                                <form action="{{ url_for('cart.update_item') }}" method="post" class="flex items-center gap-1.5">
+                                    {% from "_macros.html" import csrf_input %}
+                                    {{ csrf_input() }}
+                                    <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                                    <label for="qty-{{ item.product.id }}" class="sr-only">Quantity for {{ item.product.name }}</label>
+                                    <input id="qty-{{ item.product.id }}"
+                                           type="number"
+                                           name="quantity"
+                                           value="{{ item.quantity }}"
+                                           min="0"
+                                           max="{{ item.product.stock_quantity }}"
+                                           class="w-16 px-2 py-1 border border-gray-300 rounded-md text-sm text-center focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                                    <button type="submit" class="p-1 text-xs font-medium text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 rounded border border-emerald-200 focus:outline-none focus:ring-1 focus:ring-emerald-500" title="Update quantity">
+                                        Update
+                                    </button>
+                                </form>
+                            </td>
+                            <td class="py-4 px-3 text-right font-bold text-gray-900 whitespace-nowrap">
+                                {{ item.subtotal | format_euro }}
+                            </td>
+                            <td class="py-4 px-4 text-center">
+                                <form action="{{ url_for('cart.remove_item') }}" method="post" class="inline">
+                                    {% from "_macros.html" import csrf_input %}
+                                    {{ csrf_input() }}
+                                    <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                                    <button type="submit" class="text-xs font-medium text-red-600 hover:text-red-800 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500 rounded px-1.5 py-0.5" aria-label="Remove {{ item.product.name }} from cart">
+                                        Remove
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-<form action="{{ url_for('cart.clear') }}" method="post">
-    <button type="submit">Clear Cart</button>
-</form>
+        <!-- Order Summary & Checkout Action -->
+        <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-xs space-y-6">
+            <h2 class="text-lg font-bold text-gray-900 pb-3 border-b border-gray-100">Order Summary</h2>
 
-<a href="{{ url_for('order.checkout_form') }}">Proceed to Checkout</a>
-{% endif %}
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between text-gray-600">
+                    <span>Items ({{ cart.total_quantity }}):</span>
+                    <span class="font-medium text-gray-900">{{ cart.total | format_euro }}</span>
+                </div>
+                <div class="flex justify-between text-gray-600">
+                    <span>Shipping:</span>
+                    <span class="text-emerald-700 font-medium">Free</span>
+                </div>
+                <div class="pt-3 border-t border-gray-100 flex justify-between items-baseline">
+                    <span class="text-base font-bold text-gray-900">Total:</span>
+                    <span class="text-2xl font-extrabold text-emerald-700">{{ cart.total | format_euro }}</span>
+                </div>
+            </div>
+
+            <div class="space-y-3 pt-2">
+                <a href="{{ url_for('order.checkout_form') }}" class="w-full inline-flex justify-center items-center px-6 py-3 rounded-xl text-base font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors text-center">
+                    Proceed to Checkout
+                </a>
+                <a href="{{ url_for('catalog.index') }}" class="w-full inline-flex justify-center items-center px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-700 transition-colors text-center">
+                    &larr; Continue Shopping
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}
