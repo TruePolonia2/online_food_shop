@@ -227,6 +227,24 @@ class UserRepository:
             )
             return cursor.rowcount > 0
 
+    def set_role(self, user_id: int, role: UserRole) -> bool:
+        """Update only the authorization role for a user.
+
+        Args:
+            user_id: The ID of the user.
+            role: The new UserRole to assign.
+
+        Returns:
+            True if user was found and updated, False otherwise.
+        """
+        role_str = role.value if isinstance(role, UserRole) else str(role)
+        with transaction(self.conn):
+            cursor = self.conn.execute(
+                "UPDATE users SET role = ? WHERE id = ?",
+                (role_str, user_id),
+            )
+            return cursor.rowcount > 0
+
     def delete(self, user_id: int) -> bool:
         """Delete a user by their primary key ID.
 

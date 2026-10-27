@@ -728,6 +728,19 @@ class TestUserRepository(BaseRepositoryTestCase):
         # Nonexistent user
         self.assertFalse(self.user_repo.set_verified(999999, True))
 
+    def test_set_role(self) -> None:
+        user = self.user_repo.create(User(email="role_test@example.com", role=UserRole.CUSTOMER))
+        self.assertEqual(user.role, UserRole.CUSTOMER)
+
+        success = self.user_repo.set_role(user.id, UserRole.OWNER)
+        self.assertTrue(success)
+
+        fetched = self.user_repo.get_by_id(user.id)
+        self.assertEqual(fetched.role, UserRole.OWNER)
+
+        # Nonexistent user
+        self.assertFalse(self.user_repo.set_role(999999, UserRole.OWNER))
+
     def test_set_password_hash(self) -> None:
         user = self.user_repo.create(User(email="update_pwd@example.com"))
         self.assertIsNone(user.password_hash)

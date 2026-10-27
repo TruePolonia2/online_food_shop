@@ -33,6 +33,9 @@ def create_app(config_class=None) -> Flask:
 
     init_db_app(app)
 
+    from app.cli import init_cli
+    init_cli(app)
+
     from app.csrf import init_csrf
     from app.formatting import format_euro
 
