@@ -1,6 +1,6 @@
 """Order repository for SQLite database access."""
 from datetime import datetime, timezone
-from typing import Optional, Union
+from typing import Any, Optional, Union
 import sqlite3
 
 from app.database.connection import get_db, transaction
@@ -316,3 +316,35 @@ class OrderRepository:
                 (order_id,),
             )
             return cursor.rowcount > 0
+
+    def get_order_stats(self) -> dict[str, Any]:
+        """Retrieve aggregate order statistics via optimized SQL queries.
+
+        Returns:
+            Dictionary containing:
+            - 'total_orders': Total count of orders placed.
+            - 'status_counts': Dictionary mapping every OrderStatus enum value to its count.
+            - 'total_recorded_value': Cumulative value of all recorded order items in integer cents.
+        """
+        cursor = self.conn.execute("SELECT COUNT(*) AS total FROM orders")
+        total_orders = int(cursor.fetchone()["total"])
+
+        status_counts = {status.value: 0 for status in OrderStatus}
+        cursor_status = self.conn.execute(
+            "SELECT status, COUNT(*) AS count FROM orders GROUP BY status"
+        )
+        for row in cursor_status.fetchall():
+            st = row["status"]
+            if st in status_counts:
+                status_counts[st] = int(row["count"])
+
+        cursor_value = self.conn.execute(
+            "SELECT COALESCE(SUM(unit_price * quantity), 0) AS total_value FROM order_items"
+        )
+        total_recorded_value = int(cursor_value.fetchone()["total_value"])
+
+        return {
+            "total_orders": total_orders,
+            "status_counts": status_counts,
+            "total_recorded_value": total_recorded_value,
+        }

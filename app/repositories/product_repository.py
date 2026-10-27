@@ -179,3 +179,22 @@ class ProductRepository:
                 (product_id,),
             )
             return cursor.rowcount > 0
+
+    def get_product_stats(self) -> dict[str, int]:
+        """Retrieve aggregate product counts via an optimized SQL query.
+
+        Returns:
+            Dictionary with 'total_products' and 'active_products'.
+        """
+        cursor = self.conn.execute(
+            """SELECT COUNT(*) AS total,
+                      COALESCE(SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END), 0) AS active
+               FROM products"""
+        )
+        row = cursor.fetchone()
+        if not row:
+            return {"total_products": 0, "active_products": 0}
+        return {
+            "total_products": int(row["total"]),
+            "active_products": int(row["active"]),
+        }

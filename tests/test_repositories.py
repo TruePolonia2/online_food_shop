@@ -217,6 +217,34 @@ class TestProductRepository(BaseRepositoryTestCase):
         with self.assertRaises(sqlite3.IntegrityError):
             self.product_repo.delete(prod.id)
 
+    def test_get_product_stats(self) -> None:
+        # Empty table returns zero counts
+        stats = self.product_repo.get_product_stats()
+        self.assertEqual(stats, {"total_products": 0, "active_products": 0})
+
+        # Insert active and inactive products
+        p1 = self.product_repo.create(Product(name="Apple", price=100, is_active=True))
+        p2 = self.product_repo.create(Product(name="Banana", price=150, is_active=True))
+        p3 = self.product_repo.create(Product(name="Expired Milk", price=200, is_active=False))
+
+        stats = self.product_repo.get_product_stats()
+        self.assertEqual(stats["total_products"], 3)
+        self.assertEqual(stats["active_products"], 2)
+
+        # Deactivate an active product
+        p1.is_active = False
+        self.product_repo.update(p1)
+
+        stats = self.product_repo.get_product_stats()
+        self.assertEqual(stats["total_products"], 3)
+        self.assertEqual(stats["active_products"], 1)
+
+        # Delete an inactive product
+        self.product_repo.delete(p3.id)
+        stats = self.product_repo.get_product_stats()
+        self.assertEqual(stats["total_products"], 2)
+        self.assertEqual(stats["active_products"], 1)
+
 
 class TestCustomerRepository(BaseRepositoryTestCase):
     """Tests for CustomerRepository operations and constraints."""
@@ -633,6 +661,66 @@ class TestOrderRepository(BaseRepositoryTestCase):
         self.assertIsNone(self.order_repo.get_by_id_for_user(saved_o1.id, -1))
         self.assertIsNone(self.order_repo.get_by_id_for_user(True, u1.id))
         self.assertIsNone(self.order_repo.get_by_id_for_user(saved_o1.id, True))
+
+    def test_get_order_stats(self) -> None:
+        # Empty table returns 0 orders, 0 value, and all statuses set to 0
+        stats = self.order_repo.get_order_stats()
+        self.assertEqual(stats["total_orders"], 0)
+        self.assertEqual(stats["total_recorded_value"], 0)
+        expected_zero_counts = {
+            "pending": 0,
+            "confirmed": 0,
+            "paid": 0,
+            "shipped": 0,
+            "delivered": 0,
+            "cancelled": 0,
+        }
+        self.assertEqual(stats["status_counts"], expected_zero_counts)
+
+        # Create orders across different statuses with line items
+        o1 = self.order_repo.create(
+            Order(
+                customer_id=self.customer.id,
+                status=OrderStatus.PENDING,
+                items=[
+                    OrderItem(product_id=self.product1.id, product_name="P1", unit_price=400, quantity=2),  # 800
+                    OrderItem(product_id=self.product2.id, product_name="P2", unit_price=650, quantity=1),  # 650
+                ],
+            )
+        )
+        o2 = self.order_repo.create(
+            Order(
+                customer_id=self.customer.id,
+                status=OrderStatus.CONFIRMED,
+                items=[
+                    OrderItem(product_id=self.product1.id, product_name="P1", unit_price=500, quantity=3),  # 1500
+                ],
+            )
+        )
+        o3 = self.order_repo.create(
+            Order(
+                customer_id=self.customer.id,
+                status=OrderStatus.DELIVERED,
+                items=[],
+            )
+        )
+
+        stats = self.order_repo.get_order_stats()
+        self.assertEqual(stats["total_orders"], 3)
+        # 800 + 650 + 1500 + 0 = 2950 cents
+        self.assertEqual(stats["total_recorded_value"], 2950)
+        self.assertEqual(stats["status_counts"]["pending"], 1)
+        self.assertEqual(stats["status_counts"]["confirmed"], 1)
+        self.assertEqual(stats["status_counts"]["delivered"], 1)
+        self.assertEqual(stats["status_counts"]["paid"], 0)
+        self.assertEqual(stats["status_counts"]["shipped"], 0)
+        self.assertEqual(stats["status_counts"]["cancelled"], 0)
+
+        # Transition o1 to PAID
+        self.order_repo.update_status(o1.id, OrderStatus.PAID)
+        stats = self.order_repo.get_order_stats()
+        self.assertEqual(stats["status_counts"]["pending"], 0)
+        self.assertEqual(stats["status_counts"]["paid"], 1)
 
 
 class TestUserRepository(BaseRepositoryTestCase):

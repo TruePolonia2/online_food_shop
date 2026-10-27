@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Store Administration - Online Food Shop{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200">
+        <div>
+            <div class="flex items-center gap-3">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Store Administration</h1>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200" aria-label="Access role: Owner Access">
+                    Owner Access
+                </span>
+            </div>
+            <p class="text-sm text-gray-600 mt-1">Store health overview, operational metrics, and administration tools.</p>
+        </div>
+        <div>
+            <a href="{{ url_for('catalog.index') }}" class="inline-flex items-center text-sm font-semibold text-emerald-700 hover:text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-md">
+                &larr; Return to Storefront
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Metrics -->
+    <section aria-labelledby="metrics-heading">
+        <h2 id="metrics-heading" class="sr-only">Store Overview Metrics</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <!-- Total Products Card -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-gray-500 text-sm font-medium">
+                    <span>Total Products</span>
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                </div>
+                <div class="mt-4">
+                    <span id="metric-total-products" class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ stats.total_products }}</span>
+                    <p class="text-xs text-gray-500 mt-1">Catalog items registered in store</p>
+                </div>
+            </div>
+
+            <!-- Active Products Card -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-gray-500 text-sm font-medium">
+                    <span>Active Products</span>
+                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="mt-4">
+                    <span id="metric-active-products" class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ stats.active_products }}</span>
+                    <p class="text-xs text-gray-500 mt-1">Listed and available for purchase</p>
+                </div>
+            </div>
+
+            <!-- Total Orders Card -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-gray-500 text-sm font-medium">
+                    <span>Total Orders</span>
+                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                </div>
+                <div class="mt-4">
+                    <span id="metric-total-orders" class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ stats.total_orders }}</span>
+                    <p class="text-xs text-gray-500 mt-1">All-time customer and guest orders</p>
+                </div>
+            </div>
+
+            <!-- Total Recorded Order Value Card -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-gray-500 text-sm font-medium">
+                    <span>Recorded Order Value</span>
+                    <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="mt-4">
+                    <span id="metric-total-recorded-value" class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ stats.total_recorded_value | format_euro }}</span>
+                    <p id="recorded-value-caption" class="text-xs text-amber-700 font-medium mt-1">
+                        Recorded order total (not verified or paid revenue)
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Order Status Overview -->
+    <section aria-labelledby="status-overview-heading" class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6">
+        <div class="pb-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+                <h2 id="status-overview-heading" class="text-lg font-bold text-gray-900">Order Status Breakdown</h2>
+                <p class="text-xs text-gray-500">Distribution of all recorded orders across lifecycle states.</p>
+            </div>
+            <span class="text-xs text-gray-400 font-medium">Lifecycle breakdown</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-6">
+            <!-- Pending -->
+            <div class="p-4 rounded-xl bg-amber-50/60 border border-amber-200 flex flex-col items-center text-center">
+                <span class="text-xs font-semibold uppercase tracking-wider text-amber-800">Pending</span>
+                <span id="status-count-pending" class="text-2xl font-extrabold text-amber-900 mt-2">{{ stats.status_counts.pending }}</span>
+                <span class="text-[11px] text-amber-700 mt-1">Awaiting confirmation</span>
+            </div>
+
+            <!-- Confirmed -->
+            <div class="p-4 rounded-xl bg-blue-50/60 border border-blue-200 flex flex-col items-center text-center">
+                <span class="text-xs font-semibold uppercase tracking-wider text-blue-800">Confirmed</span>
+                <span id="status-count-confirmed" class="text-2xl font-extrabold text-blue-900 mt-2">{{ stats.status_counts.confirmed }}</span>
+                <span class="text-[11px] text-blue-700 mt-1">Acknowledged</span>
+            </div>
+
+            <!-- Paid -->
+            <div class="p-4 rounded-xl bg-indigo-50/60 border border-indigo-200 flex flex-col items-center text-center">
+                <span class="text-xs font-semibold uppercase tracking-wider text-indigo-800">Paid</span>
+                <span id="status-count-paid" class="text-2xl font-extrabold text-indigo-900 mt-2">{{ stats.status_counts.paid }}</span>
+                <span class="text-[11px] text-indigo-700 mt-1">Payment verified</span>
+            </div>
+
+            <!-- Shipped -->
+            <div class="p-4 rounded-xl bg-purple-50/60 border border-purple-200 flex flex-col items-center text-center">
+                <span class="text-xs font-semibold uppercase tracking-wider text-purple-800">Shipped</span>
+                <span id="status-count-shipped" class="text-2xl font-extrabold text-purple-900 mt-2">{{ stats.status_counts.shipped }}</span>
+                <span class="text-[11px] text-purple-700 mt-1">In transit</span>
+            </div>
+
+            <!-- Delivered -->
+            <div class="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200 flex flex-col items-center text-center">
+                <span class="text-xs font-semibold uppercase tracking-wider text-emerald-800">Delivered</span>
+                <span id="status-count-delivered" class="text-2xl font-extrabold text-emerald-900 mt-2">{{ stats.status_counts.delivered }}</span>
+                <span class="text-[11px] text-emerald-700 mt-1">Fulfilled</span>
+            </div>
+
+            <!-- Cancelled -->
+            <div class="p-4 rounded-xl bg-gray-50 border border-gray-200 flex flex-col items-center text-center">
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-700">Cancelled</span>
+                <span id="status-count-cancelled" class="text-2xl font-extrabold text-gray-800 mt-2">{{ stats.status_counts.cancelled }}</span>
+                <span class="text-[11px] text-gray-500 mt-1">Voided</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Management Tools Placeholders -->
+    <section aria-labelledby="management-tools-heading" class="space-y-4">
+        <div>
+            <h2 id="management-tools-heading" class="text-lg font-bold text-gray-900">Administration Tools</h2>
+            <p class="text-xs text-gray-500">Store operations management modules currently in development.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Product Management Tool -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 flex flex-col justify-between opacity-80" aria-disabled="true">
+                <div>
+                    <div class="flex items-center justify-between">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                            Coming in Phase 11
+                        </span>
+                    </div>
+                    <h3 class="text-base font-semibold text-gray-900 mt-3">Product Catalog Management</h3>
+                    <p class="text-sm text-gray-500 mt-2">
+                        Create, update, toggle availability, and categorize grocery items in the storefront catalog.
+                    </p>
+                </div>
+                <div class="mt-6">
+                    <button type="button" disabled aria-disabled="true" class="w-full py-2 px-4 rounded-lg bg-gray-100 text-gray-400 text-sm font-medium cursor-not-allowed">
+                        Catalog Tools (Coming Soon)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Order Processing Tool -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 flex flex-col justify-between opacity-80" aria-disabled="true">
+                <div>
+                    <div class="flex items-center justify-between">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                            Coming in Phase 11
+                        </span>
+                    </div>
+                    <h3 class="text-base font-semibold text-gray-900 mt-3">Order Processing & Fulfillment</h3>
+                    <p class="text-sm text-gray-500 mt-2">
+                        Review customer orders, transition order lifecycle statuses, and manage fulfillment workflows.
+                    </p>
+                </div>
+                <div class="mt-6">
+                    <button type="button" disabled aria-disabled="true" class="w-full py-2 px-4 rounded-lg bg-gray-100 text-gray-400 text-sm font-medium cursor-not-allowed">
+                        Order Tools (Coming Soon)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Customer Management Tool -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 flex flex-col justify-between opacity-80" aria-disabled="true">
+                <div>
+                    <div class="flex items-center justify-between">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                            Coming Later
+                        </span>
+                    </div>
+                    <h3 class="text-base font-semibold text-gray-900 mt-3">Customer Management</h3>
+                    <p class="text-sm text-gray-500 mt-2">
+                        View registered customer accounts, verification statuses, and account activity.
+                    </p>
+                </div>
+                <div class="mt-6">
+                    <button type="button" disabled aria-disabled="true" class="w-full py-2 px-4 rounded-lg bg-gray-100 text-gray-400 text-sm font-medium cursor-not-allowed">
+                        Customer Tools (Coming Soon)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

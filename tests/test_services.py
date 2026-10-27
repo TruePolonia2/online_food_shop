@@ -15,6 +15,7 @@ from app.repositories.customer_repository import CustomerRepository
 from app.repositories.order_repository import OrderRepository
 from app.repositories.product_repository import ProductRepository
 from app.repositories.user_repository import UserRepository
+from app.services.admin_service import AdminService
 from app.services.cart_service import CartService
 from app.services.category_service import CategoryService
 from app.services.customer_service import CustomerService
@@ -45,6 +46,10 @@ class BaseServiceTestCase(unittest.TestCase):
             customer_repo=self.customer_repo,
             user_repo=self.user_repo,
             conn=self.conn,
+        )
+        self.admin_service = AdminService(
+            product_repo=self.product_repo,
+            order_repo=self.order_repo,
         )
 
     def tearDown(self) -> None:
@@ -670,6 +675,60 @@ class TestOrderService(BaseServiceTestCase):
         self.assertFalse(cart.is_empty)
         self.assertEqual(len(cart.items), 1)
         self.assertEqual(cart.items[0].quantity, 2)
+
+
+class TestAdminService(BaseServiceTestCase):
+    """Tests for AdminService business logic and stats aggregation."""
+
+    def test_get_dashboard_stats_empty_database(self) -> None:
+        stats = self.admin_service.get_dashboard_stats()
+        self.assertEqual(
+            stats,
+            {
+                "total_products": 0,
+                "active_products": 0,
+                "total_orders": 0,
+                "status_counts": {
+                    "pending": 0,
+                    "confirmed": 0,
+                    "paid": 0,
+                    "shipped": 0,
+                    "delivered": 0,
+                    "cancelled": 0,
+                },
+                "total_recorded_value": 0,
+            },
+        )
+
+    def test_get_dashboard_stats_populated_database(self) -> None:
+        customer = self.customer_service.register_customer(
+            name="Alice Owner", email="alice.owner@example.com"
+        )
+        # Seed products
+        p1 = self.product_service.create_product("Organic Apples", 350, 20, is_active=True)
+        p2 = self.product_service.create_product("Pasture Eggs", 500, 10, is_active=True)
+        p3 = self.product_service.create_product("Seasonal Berries", 600, 0, is_active=False)
+
+        # Seed orders via checkout
+        cart1 = self.cart_service.create_cart(customer.id)
+        self.cart_service.add_item(cart1, p1.id, quantity=2)  # 700
+        o1 = self.order_service.checkout(customer.id, cart1)
+
+        cart2 = self.cart_service.create_cart(customer.id)
+        self.cart_service.add_item(cart2, p2.id, quantity=3)  # 1500
+        o2 = self.order_service.checkout(customer.id, cart2)
+
+        # Transition o2 status to CONFIRMED
+        self.order_service.update_order_status(o2.id, OrderStatus.CONFIRMED)
+
+        stats = self.admin_service.get_dashboard_stats()
+        self.assertEqual(stats["total_products"], 3)
+        self.assertEqual(stats["active_products"], 2)
+        self.assertEqual(stats["total_orders"], 2)
+        self.assertEqual(stats["total_recorded_value"], 2200)
+        self.assertEqual(stats["status_counts"]["pending"], 1)
+        self.assertEqual(stats["status_counts"]["confirmed"], 1)
+        self.assertEqual(stats["status_counts"]["paid"], 0)
 
 
 if __name__ == "__main__":
