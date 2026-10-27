@@ -84,6 +84,25 @@ CREATE TABLE IF NOT EXISTS email_verification_tokens (
 CREATE INDEX IF NOT EXISTS idx_verification_tokens_user_id ON email_verification_tokens (user_id);
 
 -- -----------------------------------------------------------------------------
+-- 4b. password_reset_tokens
+-- -----------------------------------------------------------------------------
+-- Single-use tokens for secure password reset and account recovery.
+-- Stores SHA-256 hash of the token, never the raw token string.
+-- Automatically deleted if the parent user is deleted (ON DELETE CASCADE).
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    expires_at TEXT NOT NULL,
+    used_at TEXT,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+-- Index to optimize querying tokens for a user and ordering
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens (user_id);
+
+-- -----------------------------------------------------------------------------
 -- 5. customers
 -- -----------------------------------------------------------------------------
 -- Customer records. Email is unique and normalized lowercase at the application layer.

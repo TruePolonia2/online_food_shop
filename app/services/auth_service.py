@@ -10,9 +10,11 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from app.database.connection import get_db, transaction
 from app.models.email_verification_token import EmailVerificationToken
 from app.models.external_identity import ExternalIdentity
+from app.models.password_reset_token import PasswordResetToken
 from app.models.user import User, UserRole
 from app.repositories.email_verification_token_repository import EmailVerificationTokenRepository
 from app.repositories.external_identity_repository import ExternalIdentityRepository
+from app.repositories.password_reset_token_repository import PasswordResetTokenRepository
 from app.repositories.user_repository import UserRepository
 from app.services.email_sender import EmailSender, InMemoryEmailSender
 
@@ -20,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_TOKEN_VALIDITY_HOURS = 24
 DEFAULT_RESEND_COOLDOWN_SECONDS = 60
+DEFAULT_PASSWORD_RESET_VALIDITY_MINUTES = 30
 MIN_PASSWORD_LENGTH = 8
 MAX_PASSWORD_LENGTH = 128
 
@@ -32,10 +35,12 @@ class AuthService:
         user_repo: Optional[UserRepository] = None,
         token_repo: Optional[EmailVerificationTokenRepository] = None,
         external_identity_repo: Optional[ExternalIdentityRepository] = None,
+        password_reset_token_repo: Optional[PasswordResetTokenRepository] = None,
         email_sender: Optional[EmailSender] = None,
         conn: Optional[sqlite3.Connection] = None,
         token_validity_hours: int = DEFAULT_TOKEN_VALIDITY_HOURS,
         resend_cooldown_seconds: int = DEFAULT_RESEND_COOLDOWN_SECONDS,
+        password_reset_validity_minutes: int = DEFAULT_PASSWORD_RESET_VALIDITY_MINUTES,
     ) -> None:
         """Initialize AuthService with repositories and email sender.
 
@@ -43,10 +48,12 @@ class AuthService:
             user_repo: Optional UserRepository. If omitted, uses default.
             token_repo: Optional EmailVerificationTokenRepository. If omitted, uses default.
             external_identity_repo: Optional ExternalIdentityRepository. If omitted, uses default.
+            password_reset_token_repo: Optional PasswordResetTokenRepository. If omitted, uses default.
             email_sender: Optional EmailSender. Defaults to InMemoryEmailSender.
             conn: Optional database connection for transaction coordination.
             token_validity_hours: Hours a verification token remains valid (default 24).
             resend_cooldown_seconds: Minimum seconds between resend requests (default 60).
+            password_reset_validity_minutes: Minutes a password reset token remains valid (default 30).
         """
         self._conn = conn
         self._user_repo = user_repo or UserRepository(conn=conn)
@@ -54,9 +61,13 @@ class AuthService:
         self._external_identity_repo = (
             external_identity_repo or ExternalIdentityRepository(conn=conn)
         )
+        self._password_reset_token_repo = (
+            password_reset_token_repo or PasswordResetTokenRepository(conn=conn)
+        )
         self._email_sender = email_sender or InMemoryEmailSender()
         self.token_validity_hours = token_validity_hours
         self.resend_cooldown_seconds = resend_cooldown_seconds
+        self.password_reset_validity_minutes = password_reset_validity_minutes
 
     @property
     def conn(self) -> sqlite3.Connection:
@@ -86,6 +97,11 @@ class AuthService:
     def email_sender(self) -> EmailSender:
         """Return the email sender."""
         return self._email_sender
+
+    @property
+    def password_reset_token_repo(self) -> PasswordResetTokenRepository:
+        """Return the password reset token repository."""
+        return self._password_reset_token_repo
 
     @staticmethod
     def validate_password(password: str, confirm_password: Optional[str] = None) -> None:
@@ -354,6 +370,155 @@ class AuthService:
             )
 
         return True
+
+    def request_password_reset(
+        self,
+        email: str,
+        reset_url_builder: Optional[any] = None,
+    ) -> bool:
+        """Initiate a password reset request for an eligible local account.
+
+        Anti-enumeration security: If the user does not exist or has no local password
+        (e.g., Google-only account), this method returns False without generating tokens
+        or dispatching emails. The caller must display an identical public confirmation message.
+
+        Args:
+            email: Account email address.
+            reset_url_builder: Optional callable taking raw_token and returning an absolute URL.
+
+        Returns:
+            True if a reset token was created and email dispatched, False otherwise.
+        """
+        if not email or not isinstance(email, str) or not email.strip():
+            return False
+
+        normalized_email = email.strip().lower()
+        user = self._user_repo.get_by_email(normalized_email)
+        if user is None:
+            return False
+
+        # Google-only accounts have no local password; do not create tokens or passwords
+        if not user.password_hash or not user.password_hash.strip():
+            return False
+
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = self.hash_token(raw_token)
+        now_utc = datetime.now(timezone.utc)
+        expires_at = now_utc + timedelta(minutes=self.password_reset_validity_minutes)
+
+        with transaction(self.conn):
+            # Invalidate any prior pending reset tokens for this user
+            self._password_reset_token_repo.invalidate_pending_for_user(
+                user.id, invalidation_time=now_utc
+            )
+            reset_token = PasswordResetToken(
+                user_id=user.id,
+                token_hash=token_hash,
+                created_at=now_utc,
+                expires_at=expires_at,
+            )
+            self._password_reset_token_repo.create(reset_token)
+
+        reset_url = reset_url_builder(raw_token) if reset_url_builder is not None else None
+        try:
+            self._email_sender.send_password_reset_email(
+                user.email, raw_token, reset_url=reset_url
+            )
+        except Exception:
+            logger.exception(
+                "Unexpected error dispatching password reset email to '%s'.",
+                user.email,
+            )
+
+        return True
+
+    def get_valid_password_reset_token(self, raw_token: str) -> Optional[PasswordResetToken]:
+        """Validate a raw password reset token and return it if valid and unconsumed.
+
+        Args:
+            raw_token: Plaintext token string.
+
+        Returns:
+            PasswordResetToken if valid and unconsumed, None otherwise.
+        """
+        if not raw_token or not isinstance(raw_token, str) or not raw_token.strip():
+            return None
+
+        token_hash = self.hash_token(raw_token)
+        token = self._password_reset_token_repo.get_by_token_hash(token_hash)
+        if token is None or not token.is_valid:
+            return None
+
+        return token
+
+    def reset_password(
+        self,
+        raw_token: str,
+        new_password: str,
+        confirm_password: Optional[str] = None,
+    ) -> Optional[User]:
+        """Atomically redeem a password reset token and update the user's password.
+
+        Security guarantees:
+        - Reuses existing password validation rules.
+        - Enforces single-use token consumption via atomic UPDATE.
+        - Updates password hash inside the same transaction.
+        - Invalidates all remaining pending reset tokens for the user.
+        - Never alters user role, verification status, external identities, or orders.
+
+        Args:
+            raw_token: The plaintext reset token.
+            new_password: The desired new password.
+            confirm_password: Optional password confirmation.
+
+        Returns:
+            The updated User entity on success, None if token is invalid/expired/used.
+
+        Raises:
+            ValueError: If new password does not satisfy validation rules.
+        """
+        self.validate_password(new_password, confirm_password)
+
+        if not raw_token or not isinstance(raw_token, str) or not raw_token.strip():
+            return None
+
+        token_hash = self.hash_token(raw_token)
+        token = self._password_reset_token_repo.get_by_token_hash(token_hash)
+        if token is None or not token.is_valid:
+            return None
+
+        now_utc = datetime.now(timezone.utc)
+        new_hash = self.hash_password(new_password)
+
+        try:
+            with transaction(self.conn):
+                # Atomic single-use consumption defends against concurrent redemption
+                marked = self._password_reset_token_repo.mark_as_used(token.id, used_at=now_utc)
+                if not marked:
+                    # Token already consumed concurrently: return None without state changes
+                    return None
+
+                # Update password hash
+                updated = self._user_repo.set_password_hash(token.user_id, new_hash)
+                if not updated:
+                    raise RuntimeError(
+                        f"Failed to update password hash for user {token.user_id}; rolling back token redemption."
+                    )
+
+                # Invalidate any other pending reset tokens for this user
+                self._password_reset_token_repo.invalidate_pending_for_user(
+                    token.user_id, invalidation_time=now_utc
+                )
+
+                user = self._user_repo.get_by_id(token.user_id)
+                if user is None:
+                    raise RuntimeError(
+                        f"User {token.user_id} not found after password update; rolling back token redemption."
+                    )
+                return user
+        except RuntimeError as e:
+            logger.error("Password reset aborted and rolled back: %s", e)
+            return None
 
     def authenticate_or_register_google_user(
         self, sub: str, email: str, name: Optional[str] = None

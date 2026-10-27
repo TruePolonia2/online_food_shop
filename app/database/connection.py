@@ -267,6 +267,26 @@ def _migrate_external_identities_table_if_needed(conn: sqlite3.Connection) -> No
     )
 
 
+def _migrate_password_reset_tokens_table_if_needed(conn: sqlite3.Connection) -> None:
+    """Safely and idempotently ensure the password_reset_tokens table and index exist."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            token_hash TEXT NOT NULL UNIQUE,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+            expires_at TEXT NOT NULL,
+            used_at TEXT,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens (user_id);"
+    )
+
+
 def init_db(
     conn: Optional[sqlite3.Connection] = None,
     schema_path: Optional[Union[str, Path]] = None,
@@ -298,6 +318,7 @@ def init_db(
     _migrate_categories_table_if_needed(conn)
     _migrate_products_table_if_needed(conn)
     _migrate_external_identities_table_if_needed(conn)
+    _migrate_password_reset_tokens_table_if_needed(conn)
     conn.commit()
 
 

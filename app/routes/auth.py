@@ -8,6 +8,7 @@ from urllib.parse import unquote, urljoin, urlparse
 from flask import (
     Blueprint,
     Response,
+    current_app,
     flash,
     g,
     has_request_context,
@@ -147,6 +148,148 @@ class LoginRateLimiter:
 
 
 login_rate_limiter = LoginRateLimiter(max_attempts=5, window_seconds=300, max_keys=10000)
+
+
+class PasswordResetRateLimiter:
+    """Thread-safe, multi-dimensional bounded sliding-window rate limiter for password reset requests.
+
+    Enforces three independent bounds within the configured time window:
+    1. Combined (IP, email) limit: Prevents repeated spamming of a single account from one origin.
+    2. Per-email limit: Prevents distributed requests (multiple IPs) from flooding the same email.
+    3. Aggregate per-IP limit: Prevents a single origin from scanning or submitting resets across
+       many different email addresses.
+
+    Maintains bounded capacity with automatic pruning of expired timestamps and eviction
+    for entries under memory pressure, preserving active lockouts.
+    """
+
+    def __init__(
+        self,
+        max_per_ip_email: int = 5,
+        max_per_email: int = 5,
+        max_per_ip: int = 15,
+        window_seconds: int = 300,
+        max_keys: int = 10000,
+    ) -> None:
+        self.max_per_ip_email = max_per_ip_email
+        self.max_per_email = max_per_email
+        self.max_per_ip = max_per_ip
+        self.window_seconds = window_seconds
+        self.max_keys = max_keys
+        self._lock = Lock()
+        self._attempts: dict[str, list[float]] = {}
+
+    def _keys_for(self, ip: str, email: str) -> dict[str, int]:
+        """Return dict of {storage_key: max_allowed_attempts} for a given (ip, email)."""
+        ip_clean = ip.strip()
+        email_clean = email.strip().lower()
+        keys = {}
+        if ip_clean and email_clean:
+            keys[f"combo:{ip_clean}:{email_clean}"] = self.max_per_ip_email
+        if email_clean:
+            keys[f"email:{email_clean}"] = self.max_per_email
+        if ip_clean:
+            keys[f"ip:{ip_clean}"] = self.max_per_ip
+        return keys
+
+    def _prune_expired_locked(self, now: float) -> None:
+        """Remove expired timestamps and empty keys. Must be called with self._lock held."""
+        cutoff = now - self.window_seconds
+        keys_to_delete = []
+        for k, timestamps in self._attempts.items():
+            valid = [t for t in timestamps if t > cutoff]
+            if not valid:
+                keys_to_delete.append(k)
+            else:
+                self._attempts[k] = valid
+        for k in keys_to_delete:
+            del self._attempts[k]
+
+    def _enforce_capacity_locked(self, now: float) -> None:
+        """Enforce max_keys bound by pruning expired entries and evicting oldest unlocked keys."""
+        self._prune_expired_locked(now)
+        if len(self._attempts) < self.max_keys:
+            return
+
+        candidates = [
+            (k, max(ts) if ts else 0.0)
+            for k, ts in self._attempts.items()
+        ]
+        candidates.sort(key=lambda item: item[1])  # oldest last-attempt first
+        excess = (len(self._attempts) - self.max_keys) + 1
+        for k, _ in candidates[:excess]:
+            del self._attempts[k]
+
+    def is_rate_limited(self, ip: str, email: str) -> bool:
+        """Check if any rate limit (combo, per-email, or per-IP) is exceeded."""
+        now = time.time()
+        key_limits = self._keys_for(ip, email)
+        with self._lock:
+            self._prune_expired_locked(now)
+            for key, limit in key_limits.items():
+                timestamps = self._attempts.get(key)
+                if timestamps is not None and len(timestamps) >= limit:
+                    return True
+            return False
+
+    def record_attempt(self, ip: str, email: str) -> None:
+        """Record a password reset attempt across all relevant dimensions."""
+        now = time.time()
+        key_limits = self._keys_for(ip, email)
+        with self._lock:
+            self._enforce_capacity_locked(now)
+            for key in key_limits:
+                if key in self._attempts:
+                    self._attempts[key].append(now)
+                elif len(self._attempts) < self.max_keys:
+                    self._attempts[key] = [now]
+
+    # Backward-compatible alias
+    record_failure = record_attempt
+
+    def reset(self, ip: str, email: str) -> None:
+        """Reset rate limiter attempts for this specific account after successful reset."""
+        ip_clean = ip.strip()
+        email_clean = email.strip().lower()
+        with self._lock:
+            if ip_clean and email_clean:
+                self._attempts.pop(f"combo:{ip_clean}:{email_clean}", None)
+            if email_clean:
+                self._attempts.pop(f"email:{email_clean}", None)
+
+    def clear(self) -> None:
+        """Clear all rate limiter state (for tests)."""
+        with self._lock:
+            self._attempts.clear()
+
+
+forgot_password_rate_limiter = PasswordResetRateLimiter(
+    max_per_ip_email=5,
+    max_per_email=5,
+    max_per_ip=15,
+    window_seconds=300,
+    max_keys=10000,
+)
+
+
+def build_absolute_reset_url(raw_token: str) -> str:
+    """Build a trusted absolute password reset URL.
+
+    Derives reset URLs strictly from application configuration
+    (e.g., APP_BASE_URL or SERVER_NAME) to prevent password-reset poisoning
+    via untrusted HTTP Host headers. Falls back safely to localhost if not configured.
+    """
+    path = f"/auth/reset-password/{raw_token}"
+    app_base_url = current_app.config.get("APP_BASE_URL")
+    if app_base_url and isinstance(app_base_url, str) and app_base_url.strip():
+        return urljoin(app_base_url.strip().rstrip("/") + "/", path.lstrip("/"))
+
+    server_name = current_app.config.get("SERVER_NAME")
+    if server_name and isinstance(server_name, str) and server_name.strip():
+        scheme = current_app.config.get("PREFERRED_URL_SCHEME", "http")
+        return f"{scheme}://{server_name.strip()}{path}"
+
+    return f"http://127.0.0.1:5000{path}"
 
 
 def is_safe_redirect_url(target: Optional[str]) -> bool:
@@ -586,3 +729,124 @@ def google_callback():
     if next_url and is_safe_redirect_url(next_url):
         return redirect(next_url)
     return redirect(url_for("catalog.index"))
+
+
+@auth_bp.route("/forgot-password", methods=["GET"])
+@auth_bp.route("/auth/forgot-password", methods=["GET"])
+def forgot_password_form():
+    """Display the password reset request form."""
+    if get_current_user() is not None:
+        return redirect(url_for("catalog.index"))
+    return render_template("auth/forgot_password.html")
+
+
+@auth_bp.route("/forgot-password", methods=["POST"])
+@auth_bp.route("/auth/forgot-password", methods=["POST"])
+def forgot_password():
+    """Handle password reset request with anti-enumeration protection and rate limiting."""
+    if get_current_user() is not None:
+        return redirect(url_for("catalog.index"))
+
+    email = request.form.get("email", "").strip()
+    client_ip = request.remote_addr or "127.0.0.1"
+
+    if forgot_password_rate_limiter.is_rate_limited(client_ip, email):
+        flash("Too many password reset requests. Please wait 5 minutes before trying again.", "error")
+        return render_template("auth/forgot_password.html", email=email), 429
+
+    forgot_password_rate_limiter.record_attempt(client_ip, email)
+
+    if email:
+        auth_service = AuthService()
+        auth_service.request_password_reset(email, reset_url_builder=build_absolute_reset_url)
+
+    flash(
+        "If an eligible account exists for that email, a password reset link has been generated. "
+        "In this development environment, email delivery is simulated and no message is sent to your inbox.",
+        "info",
+    )
+    return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/reset-password/<token>", methods=["GET"])
+@auth_bp.route("/auth/reset-password/<token>", methods=["GET"])
+def reset_password_form(token: str):
+    """Display the password reset form after validating the token.
+
+    Sets Referrer-Policy and Cache-Control headers to prevent token leakage
+    and caching of sensitive token-bearing pages.
+    """
+    cleaned_token = token.strip() if token else ""
+    if not cleaned_token:
+        flash("Invalid or missing password reset token.", "error")
+        return redirect(url_for("auth.forgot_password_form"))
+
+    auth_service = AuthService()
+    reset_token = auth_service.get_valid_password_reset_token(cleaned_token)
+    if reset_token is None:
+        flash("The password reset link is invalid, expired, or has already been used.", "error")
+        return redirect(url_for("auth.forgot_password_form"))
+
+    response = make_response(render_template("auth/reset_password.html", token=cleaned_token))
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Cache-Control"] = "no-store, private"
+    return response
+
+
+@auth_bp.route("/reset-password/<token>", methods=["POST"])
+@auth_bp.route("/auth/reset-password/<token>", methods=["POST"])
+def reset_password(token: str):
+    """Atomically consume a password reset token and update account password."""
+    cleaned_token = token.strip() if token else request.form.get("token", "").strip()
+    if not cleaned_token:
+        flash("Invalid or missing password reset token.", "error")
+        return redirect(url_for("auth.forgot_password_form"))
+
+    auth_service = AuthService()
+    reset_token = auth_service.get_valid_password_reset_token(cleaned_token)
+    if reset_token is None:
+        flash("The password reset link is invalid, expired, or has already been used.", "error")
+        return redirect(url_for("auth.forgot_password_form"))
+
+    password = request.form.get("password", "")
+    confirm_password = request.form.get("confirm_password", "")
+
+    try:
+        auth_service.validate_password(password, confirm_password)
+    except ValueError as e:
+        flash(str(e), "error")
+        response = make_response(
+            render_template("auth/reset_password.html", token=cleaned_token), 400
+        )
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Cache-Control"] = "no-store, private"
+        return response
+
+    updated_user = auth_service.reset_password(
+        raw_token=cleaned_token,
+        new_password=password,
+        confirm_password=confirm_password,
+    )
+    if updated_user is None:
+        flash("The password reset link is invalid, expired, or has already been used.", "error")
+        return redirect(url_for("auth.forgot_password_form"))
+
+    # Reset failed login/forgot-password rate limiters for this user
+    client_ip = request.remote_addr or "127.0.0.1"
+    login_rate_limiter.reset(client_ip, updated_user.email)
+    forgot_password_rate_limiter.reset(client_ip, updated_user.email)
+
+    # Do NOT auto-login user upon reset; wipe any existing local session to ensure clean re-auth
+    raw_cart = session.get(SESSION_CART_KEY)
+    sanitized_cart = extract_sanitized_cart_data(raw_cart)
+    session.clear()
+    generate_csrf_token()
+    if sanitized_cart:
+        session[SESSION_CART_KEY] = sanitized_cart
+    session.modified = True
+
+    flash(
+        "Your password has been reset successfully. Please log in with your new password.",
+        "success",
+    )
+    return redirect(url_for("auth.login"))

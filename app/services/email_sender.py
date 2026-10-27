@@ -12,6 +12,8 @@ class SentEmail:
     raw_token: str
     sent_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     subject: str = "Verify your email address"
+    email_type: str = "verification"
+    reset_url: Optional[str] = None
 
 
 @runtime_checkable
@@ -30,6 +32,21 @@ class EmailSender(Protocol):
         """
         ...
 
+    def send_password_reset_email(
+        self, to_email: str, raw_token: str, reset_url: Optional[str] = None
+    ) -> bool:
+        """Send a password reset message containing the raw token and reset URL.
+
+        Args:
+            to_email: The destination email address.
+            raw_token: The plaintext reset token.
+            reset_url: Optional trusted absolute URL for password reset.
+
+        Returns:
+            True if delivery succeeded, False otherwise.
+        """
+        ...
+
 
 class InMemoryEmailSender:
     """In-memory implementation of EmailSender for tests and local development.
@@ -41,13 +58,13 @@ class InMemoryEmailSender:
         """Initialize InMemoryEmailSender.
 
         Args:
-            simulate_failure: If True, calls to send_verification_email fail.
+            simulate_failure: If True, calls to send methods fail.
         """
         self.sent_messages: list[SentEmail] = []
         self.simulate_failure: bool = simulate_failure
 
     def send_verification_email(self, to_email: str, raw_token: str) -> bool:
-        """Record the sent email in-memory, or simulate failure.
+        """Record the sent verification email in-memory, or simulate failure.
 
         Args:
             to_email: The destination email address.
@@ -62,6 +79,34 @@ class InMemoryEmailSender:
         message = SentEmail(
             to_email=to_email,
             raw_token=raw_token,
+            subject="Verify your email address",
+            email_type="verification",
+        )
+        self.sent_messages.append(message)
+        return True
+
+    def send_password_reset_email(
+        self, to_email: str, raw_token: str, reset_url: Optional[str] = None
+    ) -> bool:
+        """Record the sent password reset email in-memory, or simulate failure.
+
+        Args:
+            to_email: The destination email address.
+            raw_token: The plaintext reset token.
+            reset_url: Optional trusted absolute URL for password reset.
+
+        Returns:
+            True if delivery succeeded, False if simulated failure.
+        """
+        if self.simulate_failure:
+            return False
+
+        message = SentEmail(
+            to_email=to_email,
+            raw_token=raw_token,
+            subject="Reset your password",
+            email_type="password_reset",
+            reset_url=reset_url,
         )
         self.sent_messages.append(message)
         return True
