@@ -203,6 +203,9 @@ yarn-error.log*
 *.sqlite3-shm
 *.db-shm
 
+# Development simulated mail outbox
+.dev_mail/
+
 # Operating System files
 .DS_Store
 .DS_Store?

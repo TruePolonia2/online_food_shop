@@ -3,8 +3,9 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import logging
 import secrets
-from typing import Optional
+from typing import Callable, Optional
 import sqlite3
+from flask import current_app, has_app_context
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.database.connection import get_db, transaction
@@ -16,7 +17,7 @@ from app.repositories.email_verification_token_repository import EmailVerificati
 from app.repositories.external_identity_repository import ExternalIdentityRepository
 from app.repositories.password_reset_token_repository import PasswordResetTokenRepository
 from app.repositories.user_repository import UserRepository
-from app.services.email_sender import EmailSender, InMemoryEmailSender
+from app.services.email_sender import EmailSender, InMemoryEmailSender, get_email_sender
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +65,14 @@ class AuthService:
         self._password_reset_token_repo = (
             password_reset_token_repo or PasswordResetTokenRepository(conn=conn)
         )
-        self._email_sender = email_sender or InMemoryEmailSender()
+        if email_sender is not None:
+            self._email_sender = email_sender
+        elif has_app_context() and "email_sender" in current_app.extensions:
+            self._email_sender = current_app.extensions["email_sender"]
+        else:
+            self._email_sender = get_email_sender()
+
+        self.last_delivery_success: bool = True
         self.token_validity_hours = token_validity_hours
         self.resend_cooldown_seconds = resend_cooldown_seconds
         self.password_reset_validity_minutes = password_reset_validity_minutes
@@ -175,6 +183,7 @@ class AuthService:
         email: str,
         password: str,
         confirm_password: Optional[str] = None,
+        verification_url_builder: Optional[Callable[[str], str]] = None,
     ) -> tuple[User, str]:
         """Register a new customer account with credentials and create a verification token.
 
@@ -185,6 +194,7 @@ class AuthService:
             email: Desired customer account email.
             password: Desired plaintext password.
             confirm_password: Optional confirmation password.
+            verification_url_builder: Optional callable generating trusted absolute verification URL.
 
         Returns:
             A tuple of (persisted User, raw verification token string).
@@ -228,14 +238,21 @@ class AuthService:
             self._token_repo.create(token)
 
         # Send verification email ONLY after transaction has cleanly committed
+        verification_url = (
+            verification_url_builder(raw_token) if verification_url_builder is not None else None
+        )
         try:
-            email_sent = self._email_sender.send_verification_email(persisted_user.email, raw_token)
+            email_sent = self._email_sender.send_verification_email(
+                persisted_user.email, raw_token, verification_url=verification_url
+            )
+            self.last_delivery_success = bool(email_sent)
             if not email_sent:
                 logger.warning(
                     "Email verification delivery failed for newly registered user '%s'.",
                     persisted_user.email,
                 )
         except Exception:
+            self.last_delivery_success = False
             logger.exception(
                 "Unexpected error dispatching verification email to '%s'.",
                 persisted_user.email,
@@ -302,7 +319,11 @@ class AuthService:
             self._user_repo.set_verified(token.user_id, is_verified=True)
             return self._user_repo.get_by_id(token.user_id)
 
-    def request_verification_resend(self, email: str) -> bool:
+    def request_verification_resend(
+        self,
+        email: str,
+        verification_url_builder: Optional[Callable[[str], str]] = None,
+    ) -> bool:
         """Generate and dispatch a new verification email for an unverified account.
 
         Enforces cooldown rate-limiting and invalidates previous pending tokens.
@@ -311,6 +332,7 @@ class AuthService:
 
         Args:
             email: The account email.
+            verification_url_builder: Optional callable generating trusted absolute verification URL.
 
         Returns:
             True if a new verification token was generated and dispatched, False if
@@ -361,9 +383,21 @@ class AuthService:
             self._token_repo.create(new_token)
 
         # Dispatch email post-commit
+        verification_url = (
+            verification_url_builder(raw_token) if verification_url_builder is not None else None
+        )
         try:
-            self._email_sender.send_verification_email(user.email, raw_token)
+            email_sent = self._email_sender.send_verification_email(
+                user.email, raw_token, verification_url=verification_url
+            )
+            self.last_delivery_success = bool(email_sent)
+            if not email_sent:
+                logger.warning(
+                    "Email verification resend delivery failed for user '%s'.",
+                    user.email,
+                )
         except Exception:
+            self.last_delivery_success = False
             logger.exception(
                 "Unexpected error dispatching resend verification email to '%s'.",
                 user.email,
@@ -374,7 +408,7 @@ class AuthService:
     def request_password_reset(
         self,
         email: str,
-        reset_url_builder: Optional[any] = None,
+        reset_url_builder: Optional[Callable[[str], str]] = None,
     ) -> bool:
         """Initiate a password reset request for an eligible local account.
 
@@ -421,10 +455,17 @@ class AuthService:
 
         reset_url = reset_url_builder(raw_token) if reset_url_builder is not None else None
         try:
-            self._email_sender.send_password_reset_email(
+            email_sent = self._email_sender.send_password_reset_email(
                 user.email, raw_token, reset_url=reset_url
             )
+            self.last_delivery_success = bool(email_sent)
+            if not email_sent:
+                logger.warning(
+                    "Password reset delivery failed for user '%s'.",
+                    user.email,
+                )
         except Exception:
+            self.last_delivery_success = False
             logger.exception(
                 "Unexpected error dispatching password reset email to '%s'.",
                 user.email,

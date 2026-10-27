@@ -292,6 +292,26 @@ def build_absolute_reset_url(raw_token: str) -> str:
     return f"http://127.0.0.1:5000{path}"
 
 
+def build_absolute_verification_url(raw_token: str) -> str:
+    """Build a trusted absolute email verification URL.
+
+    Derives verification URLs strictly from application configuration
+    (e.g., APP_BASE_URL or SERVER_NAME) to prevent Host-header injection.
+    Falls back safely to localhost if not configured.
+    """
+    path = f"/verify-email/{raw_token}"
+    app_base_url = current_app.config.get("APP_BASE_URL")
+    if app_base_url and isinstance(app_base_url, str) and app_base_url.strip():
+        return urljoin(app_base_url.strip().rstrip("/") + "/", path.lstrip("/"))
+
+    server_name = current_app.config.get("SERVER_NAME")
+    if server_name and isinstance(server_name, str) and server_name.strip():
+        scheme = current_app.config.get("PREFERRED_URL_SCHEME", "http")
+        return f"{scheme}://{server_name.strip()}{path}"
+
+    return f"http://127.0.0.1:5000{path}"
+
+
 def is_safe_redirect_url(target: Optional[str]) -> bool:
     """Validate that target URL is a safe local relative path.
 
@@ -406,17 +426,32 @@ def register():
             email=email,
             password=password,
             confirm_password=confirm_password,
+            verification_url_builder=build_absolute_verification_url,
         )
     except ValueError as err:
         flash(str(err), "error")
         # Do NOT repopulate passwords upon validation failure
         return render_template("auth/register.html", email=email), 400
 
-    flash(
-        "Account created successfully. Email verification is required. "
-        "In this development environment, email delivery is simulated and no message is sent to your inbox.",
-        "success",
-    )
+    backend = current_app.config.get("EMAIL_BACKEND", "memory")
+    if backend == "smtp":
+        if auth_service.last_delivery_success:
+            flash(
+                "Account created successfully. A verification link has been sent to your email address.",
+                "success",
+            )
+        else:
+            flash(
+                "Account created, but we could not deliver your verification email at this time. "
+                "Please use 'Resend verification link' once your email connection is restored.",
+                "warning",
+            )
+    else:
+        flash(
+            "Account created successfully. Email verification is required. "
+            "In this development environment, email delivery is simulated and no message is sent to your inbox.",
+            "success",
+        )
     return redirect(url_for("auth.login"))
 
 
@@ -568,18 +603,27 @@ def resend_verification():
     if email:
         auth_service = AuthService()
         try:
-            auth_service.request_verification_resend(email)
+            auth_service.request_verification_resend(
+                email, verification_url_builder=build_absolute_verification_url
+            )
         except ValueError:
             # Internal cooldown error is absorbed to prevent timing-based enumeration
             pass
 
-    # Generic neutral response: always display the same message regardless of whether
-    # the email exists, is already verified, or cooldown was triggered.
-    flash(
-        "If an eligible unverified account exists for that email, a verification link has been generated. "
-        "In this development environment, email delivery is simulated and no message is sent to your inbox.",
-        "info",
-    )
+    backend = current_app.config.get("EMAIL_BACKEND", "memory")
+    if backend == "smtp":
+        flash(
+            "If an eligible unverified account exists for that email, a verification link has been sent.",
+            "info",
+        )
+    else:
+        # Generic neutral response: always display the same message regardless of whether
+        # the email exists, is already verified, or cooldown was triggered.
+        flash(
+            "If an eligible unverified account exists for that email, a verification link has been generated. "
+            "In this development environment, email delivery is simulated and no message is sent to your inbox.",
+            "info",
+        )
     return redirect(url_for("auth.login"))
 
 
@@ -760,11 +804,18 @@ def forgot_password():
         auth_service = AuthService()
         auth_service.request_password_reset(email, reset_url_builder=build_absolute_reset_url)
 
-    flash(
-        "If an eligible account exists for that email, a password reset link has been generated. "
-        "In this development environment, email delivery is simulated and no message is sent to your inbox.",
-        "info",
-    )
+    backend = current_app.config.get("EMAIL_BACKEND", "memory")
+    if backend == "smtp":
+        flash(
+            "If an eligible account exists for that email, a password reset link has been sent.",
+            "info",
+        )
+    else:
+        flash(
+            "If an eligible account exists for that email, a password reset link has been generated. "
+            "In this development environment, email delivery is simulated and no message is sent to your inbox.",
+            "info",
+        )
     return redirect(url_for("auth.login"))
 
 

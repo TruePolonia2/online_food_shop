@@ -26,6 +26,26 @@ def _parse_bool_env(val: str | None, default: bool = False) -> bool:
     return default
 
 
+def _parse_int_env(val: str | None, default: int) -> int:
+    """Safely parse an integer from an environment string, falling back to default."""
+    if val is None or not val.strip():
+        return default
+    try:
+        return int(val.strip())
+    except ValueError:
+        return default
+
+
+def _parse_float_env(val: str | None, default: float) -> float:
+    """Safely parse a float from an environment string, falling back to default."""
+    if val is None or not val.strip():
+        return default
+    try:
+        return float(val.strip())
+    except ValueError:
+        return default
+
+
 def load_project_env(dotenv_path: Path | str | None = None, override: bool = False) -> bool:
     """Load environment variables from a project-local .env file.
 
@@ -155,6 +175,16 @@ class _ProductionSessionCookieSecureDescriptor:
         return _parse_bool_env(os.environ.get("SESSION_COOKIE_SECURE"), default=True)
 
 
+class _ProductionEmailPreviewDescriptor:
+    """Descriptor that strictly prevents email console preview in production.
+
+    Always returns False regardless of environment variable settings.
+    """
+
+    def __get__(self, instance, owner):
+        return False
+
+
 class _DevelopmentSessionCookieSecureDescriptor:
     """Descriptor for DevelopmentConfig.SESSION_COOKIE_SECURE (defaults to False)."""
 
@@ -198,6 +228,7 @@ class Config:
     - SESSION_COOKIE_SAMESITE: Set to 'Lax' by default to protect against CSRF attacks.
     """
 
+    ENV_NAME = "base"
     DATABASE_PATH = _DatabasePathDescriptor()
     TESTING = False
     CSRF_ENABLED = True
@@ -205,6 +236,20 @@ class Config:
     # Google OAuth 2.0 / OpenID Connect credentials
     GOOGLE_CLIENT_ID = _GoogleClientIdDescriptor()
     GOOGLE_CLIENT_SECRET = _GoogleClientSecretDescriptor()
+
+    # Email Delivery Configuration (Phase 10.11)
+    EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "memory").strip().lower()
+    SMTP_HOST = os.environ.get("SMTP_HOST", "").strip()
+    SMTP_PORT = _parse_int_env(os.environ.get("SMTP_PORT"), 587)
+    SMTP_SECURITY = os.environ.get("SMTP_SECURITY", "starttls").strip().lower()
+    SMTP_USERNAME = os.environ.get("SMTP_USERNAME", "").strip()
+    SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
+    SMTP_FROM_ADDRESS = os.environ.get("SMTP_FROM_ADDRESS", "").strip()
+    SMTP_TIMEOUT = _parse_float_env(os.environ.get("SMTP_TIMEOUT"), 10.0)
+    APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://127.0.0.1:5000").strip()
+    EMAIL_DEV_CONSOLE_PREVIEW = _parse_bool_env(
+        os.environ.get("EMAIL_DEV_CONSOLE_PREVIEW"), default=False
+    )
 
     # Hardened session cookie settings
     SESSION_COOKIE_HTTPONLY = True
@@ -223,11 +268,14 @@ class ProductionConfig(Config):
       match the development placeholder.
     - DEBUG is strictly disabled by default.
     - SESSION_COOKIE_SECURE defaults to True for HTTPS, configurable via env var.
+    - EMAIL_DEV_CONSOLE_PREVIEW is strictly disabled (False) regardless of env vars.
     """
 
+    ENV_NAME = "production"
     DEBUG = _BaseDebugDescriptor()
     SECRET_KEY = _ProductionSecretKeyDescriptor()
     SESSION_COOKIE_SECURE = _ProductionSessionCookieSecureDescriptor()
+    EMAIL_DEV_CONSOLE_PREVIEW = _ProductionEmailPreviewDescriptor()
 
 
 class DevelopmentConfig(Config):
@@ -236,11 +284,16 @@ class DevelopmentConfig(Config):
     - DEBUG defaults to True for interactive debugging.
     - SECRET_KEY falls back to DEV_SECRET_KEY for zero-config local runs.
     - SESSION_COOKIE_SECURE defaults to False for local HTTP servers.
+    - EMAIL_DEV_CONSOLE_PREVIEW defaults to False (explicit opt-in required).
     """
 
+    ENV_NAME = "development"
     DEBUG = _DevelopmentDebugDescriptor()
     SECRET_KEY = _DevelopmentSecretKeyDescriptor()
     SESSION_COOKIE_SECURE = _DevelopmentSessionCookieSecureDescriptor()
+    EMAIL_DEV_CONSOLE_PREVIEW = _parse_bool_env(
+        os.environ.get("EMAIL_DEV_CONSOLE_PREVIEW"), default=False
+    )
 
 
 class TestingConfig(Config):
@@ -250,13 +303,18 @@ class TestingConfig(Config):
     - DEBUG is False.
     - SECRET_KEY is set to a deterministic test secret.
     - SESSION_COOKIE_SECURE is False for HTTP test clients.
+    - EMAIL_BACKEND defaults to memory for isolated offline testing.
+    - EMAIL_DEV_CONSOLE_PREVIEW is False to avoid noisy test output.
     """
 
+    ENV_NAME = "testing"
     TESTING = True
     DEBUG = False
     SECRET_KEY = os.environ.get("SECRET_KEY", "testing-secret-key")
     CSRF_ENABLED = True
     SESSION_COOKIE_SECURE = False
+    EMAIL_BACKEND = "memory"
+    EMAIL_DEV_CONSOLE_PREVIEW = False
 
 
 CONFIG_MAP: dict[str, type[Config]] = {

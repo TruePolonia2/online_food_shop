@@ -40,9 +40,11 @@ def create_app(config_class=None) -> Flask:
     from app.csrf import init_csrf
     from app.formatting import format_euro
     from app.oauth import init_oauth, is_google_auth_configured
+    from app.services.email_sender import init_email
 
     init_csrf(app)
     init_oauth(app)
+    init_email(app)
     app.jinja_env.filters["format_euro"] = format_euro
 
     from app.routes.auth import auth_bp, get_current_user
