@@ -21,6 +21,7 @@ from flask import (
 
 from app.csrf import generate_csrf_token
 from app.models.user import User
+from app.oauth import is_google_auth_configured, oauth
 from app.repositories.user_repository import UserRepository
 from app.routes.cart_session import SESSION_CART_KEY, extract_sanitized_cart_data
 from app.services.auth_service import AuthService
@@ -437,3 +438,151 @@ def resend_verification():
         "info",
     )
     return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/auth/google", methods=["GET"])
+def google_login():
+    """Initiate Google OAuth 2.0 authorization code flow with OpenID Connect and PKCE."""
+    if get_current_user() is not None:
+        return redirect(url_for("catalog.index"))
+
+    if not is_google_auth_configured():
+        flash("Google sign-in is not currently configured.", "error")
+        return redirect(url_for("auth.login"))
+
+    # Safely capture post-auth redirect target
+    next_url = request.args.get("next", "")
+    redirect_uri = url_for("auth.google_callback", _external=True)
+
+    # Generate authorization URL, state, nonce, and PKCE challenge
+    rv = oauth.google.create_authorization_url(redirect_uri)
+
+    # Bind return destination to this specific authorization state
+    if next_url and is_safe_redirect_url(next_url):
+        oauth.google.save_authorize_data(redirect_uri=redirect_uri, next_url=next_url, **rv)
+    else:
+        oauth.google.save_authorize_data(redirect_uri=redirect_uri, **rv)
+
+    return redirect(rv["url"])
+
+
+@auth_bp.route("/auth/google/callback", methods=["GET"])
+def google_callback():
+    """Handle Google OpenID Connect callback and authenticate or register customer."""
+    if not is_google_auth_configured():
+        flash("Google sign-in is not currently configured.", "error")
+        return redirect(url_for("auth.login"))
+
+    # Handle provider cancellation or errors
+    error = request.args.get("error")
+    if error:
+        if error in ("access_denied", "cancelled"):
+            flash("Google sign-in was cancelled.", "info")
+        else:
+            logger.warning("Google OAuth error in callback: %s", error)
+            flash("Google sign-in failed. Please try again or sign in with your password.", "error")
+        return redirect(url_for("auth.login"))
+
+    # Extract state-bound return destination before token exchange consumes the state
+    state_param = request.args.get("state")
+    state_data = (
+        oauth.google.framework.get_state_data(session, state_param)
+        if state_param
+        else None
+    )
+    next_url = state_data.get("next_url") if state_data else None
+    if not is_safe_redirect_url(next_url):
+        next_url = None
+
+    # If user is already authenticated (e.g. concurrent tab completed login earlier)
+    if get_current_user() is not None:
+        if state_param:
+            oauth.google.framework.clear_state_data(session, state_param)
+        if next_url:
+            return redirect(next_url)
+        return redirect(url_for("catalog.index"))
+
+    # Exchange authorization code for tokens and parse verified identity claims (with PKCE verifier)
+    try:
+        token = oauth.google.authorize_access_token()
+    except Exception as exc:
+        logger.warning("Google OAuth token exchange failed: %s", exc)
+        flash("Google sign-in failed. Please try again or sign in with your password.", "error")
+        return redirect(url_for("auth.login"))
+
+    userinfo = token.get("userinfo") if token else None
+    if not userinfo or not isinstance(userinfo, dict):
+        logger.warning("Missing or invalid userinfo in Google token response")
+        flash("Google sign-in failed to obtain verified account identity.", "error")
+        return redirect(url_for("auth.login"))
+
+    sub = userinfo.get("sub")
+    email = userinfo.get("email")
+    email_verified = userinfo.get("email_verified")
+    name = userinfo.get("name")
+
+    if not sub or not isinstance(sub, str) or not sub.strip():
+        logger.warning("Invalid or missing sub claim from Google")
+        flash("Invalid identity information received from Google.", "error")
+        return redirect(url_for("auth.login"))
+
+    if not email or not isinstance(email, str) or not email.strip() or "@" not in email:
+        logger.warning("Invalid or missing email claim from Google")
+        flash("No valid email address was provided by Google.", "error")
+        return redirect(url_for("auth.login"))
+
+    # Strictly require verified email claim
+    is_verified = email_verified is True or str(email_verified).lower() == "true"
+    if not is_verified:
+        logger.warning("Unverified Google email claim for '%s'", email)
+        flash(
+            "Your Google email address is not verified. Please verify your email with Google first.",
+            "error",
+        )
+        return redirect(url_for("auth.login"))
+
+    # Process identity association via AuthService
+    auth_service = AuthService()
+    user, error_code = auth_service.authenticate_or_register_google_user(
+        sub=sub, email=email, name=name
+    )
+
+    if error_code == "collision":
+        flash(
+            "An account with this email address already exists. Please log in using your password.",
+            "warning",
+        )
+        return redirect(url_for("auth.login"))
+
+    if user is None:
+        logger.warning("Google user authentication failed (code=%s)", error_code)
+        flash("Google sign-in could not be completed. Please try again.", "error")
+        return redirect(url_for("auth.login"))
+
+    # Session fixation defense: preserve validated cart and concurrent OAuth states
+    raw_cart = session.get(SESSION_CART_KEY)
+    sanitized_cart = extract_sanitized_cart_data(raw_cart)
+    pending_states = {k: v for k, v in session.items() if k.startswith("_state_google_")}
+
+    # Clear entire session: wipes previous auth identity, old CSRF token, and stale keys
+    session.clear()
+
+    # Restore any other pending OAuth states for concurrent browser tabs
+    session.update(pending_states)
+
+    # Re-issue CSRF token and set authenticated user ID
+    generate_csrf_token()
+    session["user_id"] = user.id
+
+    # Restore valid guest cart
+    if sanitized_cart:
+        session[SESSION_CART_KEY] = sanitized_cart
+
+    session.modified = True
+
+    flash(f"Welcome back, {user.email}!", "success")
+
+    # Safe redirect
+    if next_url and is_safe_redirect_url(next_url):
+        return redirect(next_url)
+    return redirect(url_for("catalog.index"))

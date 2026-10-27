@@ -149,3 +149,28 @@ CREATE TABLE IF NOT EXISTS order_items (
 -- Indexes to optimize retrieval of line items by order and foreign key cascade/restrict checks
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items (order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items (product_id);
+
+-- -----------------------------------------------------------------------------
+-- 7. user_external_identities
+-- -----------------------------------------------------------------------------
+-- External identity provider links (OAuth / OpenID Connect).
+-- Links an external subject identifier (e.g. Google sub) to an internal user.
+-- provider is normalized lowercase (e.g. 'google').
+-- provider_user_id is the unique subject identifier from the provider.
+-- UNIQUE(provider, provider_user_id) ensures one provider account links to at most one user.
+-- UNIQUE(user_id, provider) ensures a user has at most one linked account per provider.
+-- Deleting a user cascades to remove their external identities.
+CREATE TABLE IF NOT EXISTS user_external_identities (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    provider TEXT NOT NULL CHECK(length(trim(provider)) > 0),
+    provider_user_id TEXT NOT NULL CHECK(length(trim(provider_user_id)) > 0),
+    email TEXT,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    UNIQUE (provider, provider_user_id),
+    UNIQUE (user_id, provider)
+);
+
+CREATE INDEX IF NOT EXISTS idx_external_identities_user_id ON user_external_identities (user_id);
+CREATE INDEX IF NOT EXISTS idx_external_identities_provider_sub ON user_external_identities (provider, provider_user_id);

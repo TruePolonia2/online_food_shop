@@ -231,6 +231,31 @@ def _migrate_products_table_if_needed(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE products ADD COLUMN image_url TEXT;")
 
 
+def _migrate_external_identities_table_if_needed(conn: sqlite3.Connection) -> None:
+    """Safely and idempotently ensure the user_external_identities table and indexes exist."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_external_identities (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            provider TEXT NOT NULL CHECK(length(trim(provider)) > 0),
+            provider_user_id TEXT NOT NULL CHECK(length(trim(provider_user_id)) > 0),
+            email TEXT,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+            UNIQUE (provider, provider_user_id),
+            UNIQUE (user_id, provider)
+        );
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_external_identities_user_id ON user_external_identities (user_id);"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_external_identities_provider_sub ON user_external_identities (provider, provider_user_id);"
+    )
+
+
 def init_db(
     conn: Optional[sqlite3.Connection] = None,
     schema_path: Optional[Union[str, Path]] = None,
@@ -261,6 +286,7 @@ def init_db(
     _migrate_customers_table_if_needed(conn)
     _migrate_categories_table_if_needed(conn)
     _migrate_products_table_if_needed(conn)
+    _migrate_external_identities_table_if_needed(conn)
     conn.commit()
 
 

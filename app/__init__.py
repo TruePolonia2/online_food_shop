@@ -38,8 +38,10 @@ def create_app(config_class=None) -> Flask:
 
     from app.csrf import init_csrf
     from app.formatting import format_euro
+    from app.oauth import init_oauth, is_google_auth_configured
 
     init_csrf(app)
+    init_oauth(app)
     app.jinja_env.filters["format_euro"] = format_euro
 
     from app.routes.auth import auth_bp, get_current_user
@@ -52,6 +54,7 @@ def create_app(config_class=None) -> Flask:
             "cart_item_count": count,
             "cart_count": count,
             "current_user": get_current_user(),
+            "google_auth_enabled": is_google_auth_configured(),
         }
 
     from app.routes.account import account_bp

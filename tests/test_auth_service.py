@@ -496,5 +496,76 @@ class TestInMemoryEmailSender(unittest.TestCase):
         self.assertEqual(len(sender.sent_messages), 0)
 
 
+class TestAuthServiceGoogleUser(BaseAuthServiceTestCase):
+    """Tests for AuthService.authenticate_or_register_google_user."""
+
+    def test_case_b_register_new_google_user(self):
+        user, err = self.auth_service.authenticate_or_register_google_user(
+            sub="sub_100", email="new_google@example.com", name="Google User"
+        )
+        self.assertIsNone(err)
+        self.assertIsNotNone(user)
+        self.assertEqual(user.email, "new_google@example.com")
+        self.assertEqual(user.role, UserRole.CUSTOMER)
+        self.assertTrue(user.is_verified)
+        self.assertIsNone(user.password_hash)
+
+        # External identity link exists
+        identities = self.auth_service.external_identity_repo.get_by_user_id(user.id)
+        self.assertEqual(len(identities), 1)
+        self.assertEqual(identities[0].provider_user_id, "sub_100")
+
+    def test_case_a_authenticate_existing_google_user(self):
+        created_user, _ = self.auth_service.authenticate_or_register_google_user(
+            sub="sub_200", email="linked@example.com"
+        )
+        user, err = self.auth_service.authenticate_or_register_google_user(
+            sub="sub_200", email="linked@example.com"
+        )
+        self.assertIsNone(err)
+        self.assertEqual(user.id, created_user.id)
+
+    def test_case_c_collision_with_existing_local_user(self):
+        # Register customer locally with password
+        local_user, _ = self.auth_service.register_customer(
+            email="collision@example.com", password="Password123!", confirm_password="Password123!"
+        )
+
+        user, err = self.auth_service.authenticate_or_register_google_user(
+            sub="different_sub_300", email="collision@example.com"
+        )
+        self.assertIsNone(user)
+        self.assertEqual(err, "collision")
+
+    def test_case_d_linked_user_with_changed_email_maintains_local_email(self):
+        created_user, _ = self.auth_service.authenticate_or_register_google_user(
+            sub="sub_400", email="old_email@example.com"
+        )
+        # Google provides new email for same sub
+        user, err = self.auth_service.authenticate_or_register_google_user(
+            sub="sub_400", email="new_email@example.com"
+        )
+        self.assertIsNone(err)
+        self.assertEqual(user.id, created_user.id)
+        # Verify local email in DB was NOT changed
+        reloaded = self.user_repo.get_by_id(created_user.id)
+        self.assertEqual(reloaded.email, "old_email@example.com")
+
+    def test_invalid_sub_and_email_rejected(self):
+        for invalid_sub in [None, "", "   ", True, False]:
+            user, err = self.auth_service.authenticate_or_register_google_user(
+                sub=invalid_sub, email="test@example.com"
+            )
+            self.assertIsNone(user)
+            self.assertEqual(err, "invalid_sub")
+
+        for invalid_email in [None, "", "   ", "notanemail", 123]:
+            user, err = self.auth_service.authenticate_or_register_google_user(
+                sub="sub_valid", email=invalid_email
+            )
+            self.assertIsNone(user)
+            self.assertEqual(err, "invalid_email")
+
+
 if __name__ == "__main__":
     unittest.main()

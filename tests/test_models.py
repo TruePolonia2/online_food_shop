@@ -7,6 +7,7 @@ from app.models.cart_item import CartItem
 from app.models.category import Category
 from app.models.customer import Customer
 from app.models.email_verification_token import EmailVerificationToken
+from app.models.external_identity import ExternalIdentity
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
 from app.models.product import Product
@@ -433,6 +434,48 @@ class TestEmailVerificationTokenModel(unittest.TestCase):
         )
         self.assertTrue(token_consumed.is_used)
         self.assertFalse(token_consumed.is_valid)
+
+
+class TestExternalIdentityModel(unittest.TestCase):
+    """Tests for ExternalIdentity domain invariants and validation."""
+
+    def test_valid_external_identity_creation(self):
+        identity = ExternalIdentity(
+            user_id=1,
+            provider="Google",
+            provider_user_id="google_sub_12345",
+            email="User@Example.com ",
+        )
+        self.assertEqual(identity.user_id, 1)
+        self.assertEqual(identity.provider, "google")
+        self.assertEqual(identity.provider_user_id, "google_sub_12345")
+        self.assertEqual(identity.email, "user@example.com")
+        self.assertIsNotNone(identity.created_at)
+
+    def test_invalid_user_id_raises(self):
+        for invalid_id in [None, 0, -1, "1", True, False]:
+            with self.assertRaises(ValueError):
+                ExternalIdentity(user_id=invalid_id, provider="google", provider_user_id="sub1")
+
+    def test_invalid_provider_raises(self):
+        for invalid_provider in ["", "   ", None, 123]:
+            with self.assertRaises((ValueError, AttributeError)):
+                ExternalIdentity(user_id=1, provider=invalid_provider, provider_user_id="sub1")
+
+    def test_invalid_provider_user_id_raises(self):
+        for invalid_sub in ["", "   ", None, True, False]:
+            with self.assertRaises(ValueError):
+                ExternalIdentity(user_id=1, provider="google", provider_user_id=invalid_sub)
+
+    def test_email_optional_and_normalized(self):
+        identity = ExternalIdentity(user_id=1, provider="google", provider_user_id="sub1", email=None)
+        self.assertIsNone(identity.email)
+
+        identity2 = ExternalIdentity(user_id=1, provider="google", provider_user_id="sub1", email="  ")
+        self.assertIsNone(identity2.email)
+
+        identity3 = ExternalIdentity(user_id=1, provider="google", provider_user_id="sub1", email="TEST@EXAMPLE.COM")
+        self.assertEqual(identity3.email, "test@example.com")
 
 
 if __name__ == "__main__":

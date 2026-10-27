@@ -159,7 +159,36 @@ An explicit configuration class or dotted import path (e.g. `create_app("app.con
 | `SESSION_COOKIE_SAMESITE` | `"Lax"` | `"Lax"` | Protects session cookies against cross-site request forgery. |
 | `DATABASE_PATH` | `instance/online_food_shop.sqlite3` | `instance/online_food_shop.sqlite3` | Filesystem path to the SQLite database file. |
 | `CSRF_ENABLED` | `True` | `True` | Enables/disables CSRF validation on mutating HTTP methods. |
+| `GOOGLE_CLIENT_ID` | `None` | `None` | Google OAuth 2.0 Client ID. Optional; Google sign-in remains disabled if unset. |
+| `GOOGLE_CLIENT_SECRET` | `None` | `None` | Google OAuth 2.0 Client Secret. Optional; Google sign-in remains disabled if unset. |
 | `TESTING` | `False` | `False` | Flask testing mode flag (`True` in `TestingConfig`). |
+
+### Google OAuth 2.0 / OpenID Connect Setup
+
+Google sign-in and registration remain completely disabled until both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are configured. When these variables are omitted or empty, the application starts normally and hides Google authentication options.
+
+To enable Google sign-in:
+
+- **Windows (PowerShell):**
+  ```powershell
+  $env:GOOGLE_CLIENT_ID = "your-client-id.apps.googleusercontent.com"
+  $env:GOOGLE_CLIENT_SECRET = "your-client-secret"
+  ```
+
+- **Windows (Command Prompt):**
+  ```cmd
+  set GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+  set GOOGLE_CLIENT_SECRET=your-client-secret
+  ```
+
+- **Linux / macOS (Bash/Zsh):**
+  ```bash
+  export GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
+  export GOOGLE_CLIENT_SECRET="your-client-secret"
+  ```
+
+In the Google Cloud Console (APIs & Services &rarr; Credentials):
+- **Authorized redirect URI:** `http://localhost:5000/auth/google/callback` (or your production HTTPS domain).
 
 ### Generating a Secure Secret Key
 
@@ -189,10 +218,7 @@ python -m pytest -v -p no:cacheprovider
 
 ### Current Limitations & Unimplemented Features
 
-This application is built for guest checkout and currently **does NOT implement**:
-- Customer user authentication (registration, login, logout, password hashing).
-- Email verification or password reset workflows.
-- Store owner / administrator accounts or backoffice admin routes.
+Features deferred to subsequent development phases:
+- Password reset workflows.
 - Product catalog image file upload management.
-- Google OAuth or third-party social sign-in.
 - Online payment provider integrations (Stripe, PayPal, etc.).

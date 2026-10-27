@@ -10,6 +10,7 @@ from app.database.connection import create_connection, init_db
 from app.models.category import Category
 from app.models.customer import Customer
 from app.models.email_verification_token import EmailVerificationToken
+from app.models.external_identity import ExternalIdentity
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
 from app.models.product import Product
@@ -17,6 +18,7 @@ from app.models.user import User, UserRole
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.customer_repository import CustomerRepository
 from app.repositories.email_verification_token_repository import EmailVerificationTokenRepository
+from app.repositories.external_identity_repository import ExternalIdentityRepository
 from app.repositories.order_repository import OrderRepository
 from app.repositories.product_repository import ProductRepository
 from app.repositories.user_repository import UserRepository
@@ -1099,6 +1101,115 @@ class TestRepositoryFlaskContext(unittest.TestCase):
             self.assertIsNotNone(order.id)
             self.assertEqual(order.user_id, user.id)
             self.assertEqual(order.total, 598)
+
+
+class TestExternalIdentityRepository(BaseRepositoryTestCase):
+    """Tests for ExternalIdentityRepository operations and database constraints."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.user_repo = UserRepository(self.conn)
+        self.identity_repo = ExternalIdentityRepository(self.conn)
+        self.user = self.user_repo.create(
+            User(email="ext_test@example.com", role=UserRole.CUSTOMER, is_verified=True)
+        )
+
+    def test_create_and_get_by_provider_sub(self):
+        identity = ExternalIdentity(
+            user_id=self.user.id,
+            provider="google",
+            provider_user_id="sub_12345",
+            email="ext_test@example.com",
+        )
+        saved = self.identity_repo.create(identity)
+        self.assertIsNotNone(saved.id)
+        self.assertEqual(saved.user_id, self.user.id)
+        self.assertEqual(saved.provider, "google")
+        self.assertEqual(saved.provider_user_id, "sub_12345")
+
+        fetched = self.identity_repo.get_by_provider_sub("google", "sub_12345")
+        self.assertIsNotNone(fetched)
+        self.assertEqual(fetched.id, saved.id)
+        self.assertEqual(fetched.user_id, self.user.id)
+        self.assertEqual(fetched.email, "ext_test@example.com")
+
+    def test_get_by_user_id(self):
+        identity = ExternalIdentity(
+            user_id=self.user.id,
+            provider="google",
+            provider_user_id="sub_9999",
+            email="ext_test@example.com",
+        )
+        self.identity_repo.create(identity)
+        identities = self.identity_repo.get_by_user_id(self.user.id)
+        self.assertEqual(len(identities), 1)
+        self.assertEqual(identities[0].provider_user_id, "sub_9999")
+
+        # Nonexistent user ID returns empty list
+        self.assertEqual(self.identity_repo.get_by_user_id(99999), [])
+
+    def test_get_by_user_and_provider(self):
+        identity = ExternalIdentity(
+            user_id=self.user.id,
+            provider="google",
+            provider_user_id="sub_abc",
+        )
+        self.identity_repo.create(identity)
+
+        found = self.identity_repo.get_by_user_and_provider(self.user.id, "google")
+        self.assertIsNotNone(found)
+        self.assertEqual(found.provider_user_id, "sub_abc")
+
+        self.assertIsNone(self.identity_repo.get_by_user_and_provider(self.user.id, "github"))
+
+    def test_unique_provider_sub_constraint(self):
+        identity1 = ExternalIdentity(
+            user_id=self.user.id,
+            provider="google",
+            provider_user_id="sub_unique",
+        )
+        self.identity_repo.create(identity1)
+
+        other_user = self.user_repo.create(
+            User(email="other_ext@example.com", role=UserRole.CUSTOMER, is_verified=True)
+        )
+        identity2 = ExternalIdentity(
+            user_id=other_user.id,
+            provider="google",
+            provider_user_id="sub_unique",  # duplicate provider + sub
+        )
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.identity_repo.create(identity2)
+
+    def test_unique_user_id_provider_constraint(self):
+        identity1 = ExternalIdentity(
+            user_id=self.user.id,
+            provider="google",
+            provider_user_id="sub_1",
+        )
+        self.identity_repo.create(identity1)
+
+        identity2 = ExternalIdentity(
+            user_id=self.user.id,
+            provider="google",
+            provider_user_id="sub_2",  # duplicate user_id + provider
+        )
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.identity_repo.create(identity2)
+
+    def test_cascade_delete_on_user_deletion(self):
+        identity = ExternalIdentity(
+            user_id=self.user.id,
+            provider="google",
+            provider_user_id="sub_cascade",
+        )
+        self.identity_repo.create(identity)
+        self.assertIsNotNone(self.identity_repo.get_by_provider_sub("google", "sub_cascade"))
+
+        # Delete user
+        self.user_repo.delete(self.user.id)
+        # External identity should be automatically removed by ON DELETE CASCADE
+        self.assertIsNone(self.identity_repo.get_by_provider_sub("google", "sub_cascade"))
 
 
 if __name__ == "__main__":

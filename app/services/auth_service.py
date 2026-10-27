@@ -9,8 +9,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.database.connection import get_db, transaction
 from app.models.email_verification_token import EmailVerificationToken
+from app.models.external_identity import ExternalIdentity
 from app.models.user import User, UserRole
 from app.repositories.email_verification_token_repository import EmailVerificationTokenRepository
+from app.repositories.external_identity_repository import ExternalIdentityRepository
 from app.repositories.user_repository import UserRepository
 from app.services.email_sender import EmailSender, InMemoryEmailSender
 
@@ -29,6 +31,7 @@ class AuthService:
         self,
         user_repo: Optional[UserRepository] = None,
         token_repo: Optional[EmailVerificationTokenRepository] = None,
+        external_identity_repo: Optional[ExternalIdentityRepository] = None,
         email_sender: Optional[EmailSender] = None,
         conn: Optional[sqlite3.Connection] = None,
         token_validity_hours: int = DEFAULT_TOKEN_VALIDITY_HOURS,
@@ -39,6 +42,7 @@ class AuthService:
         Args:
             user_repo: Optional UserRepository. If omitted, uses default.
             token_repo: Optional EmailVerificationTokenRepository. If omitted, uses default.
+            external_identity_repo: Optional ExternalIdentityRepository. If omitted, uses default.
             email_sender: Optional EmailSender. Defaults to InMemoryEmailSender.
             conn: Optional database connection for transaction coordination.
             token_validity_hours: Hours a verification token remains valid (default 24).
@@ -47,6 +51,9 @@ class AuthService:
         self._conn = conn
         self._user_repo = user_repo or UserRepository(conn=conn)
         self._token_repo = token_repo or EmailVerificationTokenRepository(conn=conn)
+        self._external_identity_repo = (
+            external_identity_repo or ExternalIdentityRepository(conn=conn)
+        )
         self._email_sender = email_sender or InMemoryEmailSender()
         self.token_validity_hours = token_validity_hours
         self.resend_cooldown_seconds = resend_cooldown_seconds
@@ -69,6 +76,11 @@ class AuthService:
     def token_repo(self) -> EmailVerificationTokenRepository:
         """Return the email verification token repository."""
         return self._token_repo
+
+    @property
+    def external_identity_repo(self) -> ExternalIdentityRepository:
+        """Return the external identity repository."""
+        return self._external_identity_repo
 
     @property
     def email_sender(self) -> EmailSender:
@@ -342,3 +354,90 @@ class AuthService:
             )
 
         return True
+
+    def authenticate_or_register_google_user(
+        self, sub: str, email: str, name: Optional[str] = None
+    ) -> tuple[Optional[User], Optional[str]]:
+        """Authenticate or register a user identified by a verified Google OpenID Connect identity.
+
+        Implements explicit collision resolution:
+        - Case A: Google sub is already linked -> authenticate the linked user.
+        - Case B: Google sub is unlinked and email is unregistered -> atomically create
+          a new customer account (role='customer', is_verified=True, password_hash=None)
+          and link the Google identity.
+        - Case C: Google sub is unlinked but email is already registered locally ->
+          DO NOT auto-link or authenticate; return (None, 'collision').
+        - Case D: Google sub is linked but provider email changed -> stably authenticate
+          the linked user without modifying the local account email.
+
+        Args:
+            sub: Google unique subject identifier claim ('sub').
+            email: Verified Google account email claim.
+            name: Optional display name from profile claim.
+
+        Returns:
+            A tuple of (User, None) on success, or (None, error_code) on failure.
+            Possible error codes: 'invalid_sub', 'invalid_email', 'collision',
+            'user_not_found', 'integrity_error'.
+        """
+        if not sub or isinstance(sub, bool):
+            return None, "invalid_sub"
+        normalized_sub = str(sub).strip()
+        if not normalized_sub:
+            return None, "invalid_sub"
+
+        if not email or not isinstance(email, str) or not email.strip() or "@" not in email:
+            return None, "invalid_email"
+        normalized_email = email.strip().lower()
+
+        # Check for existing linked identity (Case A & Case D)
+        existing_identity = self._external_identity_repo.get_by_provider_sub(
+            provider="google", provider_user_id=normalized_sub
+        )
+        if existing_identity is not None:
+            user = self._user_repo.get_by_id(existing_identity.user_id)
+            if user is None:
+                return None, "user_not_found"
+            # Case D: Account identified by stable 'sub'; never overwrite local user.email
+            return user, None
+
+        # Unlinked Google sub: Check if email already exists locally (Case C)
+        existing_user = self._user_repo.get_by_email(normalized_email)
+        if existing_user is not None:
+            # Case C collision: strictly reject auto-linking to prevent account takeover
+            return None, "collision"
+
+        # Case B: Unlinked sub and unused email -> register new customer
+        now_utc = datetime.now(timezone.utc)
+        try:
+            with transaction(self.conn):
+                new_user = User(
+                    email=normalized_email,
+                    password_hash=None,
+                    role=UserRole.CUSTOMER,
+                    is_verified=True,
+                    created_at=now_utc,
+                )
+                persisted_user = self._user_repo.create(new_user)
+
+                new_identity = ExternalIdentity(
+                    user_id=persisted_user.id,
+                    provider="google",
+                    provider_user_id=normalized_sub,
+                    email=normalized_email,
+                    created_at=now_utc,
+                )
+                self._external_identity_repo.create(new_identity)
+                return persisted_user, None
+        except sqlite3.IntegrityError:
+            # Concurrency fallback: re-check if created in parallel
+            existing_identity = self._external_identity_repo.get_by_provider_sub(
+                provider="google", provider_user_id=normalized_sub
+            )
+            if existing_identity is not None:
+                user = self._user_repo.get_by_id(existing_identity.user_id)
+                if user is not None:
+                    return user, None
+            if self._user_repo.get_by_email(normalized_email) is not None:
+                return None, "collision"
+            return None, "integrity_error"

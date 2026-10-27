@@ -160,6 +160,10 @@ class Config:
     TESTING = False
     CSRF_ENABLED = True
 
+    # Google OAuth 2.0 / OpenID Connect credentials
+    GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+
     # Hardened session cookie settings
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"

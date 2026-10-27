@@ -756,6 +756,28 @@ class TestConnectionAndLifecycle(unittest.TestCase):
         self.assertIsNotNone(row)
         valid_conn.close()
 
+    def test_user_external_identities_schema_and_indexes(self):
+        conn = create_connection(":memory:")
+        init_db(conn)
+        cursor = conn.execute("PRAGMA table_info(user_external_identities);")
+        cols = {row["name"]: row["type"] for row in cursor.fetchall()}
+        self.assertIn("id", cols)
+        self.assertIn("user_id", cols)
+        self.assertIn("provider", cols)
+        self.assertIn("provider_user_id", cols)
+        self.assertIn("email", cols)
+        self.assertIn("created_at", cols)
+
+        # Verify idempotency of migration
+        from app.database.connection import _migrate_external_identities_table_if_needed
+        _migrate_external_identities_table_if_needed(conn)
+
+        # Verify indexes exist
+        cursor = conn.execute("PRAGMA index_list(user_external_identities);")
+        index_names = {row["name"] for row in cursor.fetchall()}
+        self.assertTrue(any("idx_external_identities" in idx for idx in index_names))
+        conn.close()
+
 
 if __name__ == "__main__":
     unittest.main()
