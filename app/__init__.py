@@ -1,12 +1,13 @@
 """Application factory for the online food shop application."""
 from flask import Flask
 
-from app.config import CONFIG_MAP, Config, get_config_by_name
+from app.config import CONFIG_MAP, Config, get_config_by_name, load_project_env
 from app.database.connection import init_app as init_db_app
 
 
 def create_app(config_class=None) -> Flask:
     """Create and configure an instance of the Flask application."""
+    load_project_env()
     if config_class is None:
         config_class = get_config_by_name()
     elif isinstance(config_class, str):

@@ -1,5 +1,7 @@
 """Unit and integration tests for security configuration and application factory initialization."""
 import os
+from pathlib import Path
+import tempfile
 import unittest
 
 from app import create_app
@@ -13,7 +15,9 @@ from app.config import (
     _resolve_environment_name,
     get_config_by_name,
     is_production_env,
+    load_project_env,
 )
+from app.oauth import is_google_auth_configured
 
 
 class BaseConfigTestCase(unittest.TestCase):
@@ -346,3 +350,77 @@ class TestConfigurationResolutionAndFactory(BaseConfigTestCase):
         app = create_app(CustomTestConfig)
         self.assertEqual(app.config["CUSTOM_SETTING"], "custom_value_123")
         self.assertTrue(app.config["TESTING"])
+
+
+class TestDotenvConfigurationLoading(BaseConfigTestCase):
+    """Tests for .env file discovery, loading, precedence, and Google OAuth persistence."""
+
+    def test_load_project_env_loads_variables(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            env_file = Path(td) / ".env"
+            env_file.write_text("TEST_DOTENV_KEY=sample_val\nGOOGLE_CLIENT_ID=mock-client-id\n", encoding="utf-8")
+
+            os.environ.pop("TEST_DOTENV_KEY", None)
+            os.environ.pop("GOOGLE_CLIENT_ID", None)
+
+            loaded = load_project_env(dotenv_path=env_file)
+            self.assertTrue(loaded)
+            self.assertEqual(os.environ.get("TEST_DOTENV_KEY"), "sample_val")
+            self.assertEqual(os.environ.get("GOOGLE_CLIENT_ID"), "mock-client-id")
+
+    def test_load_project_env_preserves_existing_process_env_by_default(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            env_file = Path(td) / ".env"
+            env_file.write_text("FLASK_CONFIG=production\nGOOGLE_CLIENT_ID=from_file\n", encoding="utf-8")
+
+            os.environ["FLASK_CONFIG"] = "development"
+            os.environ["GOOGLE_CLIENT_ID"] = "from_process"
+
+            loaded = load_project_env(dotenv_path=env_file, override=False)
+            self.assertTrue(loaded)
+            self.assertEqual(os.environ.get("FLASK_CONFIG"), "development")
+            self.assertEqual(os.environ.get("GOOGLE_CLIENT_ID"), "from_process")
+
+    def test_load_project_env_allows_explicit_override(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            env_file = Path(td) / ".env"
+            env_file.write_text("GOOGLE_CLIENT_ID=from_file_override\n", encoding="utf-8")
+
+            os.environ["GOOGLE_CLIENT_ID"] = "old_process_val"
+
+            loaded = load_project_env(dotenv_path=env_file, override=True)
+            self.assertTrue(loaded)
+            self.assertEqual(os.environ.get("GOOGLE_CLIENT_ID"), "from_file_override")
+
+    def test_load_project_env_returns_false_for_missing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            missing_path = Path(td) / "nonexistent.env"
+            loaded = load_project_env(dotenv_path=missing_path)
+            self.assertFalse(loaded)
+
+    def test_app_reads_google_credentials_from_environment(self) -> None:
+        os.environ["GOOGLE_CLIENT_ID"] = "env-google-id-12345"
+        os.environ["GOOGLE_CLIENT_SECRET"] = "env-google-secret-67890"
+
+        app = create_app(TestingConfig)
+        self.assertEqual(app.config["GOOGLE_CLIENT_ID"], "env-google-id-12345")
+        self.assertEqual(app.config["GOOGLE_CLIENT_SECRET"], "env-google-secret-67890")
+        with app.app_context():
+            self.assertTrue(is_google_auth_configured())
+
+    def test_app_google_auth_disabled_when_credentials_missing_or_blank(self) -> None:
+        os.environ.pop("GOOGLE_CLIENT_ID", None)
+        os.environ.pop("GOOGLE_CLIENT_SECRET", None)
+
+        app = create_app(TestingConfig)
+        self.assertIsNone(app.config["GOOGLE_CLIENT_ID"])
+        self.assertIsNone(app.config["GOOGLE_CLIENT_SECRET"])
+        with app.app_context():
+            self.assertFalse(is_google_auth_configured())
+
+        # Also test with whitespace-only values
+        os.environ["GOOGLE_CLIENT_ID"] = "   "
+        os.environ["GOOGLE_CLIENT_SECRET"] = ""
+        app_blank = create_app(TestingConfig)
+        with app_blank.app_context():
+            self.assertFalse(is_google_auth_configured())

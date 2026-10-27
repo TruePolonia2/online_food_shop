@@ -2,7 +2,25 @@
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def load_project_env(dotenv_path: Path | str | None = None, override: bool = False) -> bool:
+    """Load environment variables from a project-local .env file.
+
+    Preserves existing environment variables (override=False by default) to allow
+    explicit process-level overrides. Returns True if a .env file was found and loaded.
+    """
+    target = Path(dotenv_path) if dotenv_path else BASE_DIR / ".env"
+    if target.is_file():
+        return load_dotenv(target, override=override)
+    return False
+
+
+# Automatically load environment variables from project-local .env if present
+load_project_env()
 
 # Known development-only secret key placeholder.
 # This MUST NEVER be used in production environments.
@@ -141,6 +159,30 @@ class _DevelopmentSessionCookieSecureDescriptor:
         return _parse_bool_env(os.environ.get("SESSION_COOKIE_SECURE"), default=False)
 
 
+class _DatabasePathDescriptor:
+    """Descriptor for Config.DATABASE_PATH."""
+
+    def __get__(self, instance, owner):
+        return os.environ.get(
+            "DATABASE_PATH",
+            str(BASE_DIR / "instance" / "online_food_shop.sqlite3"),
+        )
+
+
+class _GoogleClientIdDescriptor:
+    """Descriptor for Config.GOOGLE_CLIENT_ID."""
+
+    def __get__(self, instance, owner):
+        return os.environ.get("GOOGLE_CLIENT_ID")
+
+
+class _GoogleClientSecretDescriptor:
+    """Descriptor for Config.GOOGLE_CLIENT_SECRET."""
+
+    def __get__(self, instance, owner):
+        return os.environ.get("GOOGLE_CLIENT_SECRET")
+
+
 class Config:
     """Base application configuration.
 
@@ -153,16 +195,13 @@ class Config:
     - SESSION_COOKIE_SAMESITE: Set to 'Lax' by default to protect against CSRF attacks.
     """
 
-    DATABASE_PATH = os.environ.get(
-        "DATABASE_PATH",
-        str(BASE_DIR / "instance" / "online_food_shop.sqlite3"),
-    )
+    DATABASE_PATH = _DatabasePathDescriptor()
     TESTING = False
     CSRF_ENABLED = True
 
     # Google OAuth 2.0 / OpenID Connect credentials
-    GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
-    GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+    GOOGLE_CLIENT_ID = _GoogleClientIdDescriptor()
+    GOOGLE_CLIENT_SECRET = _GoogleClientSecretDescriptor()
 
     # Hardened session cookie settings
     SESSION_COOKIE_HTTPONLY = True
