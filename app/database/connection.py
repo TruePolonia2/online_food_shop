@@ -201,6 +201,36 @@ def _migrate_customers_table_if_needed(conn: sqlite3.Connection) -> None:
     conn.execute("CREATE INDEX IF NOT EXISTS idx_customers_user_id ON customers (user_id);")
 
 
+def _migrate_categories_table_if_needed(conn: sqlite3.Connection) -> None:
+    """Safely and idempotently ensure the categories table has the is_active column.
+
+    Non-destructive: Uses ALTER TABLE ADD COLUMN only if is_active is missing.
+    """
+    cursor = conn.execute("PRAGMA table_info(categories);")
+    existing_cols = {row["name"] for row in cursor.fetchall()}
+    if not existing_cols:
+        return
+
+    if "is_active" not in existing_cols:
+        conn.execute(
+            "ALTER TABLE categories ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0, 1));"
+        )
+
+
+def _migrate_products_table_if_needed(conn: sqlite3.Connection) -> None:
+    """Safely and idempotently ensure the products table has the image_url column.
+
+    Non-destructive: Uses ALTER TABLE ADD COLUMN only if image_url is missing.
+    """
+    cursor = conn.execute("PRAGMA table_info(products);")
+    existing_cols = {row["name"] for row in cursor.fetchall()}
+    if not existing_cols:
+        return
+
+    if "image_url" not in existing_cols:
+        conn.execute("ALTER TABLE products ADD COLUMN image_url TEXT;")
+
+
 def init_db(
     conn: Optional[sqlite3.Connection] = None,
     schema_path: Optional[Union[str, Path]] = None,
@@ -229,6 +259,8 @@ def init_db(
     _migrate_users_table_if_needed(conn)
     _migrate_orders_table_if_needed(conn)
     _migrate_customers_table_if_needed(conn)
+    _migrate_categories_table_if_needed(conn)
+    _migrate_products_table_if_needed(conn)
     conn.commit()
 
 

@@ -111,6 +111,16 @@ class TestCategoryService(BaseServiceTestCase):
         with self.assertRaises(ValueError):
             self.category_service.delete_category(9999)
 
+    def test_category_service_activation(self) -> None:
+        cat = self.category_service.create_category("Cold Drinks", is_active=False)
+        self.assertFalse(cat.is_active)
+        self.assertEqual(len(self.category_service.get_all(include_inactive=False)), 0)
+        self.assertEqual(len(self.category_service.get_all(include_inactive=True)), 1)
+
+        updated = self.category_service.update_category(cat.id, "Cold Drinks", is_active=True)
+        self.assertTrue(updated.is_active)
+        self.assertEqual(len(self.category_service.get_all(include_inactive=False)), 1)
+
 
 class TestProductService(BaseServiceTestCase):
     """Tests for ProductService business rules, stock adjustments, and catalog filters."""
@@ -133,6 +143,18 @@ class TestProductService(BaseServiceTestCase):
         self.assertEqual(prod.price, 299)
         self.assertEqual(prod.stock_quantity, 50)
         self.assertTrue(prod.is_active)
+
+    def test_product_service_image_url_and_validation(self) -> None:
+        p = self.product_service.create_product(
+            name="Juice", price=150, image_url="/static/juice.png"
+        )
+        self.assertEqual(p.image_url, "/static/juice.png")
+
+        # Dangerous scheme raises ValueError
+        with self.assertRaises(ValueError):
+            self.product_service.create_product(
+                name="Bad Juice", price=150, image_url="javascript:alert(1)"
+            )
 
     def test_create_product_validation_errors(self) -> None:
         # Empty name

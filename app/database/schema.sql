@@ -23,7 +23,8 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL UNIQUE CHECK(length(trim(name)) > 0),
-    description TEXT
+    description TEXT,
+    is_active INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0, 1))
 );
 
 -- -----------------------------------------------------------------------------
@@ -39,6 +40,7 @@ CREATE TABLE IF NOT EXISTS products (
     description TEXT,
     category_id INTEGER,
     is_active INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0, 1)),
+    image_url TEXT,
     FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
 );
 

@@ -1,18 +1,25 @@
 """Cart service managing transient shopping cart operations and stock availability."""
 from app.models.cart import Cart
+from app.repositories.category_repository import CategoryRepository
 from app.repositories.product_repository import ProductRepository
 
 
 class CartService:
     """Service handling in-memory shopping cart operations and availability validation."""
 
-    def __init__(self, product_repo: ProductRepository | None = None) -> None:
-        """Initialize CartService with injected product repository.
+    def __init__(
+        self,
+        product_repo: ProductRepository | None = None,
+        category_repo: CategoryRepository | None = None,
+    ) -> None:
+        """Initialize CartService with injected repositories.
 
         Args:
             product_repo: ProductRepository instance. Defaults to a new instance.
+            category_repo: CategoryRepository instance. Defaults to a new instance.
         """
         self.product_repo = product_repo or ProductRepository()
+        self.category_repo = category_repo or CategoryRepository()
 
     def create_cart(self, customer_id: int | None = None) -> Cart:
         """Create a new in-memory Cart instance.
@@ -53,6 +60,11 @@ class CartService:
 
         if not product.is_active:
             raise ValueError(f"Product '{product.name}' is currently unavailable.")
+
+        if product.category_id is not None:
+            cat = self.category_repo.get_by_id(product.category_id)
+            if cat is not None and not cat.is_active:
+                raise ValueError(f"Product '{product.name}' is currently unavailable.")
 
         existing_qty = 0
         for item in cart.items:
@@ -102,6 +114,11 @@ class CartService:
 
         if not product.is_active:
             raise ValueError(f"Product '{product.name}' is currently unavailable.")
+
+        if product.category_id is not None:
+            cat = self.category_repo.get_by_id(product.category_id)
+            if cat is not None and not cat.is_active:
+                raise ValueError(f"Product '{product.name}' is currently unavailable.")
 
         if quantity > product.stock_quantity:
             raise ValueError(
@@ -153,6 +170,8 @@ class CartService:
                 errors.append(f"Product '{item.product.name}' no longer exists.")
             elif not product.is_active:
                 errors.append(f"Product '{product.name}' is no longer active.")
+            elif product.category_id is not None and (cat := self.category_repo.get_by_id(product.category_id)) and not cat.is_active:
+                errors.append(f"Product '{product.name}' is currently unavailable.")
             elif item.quantity > product.stock_quantity:
                 errors.append(
                     f"Requested quantity ({item.quantity}) for '{product.name}' "

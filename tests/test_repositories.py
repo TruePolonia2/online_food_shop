@@ -116,6 +116,25 @@ class TestCategoryRepository(BaseRepositoryTestCase):
         self.assertIsNotNone(refetched_prod)
         self.assertIsNone(refetched_prod.category_id)
 
+    def test_category_repo_activation_and_include_inactive(self) -> None:
+        cat_active = self.category_repo.create(Category(name="Active Cat", is_active=True))
+        cat_inactive = self.category_repo.create(Category(name="Inactive Cat", is_active=False))
+
+        # Default get_all returns only active
+        active_only = self.category_repo.get_all(include_inactive=False)
+        self.assertEqual(len(active_only), 1)
+        self.assertEqual(active_only[0].name, "Active Cat")
+
+        # include_inactive=True returns both
+        all_cats = self.category_repo.get_all(include_inactive=True)
+        self.assertEqual(len(all_cats), 2)
+
+        # Update category activation status
+        cat_inactive.is_active = True
+        self.assertTrue(self.category_repo.update(cat_inactive))
+        refetched = self.category_repo.get_by_id(cat_inactive.id)
+        self.assertTrue(refetched.is_active)
+
 
 class TestProductRepository(BaseRepositoryTestCase):
     """Tests for ProductRepository operations, query filters, and constraints."""
@@ -244,6 +263,31 @@ class TestProductRepository(BaseRepositoryTestCase):
         stats = self.product_repo.get_product_stats()
         self.assertEqual(stats["total_products"], 2)
         self.assertEqual(stats["active_products"], 1)
+
+    def test_product_repo_image_url_and_inactive_category_filtering(self) -> None:
+        cat_active = self.category_repo.create(Category(name="Fruit", is_active=True))
+        cat_inactive = self.category_repo.create(Category(name="Old Dairy", is_active=False))
+
+        p1 = self.product_repo.create(
+            Product(name="Apple", price=100, category_id=cat_active.id, is_active=True, image_url="/static/apple.png")
+        )
+        p2 = self.product_repo.create(
+            Product(name="Milk", price=150, category_id=cat_inactive.id, is_active=True, image_url="https://example.com/milk.jpg")
+        )
+
+        # Image URL persisted and retrieved
+        fetched_p1 = self.product_repo.get_by_id(p1.id)
+        self.assertEqual(fetched_p1.image_url, "/static/apple.png")
+        fetched_p2 = self.product_repo.get_by_id(p2.id)
+        self.assertEqual(fetched_p2.image_url, "https://example.com/milk.jpg")
+
+        # Public list_active excludes product in inactive category
+        active_catalog = self.product_repo.list_active()
+        self.assertEqual([p.name for p in active_catalog], ["Apple"])
+
+        # Admin get_all(include_inactive=True) returns all
+        all_catalog = self.product_repo.get_all(include_inactive=True)
+        self.assertEqual(len(all_catalog), 2)
 
 
 class TestCustomerRepository(BaseRepositoryTestCase):

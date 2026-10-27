@@ -8,10 +8,12 @@ from app.models.category import Category
 
 def _row_to_category(row: sqlite3.Row) -> Category:
     """Convert an SQLite row into a Category domain model."""
+    is_active = bool(row["is_active"]) if "is_active" in row.keys() else True
     return Category(
         id=row["id"],
         name=row["name"],
         description=row["description"],
+        is_active=is_active,
     )
 
 
@@ -43,7 +45,7 @@ class CategoryRepository:
             The Category entity if found, None otherwise.
         """
         cursor = self.conn.execute(
-            "SELECT id, name, description FROM categories WHERE id = ?",
+            "SELECT id, name, description, is_active FROM categories WHERE id = ?",
             (category_id,),
         )
         row = cursor.fetchone()
@@ -59,21 +61,29 @@ class CategoryRepository:
             The Category entity if found, None otherwise.
         """
         cursor = self.conn.execute(
-            "SELECT id, name, description FROM categories WHERE name = ?",
+            "SELECT id, name, description, is_active FROM categories WHERE name = ?",
             (name.strip(),),
         )
         row = cursor.fetchone()
         return _row_to_category(row) if row else None
 
-    def get_all(self) -> list[Category]:
-        """Retrieve all categories sorted alphabetically by name.
+    def get_all(self, include_inactive: bool = False) -> list[Category]:
+        """Retrieve categories sorted alphabetically by name.
+
+        Args:
+            include_inactive: Whether to include inactive categories. Defaults to False.
 
         Returns:
             A list of Category entities.
         """
-        cursor = self.conn.execute(
-            "SELECT id, name, description FROM categories ORDER BY name ASC"
-        )
+        if include_inactive:
+            query = "SELECT id, name, description, is_active FROM categories ORDER BY name ASC"
+        else:
+            query = (
+                "SELECT id, name, description, is_active FROM categories "
+                "WHERE is_active = 1 ORDER BY name ASC"
+            )
+        cursor = self.conn.execute(query)
         return [_row_to_category(row) for row in cursor.fetchall()]
 
     def create(self, category: Category) -> Category:
@@ -87,8 +97,8 @@ class CategoryRepository:
         """
         with transaction(self.conn):
             cursor = self.conn.execute(
-                "INSERT INTO categories (name, description) VALUES (?, ?)",
-                (category.name, category.description),
+                "INSERT INTO categories (name, description, is_active) VALUES (?, ?, ?)",
+                (category.name, category.description, 1 if category.is_active else 0),
             )
             category.id = cursor.lastrowid
             return category
@@ -107,8 +117,13 @@ class CategoryRepository:
 
         with transaction(self.conn):
             cursor = self.conn.execute(
-                "UPDATE categories SET name = ?, description = ? WHERE id = ?",
-                (category.name, category.description, category.id),
+                "UPDATE categories SET name = ?, description = ?, is_active = ? WHERE id = ?",
+                (
+                    category.name,
+                    category.description,
+                    1 if category.is_active else 0,
+                    category.id,
+                ),
             )
             return cursor.rowcount > 0
 

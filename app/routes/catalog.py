@@ -13,15 +13,16 @@ def index():
     category_service = CategoryService()
     product_service = ProductService()
 
-    categories = category_service.get_all()
+    categories = category_service.get_all(include_inactive=False)
     selected_category = None
     category_id_str = request.args.get("category_id")
 
     if category_id_str:
         try:
             category_id = int(category_id_str)
-            selected_category = category_service.get_by_id(category_id)
-            if selected_category is not None:
+            candidate_cat = category_service.get_by_id(category_id)
+            if candidate_cat is not None and candidate_cat.is_active:
+                selected_category = candidate_cat
                 products = product_service.get_products_by_category(category_id)
             else:
                 products = product_service.get_active_products()
@@ -53,6 +54,9 @@ def product_detail(product_id: int):
         if product.category_id is not None
         else None
     )
+
+    if category is not None and not category.is_active:
+        abort(404)
 
     return render_template(
         "catalog/product_detail.html",

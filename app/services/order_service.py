@@ -5,6 +5,7 @@ from app.database.connection import get_db, transaction
 from app.models.cart import Cart
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
+from app.repositories.category_repository import CategoryRepository
 from app.repositories.customer_repository import CustomerRepository
 from app.repositories.order_repository import OrderRepository
 from app.repositories.product_repository import ProductRepository
@@ -21,6 +22,7 @@ class OrderService:
         customer_repo: CustomerRepository | None = None,
         user_repo: UserRepository | None = None,
         conn: sqlite3.Connection | None = None,
+        category_repo: CategoryRepository | None = None,
     ) -> None:
         """Initialize OrderService with injected repositories and connection.
 
@@ -30,11 +32,13 @@ class OrderService:
             customer_repo: CustomerRepository instance.
             user_repo: UserRepository instance.
             conn: Optional database connection for transaction management.
+            category_repo: Optional CategoryRepository instance.
         """
         self.order_repo = order_repo or OrderRepository(conn)
         self.product_repo = product_repo or ProductRepository(conn)
         self.customer_repo = customer_repo or CustomerRepository(conn)
         self.user_repo = user_repo or UserRepository(conn)
+        self.category_repo = category_repo or CategoryRepository(conn)
         self._conn = conn
 
     @property
@@ -197,6 +201,13 @@ class OrderService:
                     raise ValueError(
                         f"Product '{product.name}' is currently inactive and cannot be purchased."
                     )
+
+                if product.category_id is not None:
+                    cat = self.category_repo.get_by_id(product.category_id)
+                    if cat is not None and not cat.is_active:
+                        raise ValueError(
+                            f"Product '{product.name}' belongs to an inactive category and cannot be purchased."
+                        )
 
                 if (
                     isinstance(cart_item.quantity, bool)

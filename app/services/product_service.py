@@ -2,6 +2,7 @@
 from app.models.product import Product
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.product_repository import ProductRepository
+from app.services.catalog_validation import validate_product_image_url
 
 
 class ProductService:
@@ -81,6 +82,7 @@ class ProductService:
         description: str | None = None,
         category_id: int | None = None,
         is_active: bool = True,
+        image_url: str | None = None,
     ) -> Product:
         """Create a new product after validating domain invariants.
 
@@ -91,12 +93,14 @@ class ProductService:
             description: Optional product description.
             category_id: Optional existing category ID.
             is_active: Whether the product is active in the catalog.
+            image_url: Optional static path or URL for product image.
 
         Returns:
             The persisted Product entity with assigned ID.
 
         Raises:
-            ValueError: If name is empty, price/stock is negative, or category does not exist.
+            ValueError: If name is empty, price/stock is negative, category does not exist,
+                or image_url is dangerous.
         """
         if not name or not name.strip():
             raise ValueError("Product name cannot be empty.")
@@ -108,10 +112,14 @@ class ProductService:
             or stock_quantity < 0
         ):
             raise ValueError("Stock quantity must be a non-negative integer.")
+        if not isinstance(is_active, bool):
+            raise ValueError("Product is_active must be a boolean.")
 
         if category_id is not None:
             if self.category_repo.get_by_id(category_id) is None:
                 raise ValueError(f"Category with ID {category_id} does not exist.")
+
+        sanitized_image_url = validate_product_image_url(image_url)
 
         product = Product(
             name=name.strip(),
@@ -120,6 +128,7 @@ class ProductService:
             description=description.strip() if description else None,
             category_id=category_id,
             is_active=is_active,
+            image_url=sanitized_image_url,
         )
         return self.product_repo.create(product)
 
@@ -132,6 +141,7 @@ class ProductService:
         description: str | None = None,
         category_id: int | None = None,
         is_active: bool = True,
+        image_url: str | None = None,
     ) -> Product:
         """Update an existing product's attributes.
 
@@ -143,6 +153,7 @@ class ProductService:
             description: Updated description.
             category_id: Updated category ID.
             is_active: Updated active status.
+            image_url: Updated product image URL or static path.
 
         Returns:
             The updated Product entity.
@@ -164,10 +175,14 @@ class ProductService:
             or stock_quantity < 0
         ):
             raise ValueError("Stock quantity must be a non-negative integer.")
+        if not isinstance(is_active, bool):
+            raise ValueError("Product is_active must be a boolean.")
 
         if category_id is not None:
             if self.category_repo.get_by_id(category_id) is None:
                 raise ValueError(f"Category with ID {category_id} does not exist.")
+
+        sanitized_image_url = validate_product_image_url(image_url)
 
         product.name = name.strip()
         product.price = price
@@ -175,6 +190,7 @@ class ProductService:
         product.description = description.strip() if description else None
         product.category_id = category_id
         product.is_active = is_active
+        product.image_url = sanitized_image_url
 
         self.product_repo.update(product)
         return product

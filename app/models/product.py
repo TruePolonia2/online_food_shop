@@ -18,6 +18,7 @@ class Product:
     description: Optional[str] = None
     category_id: Optional[int] = None
     is_active: bool = True
+    image_url: Optional[str] = None
 
     def __post_init__(self) -> None:
         if not self.name or not self.name.strip():
@@ -31,6 +32,12 @@ class Product:
             or self.stock_quantity < 0
         ):
             raise ValueError("Stock quantity cannot be negative.")
+        if not isinstance(self.is_active, bool):
+            raise ValueError("Product is_active must be a boolean.")
+        if self.image_url is not None:
+            if not isinstance(self.image_url, str):
+                raise ValueError("Product image_url must be a string or None.")
+            self.image_url = self.image_url.strip() or None
 
     @property
     def is_in_stock(self) -> bool:

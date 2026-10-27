@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Product Management - Store Administration{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+    <!-- Breadcrumb & Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200">
+        <div>
+            <nav class="flex items-center gap-2 text-xs text-gray-500 mb-1" aria-label="Breadcrumb">
+                <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-700">Store Administration</a>
+                <span>&rsaquo;</span>
+                <span class="text-gray-900 font-semibold" aria-current="page">Products</span>
+            </nav>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Product Management</h1>
+            <p class="text-sm text-gray-600 mt-1">Manage grocery catalog inventory, prices, and availability.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="{{ url_for('admin.dashboard') }}" class="inline-flex items-center text-sm font-semibold text-gray-600 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded-md px-3 py-2">
+                &larr; Dashboard
+            </a>
+            <a href="{{ url_for('admin.new_product') }}" id="btn-new-product" class="inline-flex items-center px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold rounded-lg shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                New Product
+            </a>
+        </div>
+    </div>
+
+    <!-- Product List Table -->
+    {% if products %}
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm border-collapse" aria-label="Products Table">
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold uppercase text-gray-500">
+                        <th scope="col" class="py-3 px-4 sm:px-6">Product</th>
+                        <th scope="col" class="py-3 px-4 sm:px-6">Category</th>
+                        <th scope="col" class="py-3 px-4 sm:px-6 text-right">Price</th>
+                        <th scope="col" class="py-3 px-4 sm:px-6 text-center">Stock</th>
+                        <th scope="col" class="py-3 px-4 sm:px-6 text-center">Status</th>
+                        <th scope="col" class="py-3 px-4 sm:px-6 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for p in products %}
+                    <tr class="hover:bg-gray-50/80 transition-colors">
+                        <td class="py-4 px-4 sm:px-6 font-bold text-gray-900">
+                            <div>
+                                <span class="font-bold text-gray-900">{{ p.name }}</span>
+                                {% if p.description %}
+                                <p class="text-xs text-gray-500 font-normal max-w-sm truncate mt-0.5">{{ p.description }}</p>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="py-4 px-4 sm:px-6 whitespace-nowrap">
+                            {% if p.category_id and category_map.get(p.category_id) %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-800 border border-blue-200">
+                                {{ category_map[p.category_id].name }}
+                            </span>
+                            {% else %}
+                            <span class="text-xs text-gray-400 italic">Uncategorized</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 px-4 sm:px-6 text-right font-semibold text-gray-900 whitespace-nowrap">
+                            {{ p.price | format_euro }}
+                        </td>
+                        <td class="py-4 px-4 sm:px-6 text-center whitespace-nowrap">
+                            {% if p.stock_quantity == 0 %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-800 border border-red-200">
+                                0 (Out of stock)
+                            </span>
+                            {% elif p.stock_quantity < 5 %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                {{ p.stock_quantity }} (Low)
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                {{ p.stock_quantity }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 px-4 sm:px-6 text-center whitespace-nowrap">
+                            {% if p.is_active %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                Active
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-300">
+                                Inactive
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 px-4 sm:px-6 text-right whitespace-nowrap">
+                            <a href="{{ url_for('admin.edit_product', product_id=p.id) }}" class="inline-flex items-center text-xs font-semibold text-purple-700 hover:text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded px-2 py-1">
+                                Edit
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+        <h2 class="text-base font-semibold text-gray-900">No products registered yet</h2>
+        <p class="mt-1 text-sm text-gray-500">Get started by creating your first grocery product.</p>
+        <div class="mt-6">
+            <a href="{{ url_for('admin.new_product') }}" class="inline-flex items-center px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold rounded-lg shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors">
+                New Product
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

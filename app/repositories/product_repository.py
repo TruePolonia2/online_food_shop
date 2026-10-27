@@ -8,6 +8,7 @@ from app.models.product import Product
 
 def _row_to_product(row: sqlite3.Row) -> Product:
     """Convert an SQLite row into a Product domain model."""
+    image_url = row["image_url"] if "image_url" in row.keys() else None
     return Product(
         id=row["id"],
         name=row["name"],
@@ -16,6 +17,7 @@ def _row_to_product(row: sqlite3.Row) -> Product:
         description=row["description"],
         category_id=row["category_id"],
         is_active=bool(row["is_active"]),
+        image_url=image_url,
     )
 
 
@@ -47,7 +49,7 @@ class ProductRepository:
             The Product entity if found, None otherwise.
         """
         cursor = self.conn.execute(
-            """SELECT id, name, price, stock_quantity, description, category_id, is_active
+            """SELECT id, name, price, stock_quantity, description, category_id, is_active, image_url
                FROM products WHERE id = ?""",
             (product_id,),
         )
@@ -59,18 +61,21 @@ class ProductRepository:
 
         Args:
             include_inactive: When True, returns both active and inactive products.
-                Defaults to False (only active products).
+                Defaults to False (only active products in active categories).
 
         Returns:
             A list of Product entities sorted alphabetically by name.
         """
         if include_inactive:
-            query = """SELECT id, name, price, stock_quantity, description, category_id, is_active
-                       FROM products ORDER BY name ASC"""
+            query = """SELECT p.id, p.name, p.price, p.stock_quantity, p.description, p.category_id, p.is_active, p.image_url
+                       FROM products p ORDER BY p.name ASC"""
             cursor = self.conn.execute(query)
         else:
-            query = """SELECT id, name, price, stock_quantity, description, category_id, is_active
-                       FROM products WHERE is_active = 1 ORDER BY name ASC"""
+            query = """SELECT p.id, p.name, p.price, p.stock_quantity, p.description, p.category_id, p.is_active, p.image_url
+                       FROM products p
+                       LEFT JOIN categories c ON p.category_id = c.id
+                       WHERE p.is_active = 1 AND (p.category_id IS NULL OR c.is_active = 1)
+                       ORDER BY p.name ASC"""
             cursor = self.conn.execute(query)
 
         return [_row_to_product(row) for row in cursor.fetchall()]
@@ -96,12 +101,15 @@ class ProductRepository:
             A list of matching Product entities sorted by name.
         """
         if include_inactive:
-            query = """SELECT id, name, price, stock_quantity, description, category_id, is_active
-                       FROM products WHERE category_id = ? ORDER BY name ASC"""
+            query = """SELECT p.id, p.name, p.price, p.stock_quantity, p.description, p.category_id, p.is_active, p.image_url
+                       FROM products p WHERE p.category_id = ? ORDER BY p.name ASC"""
             cursor = self.conn.execute(query, (category_id,))
         else:
-            query = """SELECT id, name, price, stock_quantity, description, category_id, is_active
-                       FROM products WHERE category_id = ? AND is_active = 1 ORDER BY name ASC"""
+            query = """SELECT p.id, p.name, p.price, p.stock_quantity, p.description, p.category_id, p.is_active, p.image_url
+                       FROM products p
+                       JOIN categories c ON p.category_id = c.id
+                       WHERE p.category_id = ? AND p.is_active = 1 AND c.is_active = 1
+                       ORDER BY p.name ASC"""
             cursor = self.conn.execute(query, (category_id,))
 
         return [_row_to_product(row) for row in cursor.fetchall()]
@@ -117,8 +125,8 @@ class ProductRepository:
         """
         with transaction(self.conn):
             cursor = self.conn.execute(
-                """INSERT INTO products (name, price, stock_quantity, description, category_id, is_active)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
+                """INSERT INTO products (name, price, stock_quantity, description, category_id, is_active, image_url)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
                 (
                     product.name,
                     product.price,
@@ -126,6 +134,7 @@ class ProductRepository:
                     product.description,
                     product.category_id,
                     1 if product.is_active else 0,
+                    product.image_url,
                 ),
             )
             product.id = cursor.lastrowid
@@ -147,7 +156,7 @@ class ProductRepository:
             cursor = self.conn.execute(
                 """UPDATE products
                    SET name = ?, price = ?, stock_quantity = ?, description = ?,
-                       category_id = ?, is_active = ?
+                       category_id = ?, is_active = ?, image_url = ?
                    WHERE id = ?""",
                 (
                     product.name,
@@ -156,6 +165,7 @@ class ProductRepository:
                     product.description,
                     product.category_id,
                     1 if product.is_active else 0,
+                    product.image_url,
                     product.id,
                 ),
             )
