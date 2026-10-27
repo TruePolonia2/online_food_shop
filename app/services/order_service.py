@@ -1,5 +1,7 @@
 """Order service coordinating checkout workflows, inventory management, and order lifecycle."""
+import math
 import sqlite3
+from typing import Optional, Union
 
 from app.database.connection import get_db, transaction
 from app.models.cart import Cart
@@ -10,6 +12,18 @@ from app.repositories.customer_repository import CustomerRepository
 from app.repositories.order_repository import OrderRepository
 from app.repositories.product_repository import ProductRepository
 from app.repositories.user_repository import UserRepository
+
+
+class OrderConflictError(Exception):
+    """Raised when an administrative order update fails due to a concurrent status modification."""
+
+    pass
+
+
+ALLOWED_ADMIN_TRANSITIONS: dict[OrderStatus, set[OrderStatus]] = {
+    OrderStatus.PENDING: {OrderStatus.CONFIRMED, OrderStatus.CANCELLED},
+    OrderStatus.CONFIRMED: {OrderStatus.CANCELLED},
+}
 
 
 class OrderService:
@@ -314,3 +328,141 @@ class OrderService:
             The cancelled Order entity with status CANCELLED.
         """
         return self.update_order_status(order_id, OrderStatus.CANCELLED)
+
+    def get_paginated_orders_for_admin(
+        self,
+        status_filter: Optional[str] = None,
+        page: int = 1,
+        per_page: int = 20,
+    ) -> tuple[list[Order], int, int, Optional[str]]:
+        """Retrieve paginated orders for administrative management.
+
+        Args:
+            status_filter: Optional status filter string.
+            page: Requested page number (defaults to 1).
+            per_page: Orders per page (defaults to 20, capped at 50).
+
+        Returns:
+            Tuple of:
+            - orders: List of loaded Order domain models.
+            - total_count: Total matching orders count.
+            - total_pages: Total number of available pages.
+            - active_status: The active status filter string, or None if unfiltered/invalid.
+        """
+        valid_filter: Optional[OrderStatus] = None
+        active_filter_str: Optional[str] = None
+        if status_filter and isinstance(status_filter, str):
+            cleaned_filter = status_filter.strip().lower()
+            try:
+                valid_filter = OrderStatus(cleaned_filter)
+                active_filter_str = valid_filter.value
+            except ValueError:
+                # Safe handling: ignore invalid status filter
+                valid_filter = None
+                active_filter_str = None
+
+        safe_page = (
+            page
+            if isinstance(page, int) and not isinstance(page, bool) and page >= 1
+            else 1
+        )
+        safe_per_page = (
+            min(50, max(1, per_page))
+            if isinstance(per_page, int) and not isinstance(per_page, bool)
+            else 20
+        )
+
+        orders, total_count = self.order_repo.get_paginated_orders(
+            status=valid_filter,
+            page=safe_page,
+            per_page=safe_per_page,
+        )
+
+        total_pages = max(1, math.ceil(total_count / safe_per_page))
+        return (orders, total_count, total_pages, active_filter_str)
+
+    def admin_transition_order_status(
+        self,
+        order_id: int,
+        expected_status: Union[OrderStatus, str],
+        target_status: Union[OrderStatus, str],
+    ) -> Order:
+        """Execute an atomic administrative status transition.
+
+        Validates that:
+        1. Order exists.
+        2. Expected and target statuses are valid OrderStatus values.
+        3. Transition is permitted under conservative admin policy:
+           (pending -> confirmed, pending -> cancelled, confirmed -> cancelled).
+        4. Current database status matches expected_status.
+        5. Atomic conditional UPDATE succeeds without concurrency collision.
+
+        Stock is NOT modified during administrative status transitions in this phase.
+
+        Args:
+            order_id: Order primary key.
+            expected_status: Expected current status when admin opened form.
+            target_status: Target status to transition into.
+
+        Returns:
+            The updated Order entity.
+
+        Raises:
+            ValueError: If inputs are invalid or transition is forbidden.
+            OrderConflictError: If order status changed concurrently.
+        """
+        if isinstance(order_id, bool) or not isinstance(order_id, int) or order_id <= 0:
+            raise ValueError(f"Invalid order ID: {order_id}")
+
+        try:
+            exp_val = (
+                expected_status
+                if isinstance(expected_status, OrderStatus)
+                else OrderStatus(str(expected_status).strip().lower())
+            )
+        except (ValueError, AttributeError):
+            raise ValueError(f"Invalid expected order status: '{expected_status}'")
+
+        try:
+            tgt_val = (
+                target_status
+                if isinstance(target_status, OrderStatus)
+                else OrderStatus(str(target_status).strip().lower())
+            )
+        except (ValueError, AttributeError):
+            raise ValueError(f"Invalid target order status: '{target_status}'")
+
+        order = self.order_repo.get_by_id(order_id)
+        if order is None:
+            raise ValueError(f"Order with ID {order_id} not found.")
+
+        # Check for pre-update concurrency mismatch
+        if order.status != exp_val:
+            raise OrderConflictError(
+                f"Order #{order_id} status changed from '{exp_val.value}' to '{order.status.value}' since the page was loaded."
+            )
+
+        # Validate transition against strict policy
+        allowed_targets = ALLOWED_ADMIN_TRANSITIONS.get(order.status, set())
+        if tgt_val not in allowed_targets:
+            raise ValueError(
+                f"Cannot transition order #{order_id} from '{order.status.value}' to '{tgt_val.value}'."
+            )
+
+        # Execute atomic conditional update
+        updated = self.order_repo.update_status_conditional(
+            order_id=order_id,
+            expected_status=exp_val,
+            new_status=tgt_val,
+        )
+
+        if not updated:
+            # Re-fetch order to report actual state
+            fresh_order = self.order_repo.get_by_id(order_id)
+            actual_st = fresh_order.status.value if fresh_order else "unknown"
+            raise OrderConflictError(
+                f"Order #{order_id} was modified concurrently. Current status is '{actual_st}'."
+            )
+
+        order.status = tgt_val
+        return order

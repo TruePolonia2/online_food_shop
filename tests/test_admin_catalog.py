@@ -113,6 +113,13 @@ class TestCatalogValidationUnit(unittest.TestCase):
             'https://example.com/<script>',
             'https://example.com/"onerror=alert(1)',
             "ftp://example.com/image.jpg",
+            "//attacker.com/evil.png",
+            "/static\\image.png",
+            "/etc/passwd",
+            "/admin/orders",
+            "https://user:pass@example.com/image.png",
+            "/static/image\x00.png",
+            "https://",
         ]:
             with self.assertRaises(ValueError):
                 validate_product_image_url(dangerous)

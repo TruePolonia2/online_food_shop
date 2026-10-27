@@ -1,5 +1,6 @@
 """Validation and parsing helpers for catalog administration."""
 from typing import Any
+import urllib.parse
 
 
 def parse_euro_to_cents(value: Any) -> int:
@@ -128,12 +129,16 @@ def validate_product_image_url(url: Any) -> str | None:
 
     Allowed:
         - None or empty string (returns None)
-        - Local static paths: starts with '/' (e.g. '/static/images/apple.png')
-        - Remote URLs: starts with 'https://' or 'http://'
+        - Local static paths: starts explicitly with '/static/' (e.g. '/static/images/apple.png')
+        - Remote URLs: valid 'https://' or 'http://' with a hostname and no embedded credentials
 
     Forbidden:
+        - Protocol-relative URLs: '//...'
+        - Backslashes: '\\'
+        - Arbitrary local root paths outside '/static/'
+        - Embedded credentials (e.g. 'https://user:pass@host/img.png')
         - Dangerous schemes: 'javascript:', 'data:', 'vbscript:', 'file:'
-        - Control or injection characters
+        - ASCII control characters and quotes/HTML tags
 
     Args:
         url: The image URL or static path.
@@ -154,19 +159,50 @@ def validate_product_image_url(url: Any) -> str | None:
     if not cleaned:
         return None
 
+    if len(cleaned) > 500:
+        raise ValueError("Image URL must not exceed 500 characters.")
+
+    # Reject backslashes and protocol-relative URLs
+    if "\\" in cleaned:
+        raise ValueError("Image URL cannot contain backslashes.")
+    if cleaned.startswith("//"):
+        raise ValueError("Protocol-relative image URLs are not permitted.")
+
+    # Reject ASCII control characters and HTML delimiters
+    if any(ord(char) < 32 for char in cleaned) or any(
+        char in cleaned for char in ('"', "'", "<", ">")
+    ):
+        raise ValueError("Image path contains forbidden characters.")
+
     lower = cleaned.lower()
     dangerous_schemes = ("javascript:", "data:", "vbscript:", "file:")
     for scheme in dangerous_schemes:
         if scheme in lower:
             raise ValueError(f"Dangerous URL scheme '{scheme}' is not permitted.")
 
-    if not (cleaned.startswith("/") or lower.startswith("https://") or lower.startswith("http://")):
-        raise ValueError(
-            "Product image must be a relative static path (e.g. '/static/...') or a valid http(s) URL."
-        )
+    # Local path validation: must explicitly start with /static/
+    if cleaned.startswith("/"):
+        if not cleaned.startswith("/static/"):
+            raise ValueError(
+                "Local image paths must be located within the '/static/' directory."
+            )
+        return cleaned
 
-    # Reject quotes and tags that could break HTML attribute rendering
-    if any(char in cleaned for char in ('"', "'", "<", ">", "\n", "\r", "\t")):
-        raise ValueError("Image path contains forbidden characters.")
+    # Remote URL validation: http or https
+    if lower.startswith("https://") or lower.startswith("http://"):
+        try:
+            parsed = urllib.parse.urlsplit(cleaned)
+        except Exception:
+            raise ValueError("Malformed HTTP/HTTPS image URL.")
 
-    return cleaned
+        if not parsed.netloc:
+            raise ValueError("Image URL must contain a valid hostname.")
+
+        if "@" in parsed.netloc or parsed.username or parsed.password:
+            raise ValueError("Image URL must not contain embedded user credentials.")
+
+        return cleaned
+
+    raise ValueError(
+        "Product image must be a static path (e.g. '/static/...') or a valid http(s) URL."
+    )

@@ -197,6 +197,63 @@ class OrderRepository:
 
         return self._populate_orders_with_items(order_rows)
 
+    def get_paginated_orders(
+        self,
+        status: Optional[Union[OrderStatus, str]] = None,
+        page: int = 1,
+        per_page: int = 20,
+    ) -> tuple[list[Order], int]:
+        """Retrieve a paginated list of orders, optionally filtered by status.
+
+        Uses parameterized SQL queries, orders newest-first, and batch-loads
+        line items to prevent N+1 query patterns.
+
+        Args:
+            status: Optional OrderStatus filter.
+            page: 1-indexed page number (defaults to 1).
+            per_page: Maximum items per page (defaults to 20).
+
+        Returns:
+            Tuple of (list of populated Order entities, total matching order count).
+        """
+        page_num = max(1, page) if isinstance(page, int) and not isinstance(page, bool) else 1
+        page_size = max(1, min(100, per_page)) if isinstance(per_page, int) and not isinstance(per_page, bool) else 20
+        offset = (page_num - 1) * page_size
+
+        params: list[Any] = []
+        where_clause = ""
+        if status is not None:
+            status_val = status.value if isinstance(status, OrderStatus) else str(status)
+            OrderStatus(status_val)  # Validate status enum
+            where_clause = "WHERE status = ?"
+            params.append(status_val)
+
+        # Count total matching records
+        count_cursor = self.conn.execute(
+            f"SELECT COUNT(*) AS total FROM orders {where_clause}",
+            params,
+        )
+        total_count = int(count_cursor.fetchone()["total"])
+        if total_count == 0 or offset >= total_count:
+            return ([], total_count)
+
+        # Fetch paginated order records
+        query_params = list(params)
+        query_params.extend([page_size, offset])
+        order_cursor = self.conn.execute(
+            f"""SELECT id, customer_id, user_id, status, created_at,
+                       customer_name, customer_email, customer_phone, customer_address
+                FROM orders {where_clause}
+                ORDER BY created_at DESC, id DESC
+                LIMIT ? OFFSET ?""",
+            query_params,
+        )
+        order_rows = order_cursor.fetchall()
+        if not order_rows:
+            return ([], total_count)
+
+        return (self._populate_orders_with_items(order_rows), total_count)
+
     def _populate_orders_with_items(self, order_rows: list[sqlite3.Row]) -> list[Order]:
         """Helper to batch-load order items for multiple orders avoiding N+1 queries."""
         order_ids = [row["id"] for row in order_rows]
@@ -295,6 +352,40 @@ class OrderRepository:
             cursor = self.conn.execute(
                 "UPDATE orders SET status = ? WHERE id = ?",
                 (status_val, order_id),
+            )
+            return cursor.rowcount > 0
+
+    def update_status_conditional(
+        self,
+        order_id: int,
+        expected_status: Union[OrderStatus, str],
+        new_status: Union[OrderStatus, str],
+    ) -> bool:
+        """Atomically update an order's status only if its current status matches expected_status.
+
+        Guarantees concurrency safety via a conditional SQL UPDATE.
+
+        Args:
+            order_id: The ID of the order to update.
+            expected_status: The status expected by the caller before updating.
+            new_status: The new target OrderStatus.
+
+        Returns:
+            True if exactly one row was updated, False if the order was missing
+            or current status did not match expected_status.
+
+        Raises:
+            ValueError: If either status value is not a valid OrderStatus.
+        """
+        exp_val = expected_status.value if isinstance(expected_status, OrderStatus) else str(expected_status)
+        new_val = new_status.value if isinstance(new_status, OrderStatus) else str(new_status)
+        OrderStatus(exp_val)
+        OrderStatus(new_val)
+
+        with transaction(self.conn):
+            cursor = self.conn.execute(
+                "UPDATE orders SET status = ? WHERE id = ? AND status = ?",
+                (new_val, order_id, exp_val),
             )
             return cursor.rowcount > 0
 

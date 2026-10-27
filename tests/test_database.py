@@ -227,6 +227,92 @@ class TestDatabaseSchemaAndConstraints(unittest.TestCase):
         _migrate_users_table_if_needed(legacy_conn)
         legacy_conn.close()
 
+    def test_migrate_categories_table_if_needed(self):
+        from app.database.connection import _migrate_categories_table_if_needed
+
+        legacy_conn = create_connection(":memory:")
+        legacy_conn.execute(
+            """
+            CREATE TABLE categories (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE COLLATE NOCASE CHECK(length(trim(name)) > 0),
+                description TEXT
+            );
+            """
+        )
+        legacy_conn.execute(
+            "INSERT INTO categories (name, description) VALUES ('Produce', 'Fresh items');"
+        )
+        legacy_conn.commit()
+
+        _migrate_categories_table_if_needed(legacy_conn)
+
+        info_cursor = legacy_conn.execute("PRAGMA table_info(categories);")
+        cols = {row["name"] for row in info_cursor.fetchall()}
+        self.assertIn("is_active", cols)
+
+        cat = legacy_conn.execute(
+            "SELECT name, is_active FROM categories WHERE name = 'Produce'"
+        ).fetchone()
+        self.assertEqual(cat["is_active"], 1)
+
+        legacy_conn.execute(
+            "INSERT INTO categories (name, is_active) VALUES ('Seasonal', 0);"
+        )
+        cat_seasonal = legacy_conn.execute(
+            "SELECT name, is_active FROM categories WHERE name = 'Seasonal'"
+        ).fetchone()
+        self.assertEqual(cat_seasonal["is_active"], 0)
+
+        # Idempotence
+        _migrate_categories_table_if_needed(legacy_conn)
+        legacy_conn.close()
+
+    def test_migrate_products_table_if_needed(self):
+        from app.database.connection import _migrate_products_table_if_needed
+
+        legacy_conn = create_connection(":memory:")
+        legacy_conn.execute(
+            """
+            CREATE TABLE products (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL CHECK(length(trim(name)) > 0),
+                price INTEGER NOT NULL CHECK(price >= 0),
+                stock_quantity INTEGER NOT NULL DEFAULT 0 CHECK(stock_quantity >= 0),
+                description TEXT,
+                category_id INTEGER,
+                is_active INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0, 1))
+            );
+            """
+        )
+        legacy_conn.execute(
+            "INSERT INTO products (name, price, stock_quantity) VALUES ('Apple', 150, 10);"
+        )
+        legacy_conn.commit()
+
+        _migrate_products_table_if_needed(legacy_conn)
+
+        info_cursor = legacy_conn.execute("PRAGMA table_info(products);")
+        cols = {row["name"] for row in info_cursor.fetchall()}
+        self.assertIn("image_url", cols)
+
+        prod = legacy_conn.execute(
+            "SELECT name, image_url FROM products WHERE name = 'Apple'"
+        ).fetchone()
+        self.assertIsNone(prod["image_url"])
+
+        legacy_conn.execute(
+            "INSERT INTO products (name, price, stock_quantity, image_url) VALUES ('Pear', 180, 5, '/static/pear.png');"
+        )
+        prod_pear = legacy_conn.execute(
+            "SELECT name, image_url FROM products WHERE name = 'Pear'"
+        ).fetchone()
+        self.assertEqual(prod_pear["image_url"], "/static/pear.png")
+
+        # Idempotence
+        _migrate_products_table_if_needed(legacy_conn)
+        legacy_conn.close()
+
     def test_category_constraints(self):
         # Successful insert
         cursor = self.conn.execute(

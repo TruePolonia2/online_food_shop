@@ -173,11 +173,11 @@
             </div>
 
             <!-- Order Processing Tool -->
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 flex flex-col justify-between opacity-80" aria-disabled="true">
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 flex flex-col justify-between">
                 <div>
                     <div class="flex items-center justify-between">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                            Coming in Phase 11
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            Active Management
                         </span>
                     </div>
                     <h3 class="text-base font-semibold text-gray-900 mt-3">Order Processing & Fulfillment</h3>
@@ -186,9 +186,9 @@
                     </p>
                 </div>
                 <div class="mt-6">
-                    <button type="button" disabled aria-disabled="true" class="w-full py-2 px-4 rounded-lg bg-gray-100 text-gray-400 text-sm font-medium cursor-not-allowed">
-                        Order Tools (Coming Soon)
-                    </button>
+                    <a href="{{ url_for('admin.list_orders') }}" id="btn-manage-orders" class="w-full inline-flex justify-center items-center py-2 px-4 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors">
+                        Manage Orders
+                    </a>
                 </div>
             </div>
 

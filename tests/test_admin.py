@@ -426,12 +426,12 @@ class TestAdminDashboard(unittest.TestCase):
         self.assertIn("Return to Storefront", html)
         self.assertIn('href="/"', html)
 
-        # Placeholder management sections
+        # Management sections
         self.assertIn("Product Catalog Management", html)
         self.assertIn("Order Processing & Fulfillment", html)
         self.assertIn("Customer Management", html)
-        self.assertIn("Coming in Phase 11", html)
         self.assertIn("Coming Later", html)
+        self.assertIn('href="/admin/orders"', html)
 
         # Disabled placeholder elements with aria-disabled
         self.assertIn('aria-disabled="true"', html)

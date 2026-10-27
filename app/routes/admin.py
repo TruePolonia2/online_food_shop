@@ -3,6 +3,7 @@ from flask import (
     Blueprint,
     abort,
     flash,
+    make_response,
     redirect,
     render_template,
     request,
@@ -10,6 +11,7 @@ from flask import (
 )
 
 from app.authorization import owner_required
+from app.models.order import OrderStatus
 from app.services.admin_service import AdminService
 from app.services.catalog_validation import (
     parse_euro_to_cents,
@@ -17,6 +19,11 @@ from app.services.catalog_validation import (
     validate_product_image_url,
 )
 from app.services.category_service import CategoryService
+from app.services.order_service import (
+    ALLOWED_ADMIN_TRANSITIONS,
+    OrderConflictError,
+    OrderService,
+)
 from app.services.product_service import ProductService
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -564,3 +571,158 @@ def update_product(product_id: int):
             ),
             400,
         )
+
+
+# =============================================================================
+# Order Administration Routes
+# =============================================================================
+
+
+@admin_bp.route("/orders", methods=["GET"])
+@owner_required
+def list_orders():
+    """List orders with pagination and status filtering.
+
+    Protected strictly by owner_required decorator: only authenticated, verified
+    store owners can view administrative order listings.
+    """
+    order_service = OrderService()
+
+    raw_status = request.args.get("status")
+    raw_page = request.args.get("page")
+
+    try:
+        page = int(raw_page) if raw_page else 1
+    except (ValueError, TypeError):
+        page = 1
+
+    orders, total_count, total_pages, active_status = (
+        order_service.get_paginated_orders_for_admin(
+            status_filter=raw_status,
+            page=page,
+            per_page=20,
+        )
+    )
+
+    all_statuses = [s.value for s in OrderStatus]
+
+    response = make_response(
+        render_template(
+            "admin/orders/index.html",
+            orders=orders,
+            total_count=total_count,
+            page=page,
+            total_pages=total_pages,
+            active_status=active_status,
+            all_statuses=all_statuses,
+        )
+    )
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+    response.headers["Pragma"] = "no-cache"
+    return response
+
+
+@admin_bp.route("/orders/<int:order_id>", methods=["GET"])
+@owner_required
+def order_detail(order_id: int):
+    """Display administrative order details and available status actions.
+
+    Only verified owners can view order fulfillment details.
+    """
+    order_service = OrderService()
+    order = order_service.get_by_id(order_id)
+    if order is None:
+        abort(404)
+
+    allowed_transitions = [
+        s.value for s in ALLOWED_ADMIN_TRANSITIONS.get(order.status, set())
+    ]
+
+    response = make_response(
+        render_template(
+            "admin/orders/detail.html",
+            order=order,
+            allowed_transitions=allowed_transitions,
+        )
+    )
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+    response.headers["Pragma"] = "no-cache"
+    return response
+
+
+@admin_bp.route("/orders/<int:order_id>/status", methods=["POST"])
+@owner_required
+def update_order_status(order_id: int):
+    """Transition an order's lifecycle status atomically.
+
+    Requires CSRF token, verifies concurrency via current_status token,
+    and enforces conservative status transition rules.
+    """
+    order_service = OrderService()
+    order = order_service.get_by_id(order_id)
+    if order is None:
+        abort(404)
+
+    expected_status = request.form.get("current_status")
+    new_status = request.form.get("new_status")
+
+    if not expected_status or not new_status:
+        flash("Missing status transition parameters.", "error")
+        allowed_transitions = [
+            s.value for s in ALLOWED_ADMIN_TRANSITIONS.get(order.status, set())
+        ]
+        response = make_response(
+            render_template(
+                "admin/orders/detail.html",
+                order=order,
+                allowed_transitions=allowed_transitions,
+            ),
+            400,
+        )
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+        return response
+
+    try:
+        updated_order = order_service.admin_transition_order_status(
+            order_id=order_id,
+            expected_status=expected_status,
+            target_status=new_status,
+        )
+        flash(
+            f"Order #{order_id} status updated to '{updated_order.status.value}'.",
+            "success",
+        )
+        return redirect(url_for("admin.order_detail", order_id=order_id))
+
+    except OrderConflictError as exc:
+        flash(f"Conflict: {exc}", "error")
+        fresh_order = order_service.get_by_id(order_id) or order
+        allowed_transitions = [
+            s.value for s in ALLOWED_ADMIN_TRANSITIONS.get(fresh_order.status, set())
+        ]
+        response = make_response(
+            render_template(
+                "admin/orders/detail.html",
+                order=fresh_order,
+                allowed_transitions=allowed_transitions,
+            ),
+            409,
+        )
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+        return response
+
+    except ValueError as exc:
+        flash(str(exc), "error")
+        allowed_transitions = [
+            s.value for s in ALLOWED_ADMIN_TRANSITIONS.get(order.status, set())
+        ]
+        response = make_response(
+            render_template(
+                "admin/orders/detail.html",
+                order=order,
+                allowed_transitions=allowed_transitions,
+            ),
+            400,
+        )
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+        return response
