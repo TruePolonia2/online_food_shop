@@ -149,7 +149,7 @@ def _migrate_users_table_if_needed(conn: sqlite3.Connection) -> None:
     Non-destructive: Uses ALTER TABLE ADD COLUMN only if password_hash is missing.
     """
     cursor = conn.execute("PRAGMA table_info(users);")
-    existing_cols = {row["name"] for row in cursor.fetchall()}
+    existing_cols = {row[1] for row in cursor.fetchall()}
     if not existing_cols:
         return
 
@@ -163,7 +163,7 @@ def _migrate_orders_table_if_needed(conn: sqlite3.Connection) -> None:
     Non-destructive: Uses ALTER TABLE ADD COLUMN only if columns are missing.
     """
     cursor = conn.execute("PRAGMA table_info(orders);")
-    existing_cols = {row["name"] for row in cursor.fetchall()}
+    existing_cols = {row[1] for row in cursor.fetchall()}
     if not existing_cols:
         return
 
@@ -190,7 +190,7 @@ def _migrate_customers_table_if_needed(conn: sqlite3.Connection) -> None:
     Non-destructive: Uses ALTER TABLE ADD COLUMN only if user_id is missing.
     """
     cursor = conn.execute("PRAGMA table_info(customers);")
-    existing_cols = {row["name"] for row in cursor.fetchall()}
+    existing_cols = {row[1] for row in cursor.fetchall()}
     if not existing_cols:
         return
 
@@ -207,9 +207,12 @@ def _migrate_categories_table_if_needed(conn: sqlite3.Connection) -> None:
     Non-destructive: Uses ALTER TABLE ADD COLUMN only if is_active is missing.
     """
     cursor = conn.execute("PRAGMA table_info(categories);")
-    existing_cols = {row["name"] for row in cursor.fetchall()}
+    existing_cols = {row[1] for row in cursor.fetchall()}
     if not existing_cols:
         return
+
+    if "description" not in existing_cols:
+        conn.execute("ALTER TABLE categories ADD COLUMN description TEXT;")
 
     if "is_active" not in existing_cols:
         conn.execute(
@@ -223,9 +226,17 @@ def _migrate_products_table_if_needed(conn: sqlite3.Connection) -> None:
     Non-destructive: Uses ALTER TABLE ADD COLUMN only if image_url is missing.
     """
     cursor = conn.execute("PRAGMA table_info(products);")
-    existing_cols = {row["name"] for row in cursor.fetchall()}
+    existing_cols = {row[1] for row in cursor.fetchall()}
     if not existing_cols:
         return
+
+    if "description" not in existing_cols:
+        conn.execute("ALTER TABLE products ADD COLUMN description TEXT;")
+
+    if "is_active" not in existing_cols:
+        conn.execute(
+            "ALTER TABLE products ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0, 1));"
+        )
 
     if "image_url" not in existing_cols:
         conn.execute("ALTER TABLE products ADD COLUMN image_url TEXT;")
@@ -299,16 +310,22 @@ def init_db_command() -> None:
 
 
 def init_app(app: Flask) -> None:
-    """Register database teardown hooks and CLI commands with the Flask application.
+    """Register database teardown hooks, CLI commands, and run startup migrations.
 
-    Ensures connections are closed when requests end and registers the 'init-db'
-    CLI command. Does NOT automatically run schema initialization on every request.
+    Ensures connections are closed when requests end, registers the 'init-db'
+    CLI command, and applies idempotent database migrations on application startup.
+    Auto-migration is bypassed when TESTING=True so automated test cases retain
+    full control over isolated test databases.
 
     Args:
         app: The Flask application instance.
     """
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
+
+    if not app.config.get("TESTING"):
+        with app.app_context():
+            init_db()
 
 
 if __name__ == "__main__":

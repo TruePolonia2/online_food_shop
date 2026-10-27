@@ -25,6 +25,7 @@ class BaseConfigTestCase(unittest.TestCase):
 
     def setUp(self) -> None:
         self._original_env = dict(os.environ)
+        os.environ.setdefault("FLASK_SKIP_DOTENV", "1")
 
     def tearDown(self) -> None:
         os.environ.clear()
@@ -397,6 +398,15 @@ class TestDotenvConfigurationLoading(BaseConfigTestCase):
             missing_path = Path(td) / "nonexistent.env"
             loaded = load_project_env(dotenv_path=missing_path)
             self.assertFalse(loaded)
+
+    def test_load_project_env_respects_flask_skip_dotenv(self) -> None:
+        os.environ["FLASK_SKIP_DOTENV"] = "1"
+        self.assertFalse(load_project_env())
+
+        os.environ["FLASK_SKIP_DOTENV"] = "0"
+        with tempfile.TemporaryDirectory() as td:
+            missing_target = Path(td) / "custom.env"
+            self.assertFalse(load_project_env(dotenv_path=missing_target))
 
     def test_app_reads_google_credentials_from_environment(self) -> None:
         os.environ["GOOGLE_CLIENT_ID"] = "env-google-id-12345"

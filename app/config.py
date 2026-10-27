@@ -7,26 +7,6 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-def load_project_env(dotenv_path: Path | str | None = None, override: bool = False) -> bool:
-    """Load environment variables from a project-local .env file.
-
-    Preserves existing environment variables (override=False by default) to allow
-    explicit process-level overrides. Returns True if a .env file was found and loaded.
-    """
-    target = Path(dotenv_path) if dotenv_path else BASE_DIR / ".env"
-    if target.is_file():
-        return load_dotenv(target, override=override)
-    return False
-
-
-# Automatically load environment variables from project-local .env if present
-load_project_env()
-
-# Known development-only secret key placeholder.
-# This MUST NEVER be used in production environments.
-DEV_SECRET_KEY = "dev-secret-key-change-in-production"
-
-
 def _parse_bool_env(val: str | None, default: bool = False) -> bool:
     """Safely and predictably parse a boolean value from an environment string.
 
@@ -44,6 +24,29 @@ def _parse_bool_env(val: str | None, default: bool = False) -> bool:
     if val_clean in ("0", "false", "no", "off", ""):
         return False
     return default
+
+
+def load_project_env(dotenv_path: Path | str | None = None, override: bool = False) -> bool:
+    """Load environment variables from a project-local .env file.
+
+    Preserves existing environment variables (override=False by default) to allow
+    explicit process-level overrides. Returns True if a .env file was found and loaded.
+    Respects FLASK_SKIP_DOTENV to allow deterministic control in automated test environments.
+    """
+    if dotenv_path is None and _parse_bool_env(os.environ.get("FLASK_SKIP_DOTENV"), default=False):
+        return False
+    target = Path(dotenv_path) if dotenv_path else BASE_DIR / ".env"
+    if target.is_file():
+        return load_dotenv(target, override=override)
+    return False
+
+
+# Automatically load environment variables from project-local .env if present
+load_project_env()
+
+# Known development-only secret key placeholder.
+# This MUST NEVER be used in production environments.
+DEV_SECRET_KEY = "dev-secret-key-change-in-production"
 
 
 def _resolve_environment_name() -> str | None:

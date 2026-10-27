@@ -779,5 +779,136 @@ class TestConnectionAndLifecycle(unittest.TestCase):
         conn.close()
 
 
+class TestLegacyDatabaseMigration(unittest.TestCase):
+    """Tests confirming legacy databases are safely migrated and data is fully preserved."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.db_path = Path(self.temp_dir.name) / "legacy_shop.sqlite3"
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_legacy_database_migration_preserves_data_and_adds_is_active(self):
+        # 1. Construct a legacy schema (pre-Phase 10.7) without is_active or image_url
+        conn = sqlite3.connect(str(self.db_path))
+        try:
+            conn.execute("PRAGMA foreign_keys = ON;")
+            conn.executescript(
+                """
+                CREATE TABLE categories (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL UNIQUE CHECK(length(trim(name)) > 0),
+                    description TEXT
+                );
+                CREATE TABLE products (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL CHECK(length(trim(name)) > 0),
+                    price INTEGER NOT NULL CHECK(price >= 0),
+                    stock_quantity INTEGER NOT NULL DEFAULT 0 CHECK(stock_quantity >= 0),
+                    description TEXT,
+                    category_id INTEGER,
+                    FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
+                );
+                CREATE TABLE customers (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    email TEXT NOT NULL,
+                    phone TEXT,
+                    address TEXT
+                );
+                CREATE TABLE orders (
+                    id INTEGER PRIMARY KEY,
+                    customer_id INTEGER NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+                    FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE RESTRICT
+                );
+                CREATE TABLE order_items (
+                    id INTEGER PRIMARY KEY,
+                    order_id INTEGER NOT NULL,
+                    product_id INTEGER NOT NULL,
+                    product_name TEXT NOT NULL,
+                    unit_price INTEGER NOT NULL,
+                    quantity INTEGER NOT NULL,
+                    FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
+                    FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE RESTRICT
+                );
+                """
+            )
+            # Populate with existing legacy catalog and customer data
+            conn.execute("INSERT INTO categories (id, name, description) VALUES (1, 'Dairy', 'Fresh dairy');")
+            conn.execute("INSERT INTO categories (id, name, description) VALUES (2, 'Bakery', 'Artisan bakery');")
+            conn.execute(
+                "INSERT INTO products (id, name, price, stock_quantity, description, category_id) "
+                "VALUES (1, 'Milk', 250, 10, 'Whole milk', 1);"
+            )
+            conn.commit()
+
+            # Confirm is_active is absent initially
+            cursor = conn.execute("PRAGMA table_info(categories);")
+            initial_cols = {row[1] for row in cursor.fetchall()}
+            self.assertNotIn("is_active", initial_cols)
+
+            # 2. Run idempotent migration
+            init_db(conn)
+
+            # 3. Verify schema upgrades
+            cursor = conn.execute("PRAGMA table_info(categories);")
+            migrated_cols = {row[1] for row in cursor.fetchall()}
+            self.assertIn("is_active", migrated_cols)
+
+            cursor = conn.execute("PRAGMA table_info(products);")
+            product_cols = {row[1] for row in cursor.fetchall()}
+            self.assertIn("image_url", product_cols)
+            self.assertIn("is_active", product_cols)
+
+            # 4. Verify existing rows were preserved and defaulted to active
+            cursor = conn.execute("SELECT id, name, description, is_active FROM categories ORDER BY id ASC;")
+            rows = cursor.fetchall()
+            self.assertEqual(len(rows), 2)
+            self.assertEqual(rows[0][1], "Dairy")
+            self.assertEqual(rows[0][3], 1)
+            self.assertEqual(rows[1][1], "Bakery")
+            self.assertEqual(rows[1][3], 1)
+
+            prod = conn.execute("SELECT name, price, category_id, is_active FROM products WHERE id = 1;").fetchone()
+            self.assertEqual(prod[0], "Milk")
+            self.assertEqual(prod[1], 250)
+            self.assertEqual(prod[2], 1)
+            self.assertEqual(prod[3], 1)
+
+            # 5. Verify rerunning migrations repeatedly is safe and idempotent
+            init_db(conn)
+            init_db(conn)
+
+            count = conn.execute("SELECT COUNT(*) FROM categories;").fetchone()[0]
+            self.assertEqual(count, 2)
+        finally:
+            conn.close()
+
+    def test_startup_migration_with_application_factory(self):
+        # Create legacy database
+        conn = sqlite3.connect(str(self.db_path))
+        conn.execute("CREATE TABLE categories (id INTEGER PRIMARY KEY, name TEXT UNIQUE);")
+        conn.execute("INSERT INTO categories (name) VALUES ('Produce');")
+        conn.commit()
+        conn.close()
+
+        class StartupConfig(Config):
+            DATABASE_PATH = str(self.db_path)
+            TESTING = False
+            SECRET_KEY = "startup-test-secret-key-32-chars-long"
+
+        # Application creation should auto-run init_db when TESTING=False
+        app = create_app(StartupConfig)
+        with app.app_context():
+            from app.services.category_service import CategoryService
+            cats = CategoryService().get_all(include_inactive=False)
+            self.assertEqual(len(cats), 1)
+            self.assertEqual(cats[0].name, "Produce")
+            self.assertTrue(cats[0].is_active)
+
+
 if __name__ == "__main__":
     unittest.main()
