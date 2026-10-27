@@ -8,6 +8,7 @@ from app.models.order_item import OrderItem
 from app.repositories.customer_repository import CustomerRepository
 from app.repositories.order_repository import OrderRepository
 from app.repositories.product_repository import ProductRepository
+from app.repositories.user_repository import UserRepository
 
 
 class OrderService:
@@ -18,6 +19,7 @@ class OrderService:
         order_repo: OrderRepository | None = None,
         product_repo: ProductRepository | None = None,
         customer_repo: CustomerRepository | None = None,
+        user_repo: UserRepository | None = None,
         conn: sqlite3.Connection | None = None,
     ) -> None:
         """Initialize OrderService with injected repositories and connection.
@@ -26,11 +28,13 @@ class OrderService:
             order_repo: OrderRepository instance.
             product_repo: ProductRepository instance.
             customer_repo: CustomerRepository instance.
+            user_repo: UserRepository instance.
             conn: Optional database connection for transaction management.
         """
         self.order_repo = order_repo or OrderRepository(conn)
         self.product_repo = product_repo or ProductRepository(conn)
         self.customer_repo = customer_repo or CustomerRepository(conn)
+        self.user_repo = user_repo or UserRepository(conn)
         self._conn = conn
 
     @property
@@ -76,6 +80,38 @@ class OrderService:
         """
         return self.order_repo.get_all()
 
+    def get_user_orders(self, user_id: int) -> list[Order]:
+        """Retrieve all orders placed by an authenticated user account.
+
+        Args:
+            user_id: The ID of the authenticated user.
+
+        Returns:
+            A list of Order entities ordered by newest first.
+
+        Raises:
+            ValueError: If user_id is invalid.
+        """
+        if isinstance(user_id, bool) or not isinstance(user_id, int) or user_id <= 0:
+            raise ValueError(f"Invalid user ID: {user_id}")
+        return self.order_repo.get_by_user_id(user_id)
+
+    def get_user_order(self, order_id: int, user_id: int) -> Order | None:
+        """Retrieve a specific order owned by an authenticated user.
+
+        Args:
+            order_id: The ID of the order.
+            user_id: The ID of the authenticated user.
+
+        Returns:
+            The Order entity if found and owned by user_id, None otherwise.
+        """
+        if isinstance(order_id, bool) or not isinstance(order_id, int) or order_id <= 0:
+            return None
+        if isinstance(user_id, bool) or not isinstance(user_id, int) or user_id <= 0:
+            return None
+        return self.order_repo.get_by_id_for_user(order_id, user_id)
+
     def checkout(
         self,
         customer_id: int,
@@ -84,12 +120,15 @@ class OrderService:
         customer_email: str | None = None,
         customer_phone: str | None = None,
         customer_address: str | None = None,
+        user_id: int | None = None,
     ) -> Order:
         """Execute atomic checkout: validates stock, creates order, and decrements inventory.
 
         Saves each product's unit price as a permanent snapshot in order_items.
         Preserves customer/delivery snapshot on the order independently from the
         customer profile to guarantee privacy and historical accuracy.
+        If user_id is supplied, associates the newly created order with the authenticated
+        user account; otherwise creates an unclaimed guest order.
         If any item has insufficient stock, is inactive, or fails to persist,
         the entire transaction is rolled back leaving stock and orders unmodified.
 
@@ -100,13 +139,14 @@ class OrderService:
             customer_email: Optional contact email. Defaults to customer.email.
             customer_phone: Optional contact phone. Defaults to customer.phone.
             customer_address: Optional delivery address. Defaults to customer.address.
+            user_id: Optional authenticated user account ID owning the order.
 
         Returns:
             The newly created and persisted Order entity.
 
         Raises:
-            ValueError: If cart is empty, customer does not exist, products are inactive,
-                or requested quantities exceed stock.
+            ValueError: If cart is empty, customer does not exist, user_id is invalid
+                or not found, products are inactive, or requested quantities exceed stock.
         """
         if cart.is_empty:
             raise ValueError("Cannot checkout with an empty cart.")
@@ -114,6 +154,12 @@ class OrderService:
         customer = self.customer_repo.get_by_id(customer_id)
         if customer is None:
             raise ValueError(f"Customer with ID {customer_id} not found.")
+
+        if user_id is not None:
+            if isinstance(user_id, bool) or not isinstance(user_id, int) or user_id <= 0:
+                raise ValueError(f"Invalid user ID: {user_id}")
+            if self.user_repo.get_by_id(user_id) is None:
+                raise ValueError(f"User with ID {user_id} not found.")
 
         # Determine delivery snapshot details, defaulting to customer record if omitted
         snap_name = (
@@ -183,6 +229,7 @@ class OrderService:
             # Persist order and line items with immutable delivery snapshot
             order = Order(
                 customer_id=customer_id,
+                user_id=user_id,
                 status=OrderStatus.PENDING,
                 items=order_items,
                 customer_name=snap_name,

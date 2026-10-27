@@ -1,6 +1,7 @@
 """Order and checkout routes."""
 from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
 
+from app.routes.auth import get_current_user
 from app.routes.cart_session import clear_cart_session, load_cart_from_session
 from app.services.cart_service import CartService
 from app.services.customer_service import CustomerService
@@ -80,6 +81,10 @@ def process_checkout():
         flash("Customer account could not be resolved.", "error")
         return redirect(url_for("order.checkout_form"))
 
+    # Resolve authenticated user identity strictly from database via get_current_user()
+    current_user = get_current_user()
+    authenticated_user_id = current_user.id if current_user is not None else None
+
     # Execute atomic checkout with immutable delivery snapshot
     try:
         order = order_service.checkout(
@@ -89,6 +94,7 @@ def process_checkout():
             customer_email=email,
             customer_phone=phone,
             customer_address=address,
+            user_id=authenticated_user_id,
         )
     except ValueError as err:
         flash(f"Checkout could not be completed: {err}", "error")
@@ -114,6 +120,16 @@ def order_confirmation(order_id: int):
     order_service = OrderService()
     order = order_service.get_by_id(order_id)
     if order is None:
+        abort(404)
+
+    # Additional authorization: prevent cross-identity confirmation access
+    current_user = get_current_user()
+    if order.user_id is not None:
+        # If the order is owned by an authenticated user, the viewer must be that exact user
+        if current_user is None or current_user.id != order.user_id:
+            abort(404)
+    elif current_user is not None:
+        # If the order was a guest checkout, an authenticated user must not view it
         abort(404)
 
     return render_template(

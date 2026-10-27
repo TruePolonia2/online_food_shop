@@ -9,10 +9,12 @@ from app.models.category import Category
 from app.models.customer import Customer
 from app.models.order import OrderStatus
 from app.models.product import Product
+from app.models.user import User
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.customer_repository import CustomerRepository
 from app.repositories.order_repository import OrderRepository
 from app.repositories.product_repository import ProductRepository
+from app.repositories.user_repository import UserRepository
 from app.services.cart_service import CartService
 from app.services.category_service import CategoryService
 from app.services.customer_service import CustomerService
@@ -31,6 +33,7 @@ class BaseServiceTestCase(unittest.TestCase):
         self.product_repo = ProductRepository(self.conn)
         self.customer_repo = CustomerRepository(self.conn)
         self.order_repo = OrderRepository(self.conn)
+        self.user_repo = UserRepository(self.conn)
 
         self.category_service = CategoryService(self.category_repo)
         self.product_service = ProductService(self.product_repo, self.category_repo)
@@ -40,6 +43,7 @@ class BaseServiceTestCase(unittest.TestCase):
             order_repo=self.order_repo,
             product_repo=self.product_repo,
             customer_repo=self.customer_repo,
+            user_repo=self.user_repo,
             conn=self.conn,
         )
 
@@ -453,6 +457,52 @@ class TestOrderService(BaseServiceTestCase):
         self.assertEqual(refetched.customer_email, "recipient@example.com")
         self.assertEqual(refetched.customer_phone, "912000000")
         self.assertEqual(refetched.customer_address, "Delivery Address 789, Coimbra")
+
+    def test_checkout_with_authenticated_user_id_success(self) -> None:
+        user = self.user_repo.create(User(email="auth_checkout@example.com"))
+        cart = self.cart_service.create_cart(self.customer.id)
+        self.cart_service.add_item(cart, self.apple.id, quantity=1)
+
+        order = self.order_service.checkout(
+            self.customer.id,
+            cart,
+            customer_name="Auth Buyer",
+            customer_email="auth_checkout@example.com",
+            user_id=user.id,
+        )
+
+        self.assertIsNotNone(order.id)
+        self.assertEqual(order.user_id, user.id)
+
+        # Order is retrievable via get_user_order and get_user_orders
+        user_orders = self.order_service.get_user_orders(user.id)
+        self.assertEqual(len(user_orders), 1)
+        self.assertEqual(user_orders[0].id, order.id)
+
+        fetched_order = self.order_service.get_user_order(order.id, user.id)
+        self.assertIsNotNone(fetched_order)
+        self.assertEqual(fetched_order.id, order.id)
+
+    def test_checkout_with_nonexistent_user_id_raises(self) -> None:
+        cart = self.cart_service.create_cart(self.customer.id)
+        self.cart_service.add_item(cart, self.apple.id, quantity=1)
+
+        with self.assertRaises(ValueError) as ctx:
+            self.order_service.checkout(self.customer.id, cart, user_id=999999)
+        self.assertIn("not found", str(ctx.exception).lower())
+
+    def test_checkout_with_invalid_user_id_type_raises(self) -> None:
+        cart = self.cart_service.create_cart(self.customer.id)
+        self.cart_service.add_item(cart, self.apple.id, quantity=1)
+
+        for invalid_id in [True, False, -5, 0, "not-an-int"]:
+            with self.assertRaises(ValueError):
+                self.order_service.checkout(self.customer.id, cart, user_id=invalid_id)
+
+    def test_get_user_orders_validation(self) -> None:
+        for invalid_id in [True, False, -1, 0, "string"]:
+            with self.assertRaises(ValueError):
+                self.order_service.get_user_orders(invalid_id)
 
     def test_checkout_empty_cart_raises(self) -> None:
         empty_cart = self.cart_service.create_cart()

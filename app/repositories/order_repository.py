@@ -138,6 +138,48 @@ class OrderRepository:
 
         return self._populate_orders_with_items(order_rows)
 
+    def get_by_id_for_user(self, order_id: int, user_id: int) -> Optional[Order]:
+        """Retrieve an order by ID strictly scoped to an authenticated user account.
+
+        Applies ownership filtering directly in SQL. Guest orders (where user_id is NULL)
+        or orders belonging to a different user will return None.
+
+        Args:
+            order_id: The primary key ID of the order.
+            user_id: The ID of the authenticated user.
+
+        Returns:
+            The Order entity with line items populated if found and owned by user_id,
+            or None otherwise.
+        """
+        if (
+            isinstance(order_id, bool)
+            or not isinstance(order_id, int)
+            or order_id <= 0
+            or isinstance(user_id, bool)
+            or not isinstance(user_id, int)
+            or user_id <= 0
+        ):
+            return None
+
+        cursor = self.conn.execute(
+            """SELECT id, customer_id, user_id, status, created_at,
+                      customer_name, customer_email, customer_phone, customer_address
+               FROM orders WHERE id = ? AND user_id = ?""",
+            (order_id, user_id),
+        )
+        order_row = cursor.fetchone()
+        if not order_row:
+            return None
+
+        items_cursor = self.conn.execute(
+            """SELECT id, order_id, product_id, product_name, unit_price, quantity
+               FROM order_items WHERE order_id = ? ORDER BY id ASC""",
+            (order_id,),
+        )
+        items = [_row_to_order_item(r) for r in items_cursor.fetchall()]
+        return _row_to_order(order_row, items)
+
     def get_all(self) -> list[Order]:
         """Retrieve all orders in the system, ordered by newest first.
 

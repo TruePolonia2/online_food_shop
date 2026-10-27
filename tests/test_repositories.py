@@ -590,6 +590,50 @@ class TestOrderRepository(BaseRepositoryTestCase):
         u3 = self.user_repo.create(User(email="u3@example.com"))
         self.assertEqual(self.order_repo.get_by_user_id(u3.id), [])
 
+    def test_get_by_id_for_user(self) -> None:
+        u1 = self.user_repo.create(User(email="buyer1@example.com"))
+        u2 = self.user_repo.create(User(email="buyer2@example.com"))
+
+        item = OrderItem(
+            product_id=self.product1.id,
+            product_name="Product 1",
+            unit_price=1000,
+            quantity=2,
+        )
+        o1 = Order(
+            customer_id=self.customer.id,
+            user_id=u1.id,
+            items=[item],
+            customer_name="Buyer 1",
+        )
+        saved_o1 = self.order_repo.create(o1)
+
+        # Owner user can retrieve order with line items
+        fetched = self.order_repo.get_by_id_for_user(saved_o1.id, u1.id)
+        self.assertIsNotNone(fetched)
+        self.assertEqual(fetched.id, saved_o1.id)
+        self.assertEqual(fetched.user_id, u1.id)
+        self.assertEqual(len(fetched.items), 1)
+        self.assertEqual(fetched.items[0].product_name, "Product 1")
+        self.assertEqual(fetched.items[0].quantity, 2)
+
+        # Different user cannot retrieve order
+        self.assertIsNone(self.order_repo.get_by_id_for_user(saved_o1.id, u2.id))
+
+        # Guest order (user_id=None) cannot be retrieved by any user
+        o_guest = self.order_repo.create(Order(customer_id=self.customer.id, user_id=None))
+        self.assertIsNone(self.order_repo.get_by_id_for_user(o_guest.id, u1.id))
+        self.assertIsNone(self.order_repo.get_by_id_for_user(o_guest.id, u2.id))
+
+        # Nonexistent order ID
+        self.assertIsNone(self.order_repo.get_by_id_for_user(999999, u1.id))
+
+        # Invalid arguments return None safely
+        self.assertIsNone(self.order_repo.get_by_id_for_user(-1, u1.id))
+        self.assertIsNone(self.order_repo.get_by_id_for_user(saved_o1.id, -1))
+        self.assertIsNone(self.order_repo.get_by_id_for_user(True, u1.id))
+        self.assertIsNone(self.order_repo.get_by_id_for_user(saved_o1.id, True))
+
 
 class TestUserRepository(BaseRepositoryTestCase):
     """Tests for UserRepository CRUD operations, case-insensitive uniqueness, and transactions."""
