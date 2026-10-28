@@ -11,6 +11,10 @@ from flask import (
 )
 
 from app.authorization import owner_required
+from app.models.contact_message import (
+    ALLOWED_STATUS_TRANSITIONS as CONTACT_STATUS_TRANSITIONS,
+    ContactMessageStatus,
+)
 from app.models.order import OrderStatus
 from app.services.admin_service import AdminService
 from app.services.catalog_validation import (
@@ -19,6 +23,10 @@ from app.services.catalog_validation import (
     validate_product_image_url,
 )
 from app.services.category_service import CategoryService
+from app.services.contact_service import (
+    ContactService,
+    ContactStatusTransitionError,
+)
 from app.services.order_service import (
     ALLOWED_ADMIN_TRANSITIONS,
     OrderConflictError,
@@ -726,3 +734,104 @@ def update_order_status(order_id: int):
         )
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
         return response
+
+
+# =============================================================================
+# Customer Support Inbox Routes
+# =============================================================================
+
+
+@admin_bp.route("/messages", methods=["GET"])
+@owner_required
+def list_messages():
+    """Display paginated list of customer contact messages with status filter tabs.
+
+    Protected strictly by owner_required decorator: only authenticated store owners
+    can access customer support messages.
+    """
+    contact_service = ContactService()
+    status_filter = request.args.get("status", "").strip().lower() or None
+    page = request.args.get("page", 1, type=int)
+
+    messages, total_count, total_pages = contact_service.list_messages(
+        status=status_filter,
+        page=page,
+        per_page=20,
+    )
+    status_counts = contact_service.get_status_counts()
+
+    response = make_response(
+        render_template(
+            "admin/messages/index.html",
+            messages=messages,
+            current_status=status_filter,
+            status_counts=status_counts,
+            page=page,
+            total_pages=total_pages,
+            total_count=total_count,
+        )
+    )
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+    response.headers["Pragma"] = "no-cache"
+    return response
+
+
+@admin_bp.route("/messages/<int:message_id>", methods=["GET"])
+@owner_required
+def view_message(message_id: int):
+    """View customer contact message details.
+
+    Adheres to safe GET semantics: viewing a message does not modify persistent
+    database state. Status changes (such as marking as read) are performed via
+    explicit CSRF-protected POST actions.
+
+    Protected strictly by owner_required decorator.
+    """
+    contact_service = ContactService()
+    message = contact_service.get_message(message_id)
+    if message is None:
+        abort(404)
+
+    allowed_transitions = [
+        s.value for s in CONTACT_STATUS_TRANSITIONS.get(message.status, set())
+    ]
+
+    response = make_response(
+        render_template(
+            "admin/messages/detail.html",
+            message=message,
+            allowed_transitions=allowed_transitions,
+        )
+    )
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+    response.headers["Pragma"] = "no-cache"
+    return response
+
+
+@admin_bp.route("/messages/<int:message_id>/status", methods=["POST"])
+@owner_required
+def update_message_status(message_id: int):
+    """Update contact message status (e.g. resolve, reopen, mark read/unread).
+
+    Requires CSRF token and owner credentials.
+    """
+    contact_service = ContactService()
+    message = contact_service.get_message(message_id)
+    if message is None:
+        abort(404)
+
+    new_status = request.form.get("status", "").strip().lower()
+    if not new_status:
+        flash("Target status is required.", "error")
+        return redirect(url_for("admin.view_message", message_id=message_id))
+
+    try:
+        updated = contact_service.update_status(message_id, new_status)
+        flash(f"Message #{message_id} status updated to '{updated.status.value}'.", "success")
+    except (ContactStatusTransitionError, ValueError) as exc:
+        flash(str(exc), "error")
+
+    redirect_target = request.form.get("redirect_to")
+    if redirect_target == "index":
+        return redirect(url_for("admin.list_messages"))
+    return redirect(url_for("admin.view_message", message_id=message_id))

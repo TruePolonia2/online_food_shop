@@ -11,6 +11,7 @@ from app.models.order import OrderStatus
 from app.models.product import Product
 from app.models.user import User
 from app.repositories.category_repository import CategoryRepository
+from app.repositories.contact_message_repository import ContactMessageRepository
 from app.repositories.customer_repository import CustomerRepository
 from app.repositories.order_repository import OrderRepository
 from app.repositories.product_repository import ProductRepository
@@ -35,6 +36,7 @@ class BaseServiceTestCase(unittest.TestCase):
         self.customer_repo = CustomerRepository(self.conn)
         self.order_repo = OrderRepository(self.conn)
         self.user_repo = UserRepository(self.conn)
+        self.contact_repo = ContactMessageRepository(self.conn)
 
         self.category_service = CategoryService(self.category_repo)
         self.product_service = ProductService(self.product_repo, self.category_repo)
@@ -50,6 +52,7 @@ class BaseServiceTestCase(unittest.TestCase):
         self.admin_service = AdminService(
             product_repo=self.product_repo,
             order_repo=self.order_repo,
+            contact_repo=self.contact_repo,
         )
 
     def tearDown(self) -> None:
@@ -719,6 +722,8 @@ class TestAdminService(BaseServiceTestCase):
                     "cancelled": 0,
                 },
                 "total_recorded_value": 0,
+                "new_messages_count": 0,
+                "total_contact_messages": 0,
             },
         )
 
@@ -748,6 +753,8 @@ class TestAdminService(BaseServiceTestCase):
         self.assertEqual(stats["active_products"], 2)
         self.assertEqual(stats["total_orders"], 2)
         self.assertEqual(stats["total_recorded_value"], 2200)
+        self.assertEqual(stats["new_messages_count"], 0)
+        self.assertEqual(stats["total_contact_messages"], 0)
         self.assertEqual(stats["status_counts"]["pending"], 1)
         self.assertEqual(stats["status_counts"]["confirmed"], 1)
         self.assertEqual(stats["status_counts"]["paid"], 0)

@@ -37,6 +37,9 @@
                     <a href="{{ url_for('catalog.index') }}" class="text-sm font-medium text-gray-700 hover:text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 rounded-md px-2 py-1.5 transition-colors">
                         Products
                     </a>
+                    <a href="{{ url_for('contact.contact') }}" class="text-sm font-medium text-gray-700 hover:text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 rounded-md px-2 py-1.5 transition-colors">
+                        Contact
+                    </a>
 
                     <!-- Cart Link with Item Counter -->
                     <a href="{{ url_for('cart.view_cart') }}" class="relative inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-emerald-700 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 rounded-lg border border-gray-200 transition-colors" aria-label="Shopping Cart, {{ cart_item_count }} items">
@@ -156,8 +159,12 @@
 
     <!-- Footer -->
     <footer class="bg-white border-t border-gray-200 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm text-gray-500">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
             <p>&copy; {{ current_year | default(2026) }} Online Food Shop. All rights reserved.</p>
+            <div class="flex items-center gap-6">
+                <a href="{{ url_for('catalog.index') }}" class="hover:text-emerald-700 transition-colors">Products</a>
+                <a href="{{ url_for('contact.contact') }}" class="hover:text-emerald-700 transition-colors">Contact Us</a>
+            </div>
         </div>
     </footer>
 

@@ -2,6 +2,7 @@
 from app.models.cart import Cart
 from app.models.cart_item import CartItem
 from app.models.category import Category
+from app.models.contact_message import ContactMessage, ContactMessageStatus
 from app.models.customer import Customer
 from app.models.email_verification_token import EmailVerificationToken
 from app.models.external_identity import ExternalIdentity
@@ -15,6 +16,8 @@ __all__ = [
     "Cart",
     "CartItem",
     "Category",
+    "ContactMessage",
+    "ContactMessageStatus",
     "Customer",
     "EmailVerificationToken",
     "ExternalIdentity",

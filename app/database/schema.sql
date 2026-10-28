@@ -193,3 +193,23 @@ CREATE TABLE IF NOT EXISTS user_external_identities (
 
 CREATE INDEX IF NOT EXISTS idx_external_identities_user_id ON user_external_identities (user_id);
 CREATE INDEX IF NOT EXISTS idx_external_identities_provider_sub ON user_external_identities (provider, provider_user_id);
+
+-- -----------------------------------------------------------------------------
+-- 8. contact_messages
+-- -----------------------------------------------------------------------------
+-- Customer support and inquiry messages submitted through the public contact form.
+-- Stores name, email, subject, message body, status ('new', 'read', 'resolved'),
+-- created_at, and updated_at ISO 8601 timestamps.
+CREATE TABLE IF NOT EXISTS contact_messages (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL CHECK(length(trim(name)) > 0 AND length(name) <= 100),
+    email TEXT NOT NULL CHECK(length(trim(email)) > 0 AND instr(email, '@') > 0 AND length(email) <= 254),
+    subject TEXT NOT NULL CHECK(length(trim(subject)) > 0 AND length(subject) <= 150),
+    message TEXT NOT NULL CHECK(length(trim(message)) > 0 AND length(message) <= 5000),
+    status TEXT NOT NULL DEFAULT 'new' CHECK(status IN ('new', 'read', 'resolved')),
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    updated_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_contact_messages_status_created_at ON contact_messages (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_contact_messages_created_at ON contact_messages (created_at DESC);

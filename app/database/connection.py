@@ -287,6 +287,30 @@ def _migrate_password_reset_tokens_table_if_needed(conn: sqlite3.Connection) -> 
     )
 
 
+def _migrate_contact_messages_table_if_needed(conn: sqlite3.Connection) -> None:
+    """Safely and idempotently ensure the contact_messages table and indexes exist."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS contact_messages (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL CHECK(length(trim(name)) > 0 AND length(name) <= 100),
+            email TEXT NOT NULL CHECK(length(trim(email)) > 0 AND instr(email, '@') > 0 AND length(email) <= 254),
+            subject TEXT NOT NULL CHECK(length(trim(subject)) > 0 AND length(subject) <= 150),
+            message TEXT NOT NULL CHECK(length(trim(message)) > 0 AND length(message) <= 5000),
+            status TEXT NOT NULL DEFAULT 'new' CHECK(status IN ('new', 'read', 'resolved')),
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+            updated_at TEXT
+        );
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_contact_messages_status_created_at ON contact_messages (status, created_at DESC);"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_contact_messages_created_at ON contact_messages (created_at DESC);"
+    )
+
+
 def init_db(
     conn: Optional[sqlite3.Connection] = None,
     schema_path: Optional[Union[str, Path]] = None,
@@ -319,6 +343,7 @@ def init_db(
     _migrate_products_table_if_needed(conn)
     _migrate_external_identities_table_if_needed(conn)
     _migrate_password_reset_tokens_table_if_needed(conn)
+    _migrate_contact_messages_table_if_needed(conn)
     conn.commit()
 
 

@@ -64,6 +64,7 @@ def create_app(config_class=None) -> Flask:
     from app.routes.admin import admin_bp
     from app.routes.cart import cart_bp
     from app.routes.catalog import catalog_bp
+    from app.routes.contact import contact_bp
     from app.routes.order import order_bp
 
     app.register_blueprint(catalog_bp)
@@ -72,5 +73,6 @@ def create_app(config_class=None) -> Flask:
     app.register_blueprint(auth_bp)
     app.register_blueprint(account_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(contact_bp)
 
     return app

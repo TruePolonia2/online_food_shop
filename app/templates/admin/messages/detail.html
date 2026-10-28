@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_input %}
+
+{% block title %}Support Message #{{ message.id }} - Store Administration{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Breadcrumb & Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200">
+        <div>
+            <nav class="flex items-center gap-2 text-xs text-gray-500 mb-1" aria-label="Breadcrumb">
+                <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-700">Store Administration</a>
+                <span>&rsaquo;</span>
+                <a href="{{ url_for('admin.list_messages') }}" class="hover:text-gray-700">Support Messages</a>
+                <span>&rsaquo;</span>
+                <span class="text-gray-900 font-semibold" aria-current="page">Message #{{ message.id }}</span>
+            </nav>
+            <div class="flex flex-wrap items-center gap-3 mt-1">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Support Message #{{ message.id }}</h1>
+                <!-- Status Badge -->
+                {% if message.status.value == 'new' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                    New
+                </span>
+                {% elif message.status.value == 'read' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                    Read
+                </span>
+                {% elif message.status.value == 'resolved' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    Resolved
+                </span>
+                {% else %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
+                    {{ message.status.value | capitalize }}
+                </span>
+                {% endif %}
+            </div>
+            <p class="text-xs text-gray-500 mt-1">
+                Received on {{ message.created_at.strftime('%B %d, %Y at %H:%M UTC') }}
+            </p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="{{ url_for('admin.list_messages') }}" class="inline-flex items-center text-sm font-semibold text-gray-600 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded-md px-3 py-2">
+                &larr; Back to Messages
+            </a>
+        </div>
+    </div>
+
+    <!-- Lifecycle Status Actions Card -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6">
+        <h2 class="text-base font-bold text-gray-900 mb-2">Message Lifecycle Actions</h2>
+        <p class="text-xs text-gray-500 mb-4">
+            Current status is <span class="font-semibold text-gray-800">{{ message.status.value }}</span>.
+            Update the lifecycle state to keep customer support workflows organized.
+        </p>
+
+        <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-gray-100">
+            <!-- Mailto Reply Button -->
+            <a href="mailto:{{ message.email }}?subject=Re:%20{{ message.subject | urlencode }}"
+               class="inline-flex items-center px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-semibold shadow-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Reply via Email
+            </a>
+
+            <!-- Transition to Resolved -->
+            {% if 'resolved' in allowed_transitions %}
+            <form method="POST" action="{{ url_for('admin.update_message_status', message_id=message.id) }}" class="inline">
+                {{ csrf_input() }}
+                <input type="hidden" name="status" value="resolved">
+                <button type="submit"
+                        id="btn-resolve-message"
+                        class="inline-flex items-center px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold shadow-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Mark as Resolved
+                </button>
+            </form>
+            {% endif %}
+
+            <!-- Transition to Read -->
+            {% if 'read' in allowed_transitions %}
+            <form method="POST" action="{{ url_for('admin.update_message_status', message_id=message.id) }}" class="inline">
+                {{ csrf_input() }}
+                <input type="hidden" name="status" value="read">
+                <button type="submit"
+                        id="btn-mark-read"
+                        class="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                    Mark as Read
+                </button>
+            </form>
+            {% endif %}
+
+            <!-- Transition to New (Reopen / Unread) -->
+            {% if 'new' in allowed_transitions %}
+            <form method="POST" action="{{ url_for('admin.update_message_status', message_id=message.id) }}" class="inline">
+                {{ csrf_input() }}
+                <input type="hidden" name="status" value="new">
+                <button type="submit"
+                        id="btn-mark-unread"
+                        class="inline-flex items-center px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-medium border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
+                    Mark as Unread (Reopen)
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Message Sender & Content Card -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
+        <!-- Message Metadata Header -->
+        <div class="p-6 bg-gray-50/50 border-b border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 block">Sender Name</span>
+                <span class="text-sm font-bold text-gray-900 mt-0.5 block">{{ message.name }}</span>
+            </div>
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 block">Email Address</span>
+                <a href="mailto:{{ message.email }}" class="text-sm font-semibold text-emerald-700 hover:underline mt-0.5 block">
+                    {{ message.email }}
+                </a>
+            </div>
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 block">Received Timestamp</span>
+                <span class="text-xs text-gray-600 mt-0.5 block">{{ message.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</span>
+            </div>
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 block">Last Updated</span>
+                <span class="text-xs text-gray-600 mt-0.5 block">{% if message.updated_at %}{{ message.updated_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}{% else %}Not updated yet{% endif %}</span>
+            </div>
+        </div>
+
+        <!-- Subject & Body -->
+        <div class="p-6 space-y-4">
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 block">Subject</span>
+                <h3 class="text-lg font-bold text-gray-900 mt-1">{{ message.subject }}</h3>
+            </div>
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 block mb-2">Message Body</span>
+                <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 text-sm text-gray-800 leading-relaxed whitespace-pre-wrap font-sans">
+{{ message.message }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
