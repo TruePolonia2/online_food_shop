@@ -338,6 +338,9 @@ class OrderService:
         if order.status == OrderStatus.DELIVERED:
             raise ValueError("Cannot update the status of an already delivered order.")
 
+        if target_status == OrderStatus.CANCELLED and order.payment_status == PaymentStatus.PAID:
+            raise ValueError("Cannot cancel an order that has already been paid.")
+
         with transaction(self.conn):
             # If cancelling an active order, restore inventory
             if target_status == OrderStatus.CANCELLED:

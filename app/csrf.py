@@ -38,6 +38,17 @@ def validate_csrf_token(token: str | None) -> bool:
     return hmac.compare_digest(stored_token, token)
 
 
+def csrf_exempt(view_func):
+    """Mark a view function as exempt from CSRF validation.
+
+    Use with extreme caution. Only external machine-to-machine webhook endpoints
+    (such as Stripe webhooks) that authenticate requests through cryptographic
+    signatures should ever be exempt.
+    """
+    view_func._csrf_exempt = True
+    return view_func
+
+
 def init_csrf(app: Flask) -> None:
     """Initialize CSRF protection on the Flask application instance.
 
@@ -51,6 +62,12 @@ def init_csrf(app: Flask) -> None:
         # CSRF is active by default; disabled only if CSRF_ENABLED is explicitly False
         if app.config.get("CSRF_ENABLED") is False:
             return
+
+        # Check if the target view function is explicitly marked as exempt
+        if request.endpoint:
+            view_func = app.view_functions.get(request.endpoint)
+            if view_func and getattr(view_func, "_csrf_exempt", False):
+                return
 
         if request.method in STATE_CHANGING_METHODS:
             token = request.form.get("csrf_token")

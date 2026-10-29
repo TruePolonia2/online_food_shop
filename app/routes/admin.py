@@ -16,6 +16,7 @@ from app.models.contact_message import (
     ContactMessageStatus,
 )
 from app.models.order import OrderStatus
+from app.repositories.payment_repository import PaymentRepository
 from app.services.admin_service import AdminService
 from app.services.catalog_validation import (
     parse_euro_to_cents,
@@ -646,11 +647,17 @@ def order_detail(order_id: int):
         s.value for s in ALLOWED_ADMIN_TRANSITIONS.get(order.status, set())
     ]
 
+    payment_repo = PaymentRepository()
+    payments = payment_repo.get_by_order_id(order_id)
+    latest_payment = payments[-1] if payments else None
+
     response = make_response(
         render_template(
             "admin/orders/detail.html",
             order=order,
             allowed_transitions=allowed_transitions,
+            latest_payment=latest_payment,
+            payments=payments,
         )
     )
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"

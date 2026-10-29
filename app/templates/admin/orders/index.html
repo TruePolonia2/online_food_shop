@@ -100,35 +100,55 @@
                             {{ o.customer_name or o.delivery_name or '—' }}
                         </td>
                         <td class="py-4 px-4 sm:px-6 text-center">
-                            {% if o.status.value == 'pending' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                                Pending
-                            </span>
-                            {% elif o.status.value == 'confirmed' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
-                                Confirmed
-                            </span>
-                            {% elif o.status.value == 'paid' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                Paid
-                            </span>
-                            {% elif o.status.value == 'shipped' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
-                                Shipped
-                            </span>
-                            {% elif o.status.value == 'delivered' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
-                                Delivered
-                            </span>
-                            {% elif o.status.value == 'cancelled' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
-                                Cancelled
-                            </span>
-                            {% else %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
-                                {{ o.status.value | capitalize }}
-                            </span>
-                            {% endif %}
+                            <div class="flex flex-col items-center gap-1.5">
+                                <div>
+                                    {% if o.status.value == 'pending' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                                        Pending
+                                    </span>
+                                    {% elif o.status.value == 'confirmed' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                                        Confirmed
+                                    </span>
+                                    {% elif o.status.value == 'paid' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                        Paid
+                                    </span>
+                                    {% elif o.status.value == 'shipped' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+                                        Shipped
+                                    </span>
+                                    {% elif o.status.value == 'delivered' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
+                                        Delivered
+                                    </span>
+                                    {% elif o.status.value == 'cancelled' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
+                                        Cancelled
+                                    </span>
+                                    {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
+                                        {{ o.status.value | capitalize }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium
+                                        {% if o.payment_status.value == 'paid' %}
+                                            bg-emerald-50 text-emerald-700 border border-emerald-200
+                                        {% elif o.payment_status.value == 'pending' %}
+                                            bg-amber-50 text-amber-700 border border-amber-200
+                                        {% elif o.payment_status.value == 'failed' %}
+                                            bg-rose-50 text-rose-700 border border-rose-200
+                                        {% elif o.payment_status.value == 'cancelled' %}
+                                            bg-rose-50 text-rose-700 border border-rose-200
+                                        {% else %}
+                                            bg-gray-100 text-gray-600 border border-gray-200
+                                        {% endif %}" title="Payment Status">
+                                        Payment: {{ o.payment_status.value | capitalize }}
+                                    </span>
+                                </div>
+                            </div>
                         </td>
                         <td class="py-4 px-4 sm:px-6 text-right font-bold text-gray-900 whitespace-nowrap">
                             {{ o.total | format_euro }}

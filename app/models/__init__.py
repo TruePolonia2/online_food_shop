@@ -13,6 +13,7 @@ from app.models.password_reset_token import PasswordResetToken
 from app.models.payment import Payment, PaymentMethod, PaymentStatus
 from app.models.product import Product
 from app.models.user import User, UserRole
+from app.models.webhook_event import StripeWebhookEvent, WebhookEventStatus
 
 __all__ = [
     "AccountLinkIntent",
@@ -32,6 +33,8 @@ __all__ = [
     "PaymentMethod",
     "PaymentStatus",
     "Product",
+    "StripeWebhookEvent",
     "User",
     "UserRole",
+    "WebhookEventStatus",
 ]

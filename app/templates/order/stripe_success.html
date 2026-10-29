@@ -5,6 +5,22 @@
 {% block content %}
 <div class="max-w-3xl mx-auto space-y-8">
     <!-- Status Banner -->
+    {% if order.payment_status.value == 'paid' %}
+    <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 sm:p-8 text-center space-y-3 shadow-xs">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mb-1">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+        </div>
+        <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Payment Confirmed</h1>
+        <p class="text-sm text-gray-600 max-w-lg mx-auto">
+            Thank you for your order! Your payment of <strong class="text-gray-900">{{ order.total | format_euro }}</strong> has been confirmed through Stripe.
+        </p>
+        <p class="text-xs text-emerald-800 bg-emerald-100/60 inline-block px-3 py-1 rounded-full">
+            Payment has been verified server-side. Your order is confirmed.
+        </p>
+    </div>
+    {% else %}
     <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6 sm:p-8 text-center space-y-3 shadow-xs">
         <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-600 mb-1">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -13,12 +29,13 @@
         </div>
         <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Payment Submitted — Pending Confirmation</h1>
         <p class="text-sm text-gray-600 max-w-lg mx-auto">
-            Thank you for your order! Your payment of <strong class="text-gray-900">{{ order.total | format_euro }}</strong> has been submitted through Stripe and is currently awaiting final confirmation.
+            Thank you for your order! Your payment of <strong class="text-gray-900">{{ order.total | format_euro }}</strong> has been submitted through Stripe and may still be processing.
         </p>
         <p class="text-xs text-amber-800 bg-amber-100/60 inline-block px-3 py-1 rounded-full">
             Payment confirmation is verified server-side. Your order status will update once confirmation is finalized.
         </p>
     </div>
+    {% endif %}
 
     <!-- Order Details Card -->
     <div class="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-xs space-y-6">
@@ -28,9 +45,15 @@
                 <p class="text-xl font-bold text-gray-900">Order #{{ order.id }}</p>
             </div>
             <div class="flex items-center gap-2">
+                {% if order.payment_status.value == 'paid' %}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                    Payment Confirmed
+                </span>
+                {% else %}
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
                     Payment Pending
                 </span>
+                {% endif %}
                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
                     Stripe Card
                 </span>

@@ -267,3 +267,29 @@ CREATE TABLE IF NOT EXISTS payments (
 CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments (order_id);
 CREATE INDEX IF NOT EXISTS idx_payments_stripe_session_id ON payments (stripe_session_id);
 CREATE INDEX IF NOT EXISTS idx_payments_idempotency_key ON payments (idempotency_key);
+
+-- -----------------------------------------------------------------------------
+-- 11. stripe_webhook_events
+-- -----------------------------------------------------------------------------
+-- Idempotency tracking and audit log for Stripe webhook events (Phase 10.13).
+-- Tracks event ID, event type, processing status ('processing', 'processed', 'failed', 'ignored'),
+-- associated order_id/payment_id, error messages, and ISO 8601 UTC timestamps.
+CREATE TABLE IF NOT EXISTS stripe_webhook_events (
+    id INTEGER PRIMARY KEY,
+    event_id TEXT NOT NULL UNIQUE CHECK(length(trim(event_id)) > 0),
+    event_type TEXT NOT NULL CHECK(length(trim(event_type)) > 0),
+    livemode INTEGER NOT NULL DEFAULT 0 CHECK(livemode IN (0, 1)),
+    status TEXT NOT NULL DEFAULT 'processing' CHECK(status IN ('processing', 'processed', 'failed', 'ignored')),
+    order_id INTEGER,
+    payment_id INTEGER,
+    payload_summary TEXT,
+    error_message TEXT,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    processed_at TEXT,
+    FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE SET NULL,
+    FOREIGN KEY (payment_id) REFERENCES payments (id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_stripe_webhook_events_event_id ON stripe_webhook_events (event_id);
+CREATE INDEX IF NOT EXISTS idx_stripe_webhook_events_order_id ON stripe_webhook_events (order_id);
+CREATE INDEX IF NOT EXISTS idx_stripe_webhook_events_status ON stripe_webhook_events (status);

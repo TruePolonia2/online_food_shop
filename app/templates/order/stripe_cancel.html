@@ -13,10 +13,12 @@
         </div>
         <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Payment Not Completed</h1>
         <p class="text-sm text-gray-600 max-w-lg mx-auto">
-            You returned from the Stripe Checkout payment window without completing your payment. No charges were made to your card.
+            You returned from the Stripe Checkout window before payment confirmation was finalized.
+            Please note that closing or navigating away from the payment window does not prove that no charge occurred if payment details were already submitted.
         </p>
         <p class="text-xs text-gray-500">
-            Your Order #{{ order.id }} reservation remains in <strong class="text-amber-700">Pending</strong> status until an authoritative update is received.
+            Your Order #{{ order.id }} reservation remains in <strong class="text-amber-700">Pending</strong> status.
+            If your payment was completed, your order will automatically update to Confirmed once authoritative confirmation is received from Stripe.
         </p>
     </div>
 

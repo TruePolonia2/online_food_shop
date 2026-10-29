@@ -409,6 +409,43 @@ def _migrate_payments_table_if_needed(conn: sqlite3.Connection) -> None:
         )
 
 
+def _migrate_stripe_webhook_events_table_if_needed(conn: sqlite3.Connection) -> None:
+    """Safely and idempotently ensure the stripe_webhook_events table and indexes exist."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS stripe_webhook_events (
+            id INTEGER PRIMARY KEY,
+            event_id TEXT NOT NULL UNIQUE CHECK(length(trim(event_id)) > 0),
+            event_type TEXT NOT NULL CHECK(length(trim(event_type)) > 0),
+            livemode INTEGER NOT NULL DEFAULT 0 CHECK(livemode IN (0, 1)),
+            status TEXT NOT NULL DEFAULT 'processing' CHECK(status IN ('processing', 'processed', 'failed', 'ignored')),
+            order_id INTEGER,
+            payment_id INTEGER,
+            payload_summary TEXT,
+            error_message TEXT,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+            processed_at TEXT,
+            FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE SET NULL,
+            FOREIGN KEY (payment_id) REFERENCES payments (id) ON DELETE SET NULL
+        );
+        """
+    )
+    idx_cursor = conn.execute("PRAGMA index_list('stripe_webhook_events');")
+    existing_indexes = {row[1] for row in idx_cursor.fetchall()}
+    if "idx_stripe_webhook_events_event_id" not in existing_indexes:
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_stripe_webhook_events_event_id ON stripe_webhook_events (event_id);"
+        )
+    if "idx_stripe_webhook_events_order_id" not in existing_indexes:
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_stripe_webhook_events_order_id ON stripe_webhook_events (order_id);"
+        )
+    if "idx_stripe_webhook_events_status" not in existing_indexes:
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_stripe_webhook_events_status ON stripe_webhook_events (status);"
+        )
+
+
 def init_db(
     conn: Optional[sqlite3.Connection] = None,
     schema_path: Optional[Union[str, Path]] = None,
@@ -444,6 +481,7 @@ def init_db(
     _migrate_contact_messages_table_if_needed(conn)
     _migrate_account_link_intents_table_if_needed(conn)
     _migrate_payments_table_if_needed(conn)
+    _migrate_stripe_webhook_events_table_if_needed(conn)
     conn.commit()
 
 

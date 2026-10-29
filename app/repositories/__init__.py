@@ -10,6 +10,7 @@ from app.repositories.password_reset_token_repository import PasswordResetTokenR
 from app.repositories.payment_repository import PaymentRepository
 from app.repositories.product_repository import ProductRepository
 from app.repositories.user_repository import UserRepository
+from app.repositories.webhook_event_repository import WebhookEventRepository
 
 __all__ = [
     "AccountLinkIntentRepository",
@@ -23,4 +24,5 @@ __all__ = [
     "PaymentRepository",
     "ProductRepository",
     "UserRepository",
+    "WebhookEventRepository",
 ]

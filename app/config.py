@@ -266,13 +266,19 @@ class _StripeWebhookSecretDescriptor:
     """Descriptor for Config.STRIPE_WEBHOOK_SECRET.
 
     Stores the webhook signing secret for Stripe event verification.
+    Rejects live webhook secrets to enforce test mode exclusively.
     """
 
     def __get__(self, instance, owner):
         key = os.environ.get("STRIPE_WEBHOOK_SECRET")
         if not key or not key.strip():
             return None
-        return key.strip()
+        cleaned = key.strip()
+        if cleaned.startswith("whsec_live_"):
+            raise ValueError(
+                "Live Stripe credentials are prohibited. Only Stripe test mode webhook secrets are supported."
+            )
+        return cleaned
 
 
 class _StripeCurrencyDescriptor:
@@ -452,3 +458,33 @@ def is_stripe_configured(config: Any = None) -> bool:
     if not key or not isinstance(key, str) or not key.strip():
         return False
     return key.strip().startswith("sk_test_")
+
+
+def is_stripe_webhook_configured(config: Any = None) -> bool:
+    """Check whether Stripe webhook integration is configured with a secret.
+
+    Args:
+        config: Application configuration dictionary or Config object.
+
+    Returns:
+        True if STRIPE_WEBHOOK_SECRET is non-empty.
+    """
+    if config is not None:
+        if hasattr(config, "get"):
+            secret = config.get("STRIPE_WEBHOOK_SECRET")
+        else:
+            secret = getattr(config, "STRIPE_WEBHOOK_SECRET", None)
+    else:
+        try:
+            from flask import current_app, has_app_context
+
+            if has_app_context() and current_app:
+                secret = current_app.config.get("STRIPE_WEBHOOK_SECRET")
+            else:
+                secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
+        except ImportError:
+            secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
+
+    if not secret or not isinstance(secret, str) or not secret.strip():
+        return False
+    return True
