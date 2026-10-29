@@ -1,5 +1,7 @@
 """Customer authentication and session management routes."""
+from datetime import datetime, timezone
 import logging
+import secrets
 from threading import Lock
 import time
 from typing import Optional
@@ -21,7 +23,7 @@ from flask import (
 )
 
 from app.csrf import generate_csrf_token
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.oauth import is_google_auth_configured, oauth
 from app.repositories.user_repository import UserRepository
 from app.routes.cart_session import SESSION_CART_KEY, extract_sanitized_cart_data
@@ -148,6 +150,8 @@ class LoginRateLimiter:
 
 
 login_rate_limiter = LoginRateLimiter(max_attempts=5, window_seconds=300, max_keys=10000)
+account_link_rate_limiter = LoginRateLimiter(max_attempts=5, window_seconds=300, max_keys=10000)
+SESSION_PENDING_LINK_KEY = "_pending_google_link"
 
 
 class PasswordResetRateLimiter:
@@ -290,6 +294,28 @@ def build_absolute_reset_url(raw_token: str) -> str:
         return f"{scheme}://{server_name.strip()}{path}"
 
     return f"http://127.0.0.1:5000{path}"
+
+
+def get_canonical_oauth_redirect_uri() -> str:
+    """Build a trusted canonical absolute OAuth callback URL.
+
+    Derives the callback URL strictly from application configuration (APP_BASE_URL
+    or SERVER_NAME) rather than dynamic or untrusted HTTP Host headers, ensuring
+    deterministic matching against Google Cloud Console authorized redirect URIs
+    and mitigating redirect_uri_mismatch errors. Falls back safely to localhost
+    if neither is configured.
+    """
+    path = "/auth/google/callback"
+    app_base_url = current_app.config.get("APP_BASE_URL")
+    if app_base_url and isinstance(app_base_url, str) and app_base_url.strip():
+        return urljoin(app_base_url.strip().rstrip("/") + "/", path.lstrip("/"))
+
+    server_name = current_app.config.get("SERVER_NAME")
+    if server_name and isinstance(server_name, str) and server_name.strip():
+        scheme = current_app.config.get("PREFERRED_URL_SCHEME", "http")
+        return f"{scheme}://{server_name.strip()}{path}"
+
+    return url_for("auth.google_callback", _external=True)
 
 
 def build_absolute_verification_url(raw_token: str) -> str:
@@ -639,10 +665,10 @@ def google_login():
 
     # Safely capture post-auth redirect target
     next_url = request.args.get("next", "")
-    redirect_uri = url_for("auth.google_callback", _external=True)
+    redirect_uri = get_canonical_oauth_redirect_uri()
 
-    # Generate authorization URL, state, nonce, and PKCE challenge
-    rv = oauth.google.create_authorization_url(redirect_uri)
+    # Generate authorization URL, state, nonce, and PKCE challenge with explicit account selection
+    rv = oauth.google.create_authorization_url(redirect_uri, prompt="select_account")
 
     # Bind return destination to this specific authorization state
     if next_url and is_safe_redirect_url(next_url):
@@ -735,6 +761,64 @@ def google_callback():
     )
 
     if error_code == "collision":
+        local_user = auth_service.user_repo.get_by_email(email.strip().lower())
+        if local_user is not None:
+            # 1. Owner protection: Never link owner accounts
+            if local_user.role == UserRole.OWNER:
+                flash(
+                    "An account with this email address already exists. Store owner accounts cannot be linked to external providers. Please sign in with your password.",
+                    "error",
+                )
+                return redirect(url_for("auth.login"))
+
+            # 2. Unverified protection: Never bypass email verification
+            if not local_user.is_verified:
+                flash(
+                    "An account with this email address exists but has not been verified yet. "
+                    "Please check your email to verify your account before linking Google sign-in.",
+                    "warning",
+                )
+                return redirect(url_for("auth.login"))
+
+            # 3. Check if local customer already has a different Google account linked
+            existing_link = auth_service.external_identity_repo.get_by_user_and_provider(
+                local_user.id, "google"
+            )
+            if existing_link is not None:
+                flash(
+                    "An account with this email already has a different Google account linked. Please sign in with your password.",
+                    "error",
+                )
+                return redirect(url_for("auth.login"))
+
+            # 4. Check if this Google sub is already linked to another account
+            sub_link = auth_service.external_identity_repo.get_by_provider_sub(
+                "google", sub.strip()
+            )
+            if sub_link is not None:
+                flash(
+                    "This Google identity is already linked to a different account.",
+                    "error",
+                )
+                return redirect(url_for("auth.login"))
+
+            # 5. Eligible customer with local password: start secure one-time linking flow
+            if local_user.password_hash is not None:
+                intent = auth_service.create_account_link_intent(
+                    user_id=local_user.id,
+                    sub=sub.strip(),
+                    email=local_user.email,
+                    next_url=next_url,
+                )
+                session[SESSION_PENDING_LINK_KEY] = {
+                    "intent_id": intent.intent_id,
+                    "email": local_user.email,
+                    "expires_at": intent.expires_at.timestamp(),
+                    "next_url": next_url,
+                }
+                session.modified = True
+                return redirect(url_for("auth.google_link_page"))
+
         flash(
             "An account with this email address already exists. Please log in using your password.",
             "warning",
@@ -773,6 +857,192 @@ def google_callback():
     if next_url and is_safe_redirect_url(next_url):
         return redirect(next_url)
     return redirect(url_for("catalog.index"))
+
+
+@auth_bp.route("/auth/google/link", methods=["GET"])
+def google_link_page():
+    """Present the password confirmation page to link an existing local account to Google."""
+    if get_current_user() is not None:
+        return redirect(url_for("catalog.index"))
+
+    pending = session.get(SESSION_PENDING_LINK_KEY)
+    if not pending or not isinstance(pending, dict) or not pending.get("intent_id"):
+        flash("No pending account linking request was found. Please sign in again.", "info")
+        return redirect(url_for("auth.login"))
+
+    intent_id = str(pending["intent_id"]).strip()
+    auth_service = AuthService()
+    intent = auth_service.get_account_link_intent(intent_id)
+
+    if intent is None:
+        session.pop(SESSION_PENDING_LINK_KEY, None)
+        session.modified = True
+        flash("No pending account linking request was found. Please sign in again.", "info")
+        return redirect(url_for("auth.login"))
+
+    if intent.status == "cancelled":
+        session.pop(SESSION_PENDING_LINK_KEY, None)
+        session.modified = True
+        flash("The account linking request was cancelled.", "info")
+        return redirect(url_for("auth.login"))
+
+    if intent.status == "consumed":
+        session.pop(SESSION_PENDING_LINK_KEY, None)
+        session.modified = True
+        flash("This account linking request has already been used.", "warning")
+        return redirect(url_for("auth.login"))
+
+    now_ts = datetime.now(timezone.utc).timestamp()
+    if intent.is_expired or now_ts > pending.get("expires_at", float("inf")):
+        session.pop(SESSION_PENDING_LINK_KEY, None)
+        session.modified = True
+        flash("The account linking request has expired. Please try signing in again.", "warning")
+        return redirect(url_for("auth.login"))
+
+    return render_template(
+        "auth/link_account.html",
+        email=intent.email,
+        next_url=intent.next_url or "",
+    )
+
+
+@auth_bp.route("/auth/google/link", methods=["POST"])
+def google_link_confirm():
+    """Confirm local account password and atomically link the verified Google identity."""
+    if get_current_user() is not None:
+        return redirect(url_for("catalog.index"))
+
+    pending = session.get(SESSION_PENDING_LINK_KEY)
+    if not pending or not isinstance(pending, dict) or not pending.get("intent_id"):
+        flash("The account linking session is invalid or has expired. Please sign in again.", "error")
+        return redirect(url_for("auth.login"))
+
+    intent_id = str(pending["intent_id"]).strip()
+    auth_service = AuthService()
+    intent = auth_service.get_account_link_intent(intent_id)
+
+    if intent is None:
+        session.pop(SESSION_PENDING_LINK_KEY, None)
+        session.modified = True
+        flash("The account linking session is invalid or has expired. Please sign in again.", "error")
+        return redirect(url_for("auth.login"))
+
+    if intent.status == "cancelled":
+        session.pop(SESSION_PENDING_LINK_KEY, None)
+        session.modified = True
+        flash("The account linking request was cancelled. Please try signing in again.", "info")
+        return redirect(url_for("auth.login"))
+
+    if intent.status == "consumed":
+        session.pop(SESSION_PENDING_LINK_KEY, None)
+        session.modified = True
+        flash("This account linking request has already been used. Please try signing in again.", "warning")
+        return redirect(url_for("auth.login"))
+
+    now_ts = datetime.now(timezone.utc).timestamp()
+    if intent.is_expired or now_ts > pending.get("expires_at", float("inf")):
+        session.pop(SESSION_PENDING_LINK_KEY, None)
+        session.modified = True
+        flash("The account linking request has expired. Please try signing in again.", "warning")
+        return redirect(url_for("auth.login"))
+
+    client_ip = request.remote_addr or "127.0.0.1"
+    email = intent.email
+
+    # Rate limiting protection against credential stuffing
+    if account_link_rate_limiter.is_rate_limited(client_ip, email) or login_rate_limiter.is_rate_limited(client_ip, email):
+        return render_template(
+            "auth/link_account.html",
+            email=email,
+            rate_limit_error="Too many failed attempts. Please wait 5 minutes before trying again.",
+        ), 429
+
+    password = request.form.get("password", "")
+    if not password or not password.strip():
+        return render_template(
+            "auth/link_account.html",
+            email=email,
+            error="Please enter your store password to confirm linking.",
+        ), 400
+
+    user, err = auth_service.link_google_identity(
+        user_id=intent.user_id,
+        sub=intent.provider_user_id,
+        email=intent.email,
+        password=password,
+        intent_id=intent.intent_id,
+    )
+
+    if err == "invalid_password":
+        account_link_rate_limiter.record_failure(client_ip, email)
+        login_rate_limiter.record_failure(client_ip, email)
+        return render_template(
+            "auth/link_account.html",
+            email=email,
+            error="Incorrect password. Please check your password and try again.",
+        ), 401
+
+    if user is None or err is not None:
+        # Non-recoverable error (e.g. user already linked, owner forbidden, intent already consumed)
+        session.pop(SESSION_PENDING_LINK_KEY, None)
+        session.modified = True
+        logger.warning("Account linking rejected for %s: %s", email, err)
+        if err in ("intent_cancelled", "intent_already_consumed", "intent_expired"):
+            flash("The account linking request is no longer valid. Please try signing in again.", "warning")
+        else:
+            flash("Account linking could not be completed. Please log in using your password.", "error")
+        return redirect(url_for("auth.login"))
+
+    # Successful confirmation & atomic linking:
+    account_link_rate_limiter.reset(client_ip, email)
+    login_rate_limiter.reset(client_ip, email)
+    next_url = intent.next_url
+
+    # Session fixation defense: preserve validated cart and concurrent OAuth states
+    raw_cart = session.get(SESSION_CART_KEY)
+    sanitized_cart = extract_sanitized_cart_data(raw_cart)
+    pending_states = {k: v for k, v in session.items() if k.startswith("_state_google_")}
+
+    # Clear entire session: wipes pending link, old CSRF token, and stale keys
+    session.clear()
+
+    # Restore any other pending OAuth states for concurrent browser tabs
+    session.update(pending_states)
+
+    # Re-issue CSRF token and set authenticated user ID
+    generate_csrf_token()
+    session["user_id"] = user.id
+
+    if sanitized_cart:
+        session[SESSION_CART_KEY] = sanitized_cart
+
+    session.modified = True
+
+    flash(f"Your Google account has been successfully linked! Welcome back, {user.email}!", "success")
+
+    if next_url and is_safe_redirect_url(next_url):
+        return redirect(next_url)
+    return redirect(url_for("catalog.index"))
+
+
+@auth_bp.route("/auth/google/link/cancel", methods=["POST"])
+def cancel_google_link():
+    """Cancel pending account linking via CSRF-protected POST."""
+    pending = session.get(SESSION_PENDING_LINK_KEY)
+    if pending and isinstance(pending, dict) and pending.get("intent_id"):
+        auth_service = AuthService()
+        auth_service.cancel_account_link_intent(str(pending["intent_id"]).strip())
+
+    session.pop(SESSION_PENDING_LINK_KEY, None)
+    session.modified = True
+    flash("Google account linking was cancelled.", "info")
+    return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/auth/google/link/cancel", methods=["GET"])
+def cancel_google_link_get():
+    """Reject state-changing cancel via GET; redirect safely without mutating session or intent state."""
+    return redirect(url_for("auth.login"))
 
 
 @auth_bp.route("/forgot-password", methods=["GET"])

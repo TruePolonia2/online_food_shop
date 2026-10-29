@@ -567,5 +567,267 @@ class TestAuthServiceGoogleUser(BaseAuthServiceTestCase):
             self.assertEqual(err, "invalid_email")
 
 
+class TestAuthServiceLinkGoogleIdentity(BaseAuthServiceTestCase):
+    """Unit tests for AuthService.link_google_identity."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        # Create a verified local customer
+        self.local_user, _ = self.auth_service.register_customer(
+            email="link_tester@example.com",
+            password="SecurePassword123!",
+            confirm_password="SecurePassword123!",
+        )
+        self.auth_service.verify_email(self.email_sender.last_email.raw_token)
+
+    def test_successful_linking(self):
+        user, err = self.auth_service.link_google_identity(
+            user_id=self.local_user.id,
+            sub="google_sub_999",
+            email="link_tester@example.com",
+            password="SecurePassword123!",
+        )
+        self.assertIsNone(err)
+        self.assertIsNotNone(user)
+        self.assertEqual(user.id, self.local_user.id)
+
+        # External identity link exists
+        identities = self.auth_service.external_identity_repo.get_by_user_id(user.id)
+        self.assertEqual(len(identities), 1)
+        self.assertEqual(identities[0].provider_user_id, "google_sub_999")
+        self.assertEqual(identities[0].provider, "google")
+
+        # Subsequent authenticate_or_register_google_user directly returns this user
+        subsequent_user, sub_err = self.auth_service.authenticate_or_register_google_user(
+            sub="google_sub_999", email="link_tester@example.com"
+        )
+        self.assertIsNone(sub_err)
+        self.assertEqual(subsequent_user.id, self.local_user.id)
+
+    def test_invalid_password_rejected(self):
+        user, err = self.auth_service.link_google_identity(
+            user_id=self.local_user.id,
+            sub="google_sub_999",
+            email="link_tester@example.com",
+            password="WrongPassword!",
+        )
+        self.assertIsNone(user)
+        self.assertEqual(err, "invalid_password")
+
+        # No link created
+        identities = self.auth_service.external_identity_repo.get_by_user_id(self.local_user.id)
+        self.assertEqual(len(identities), 0)
+
+    def test_invalid_parameters_rejected(self):
+        for sub in [None, "", "  "]:
+            user, err = self.auth_service.link_google_identity(
+                user_id=self.local_user.id,
+                sub=sub,
+                email="link_tester@example.com",
+                password="SecurePassword123!",
+            )
+            self.assertIsNone(user)
+            self.assertEqual(err, "invalid_inputs")
+
+        for pw in [None, ""]:
+            user, err = self.auth_service.link_google_identity(
+                user_id=self.local_user.id,
+                sub="google_sub_999",
+                email="link_tester@example.com",
+                password=pw,
+            )
+            self.assertIsNone(user)
+            self.assertEqual(err, "invalid_inputs")
+
+    def test_nonexistent_user_rejected(self):
+        user, err = self.auth_service.link_google_identity(
+            user_id=99999,
+            sub="google_sub_999",
+            email="link_tester@example.com",
+            password="SecurePassword123!",
+        )
+        self.assertIsNone(user)
+        self.assertEqual(err, "user_not_found")
+
+    def test_owner_role_cannot_be_linked(self):
+        owner = self.user_repo.create(
+            User(
+                email="owner_test@example.com",
+                password_hash="scrypt:fakehash",
+                role=UserRole.OWNER,
+                is_verified=True,
+            )
+        )
+        user, err = self.auth_service.link_google_identity(
+            user_id=owner.id,
+            sub="google_sub_owner",
+            email="owner_test@example.com",
+            password="AnyPassword",
+        )
+        self.assertIsNone(user)
+        self.assertEqual(err, "owner_forbidden")
+
+    def test_unverified_account_cannot_be_linked(self):
+        unverified_user = self.user_repo.create(
+            User(
+                email="unverified_link@example.com",
+                password_hash="scrypt:fakehash",
+                role=UserRole.CUSTOMER,
+                is_verified=False,
+            )
+        )
+        user, err = self.auth_service.link_google_identity(
+            user_id=unverified_user.id,
+            sub="google_sub_unver",
+            email="unverified_link@example.com",
+            password="AnyPassword",
+        )
+        self.assertIsNone(user)
+        self.assertEqual(err, "unverified_user")
+
+    def test_email_mismatch_rejected(self):
+        user, err = self.auth_service.link_google_identity(
+            user_id=self.local_user.id,
+            sub="google_sub_999",
+            email="different_email@example.com",
+            password="SecurePassword123!",
+        )
+        self.assertIsNone(user)
+        self.assertEqual(err, "email_mismatch")
+
+    def test_duplicate_linking_rejected(self):
+        # First link succeeds
+        self.auth_service.link_google_identity(
+            user_id=self.local_user.id,
+            sub="google_sub_999",
+            email="link_tester@example.com",
+            password="SecurePassword123!",
+        )
+        # Second attempt with same user fails
+        user, err = self.auth_service.link_google_identity(
+            user_id=self.local_user.id,
+            sub="google_sub_different",
+            email="link_tester@example.com",
+            password="SecurePassword123!",
+        )
+        self.assertIsNone(user)
+        self.assertEqual(err, "user_already_linked")
+
+        # Third attempt with same sub fails for another user
+        other_user, _ = self.auth_service.register_customer(
+            email="other_cust@example.com",
+            password="SecurePassword123!",
+            confirm_password="SecurePassword123!",
+        )
+        self.auth_service.verify_email(self.email_sender.last_email.raw_token)
+        user2, err2 = self.auth_service.link_google_identity(
+            user_id=other_user.id,
+            sub="google_sub_999",
+            email="other_cust@example.com",
+            password="SecurePassword123!",
+        )
+        self.assertIsNone(user2)
+        self.assertEqual(err2, "sub_already_linked")
+
+    def test_intent_lifecycle_and_single_use(self):
+        intent = self.auth_service.create_account_link_intent(
+            user_id=self.local_user.id,
+            sub="intent_sub_1",
+            email="link_tester@example.com",
+            next_url="/cart",
+        )
+        self.assertIsNotNone(intent)
+        self.assertEqual(intent.status, "pending")
+        self.assertTrue(intent.is_valid)
+
+        # Retrieve intent
+        fetched = self.auth_service.get_account_link_intent(intent.intent_id)
+        self.assertIsNotNone(fetched)
+        self.assertEqual(fetched.intent_id, intent.intent_id)
+
+        # Successfully consume intent
+        user, err = self.auth_service.link_google_identity(
+            user_id=self.local_user.id,
+            sub="intent_sub_1",
+            email="link_tester@example.com",
+            password="SecurePassword123!",
+            intent_id=intent.intent_id,
+        )
+        self.assertIsNone(err)
+        self.assertIsNotNone(user)
+
+        # Verify intent is marked consumed in DB
+        reloaded_intent = self.auth_service.get_account_link_intent(intent.intent_id)
+        self.assertEqual(reloaded_intent.status, "consumed")
+        self.assertTrue(reloaded_intent.is_consumed)
+        self.assertFalse(reloaded_intent.is_valid)
+
+        # Replay attempt with consumed intent fails
+        user_replay, err_replay = self.auth_service.link_google_identity(
+            user_id=self.local_user.id,
+            sub="intent_sub_1",
+            email="link_tester@example.com",
+            password="SecurePassword123!",
+            intent_id=intent.intent_id,
+        )
+        self.assertIsNone(user_replay)
+        self.assertEqual(err_replay, "intent_already_consumed")
+
+    def test_cancelled_intent_rejected(self):
+        intent = self.auth_service.create_account_link_intent(
+            user_id=self.local_user.id,
+            sub="intent_sub_cancel",
+            email="link_tester@example.com",
+        )
+        self.assertTrue(self.auth_service.cancel_account_link_intent(intent.intent_id))
+
+        # Attempt to link with cancelled intent
+        user, err = self.auth_service.link_google_identity(
+            user_id=self.local_user.id,
+            sub="intent_sub_cancel",
+            email="link_tester@example.com",
+            password="SecurePassword123!",
+            intent_id=intent.intent_id,
+        )
+        self.assertIsNone(user)
+        self.assertEqual(err, "intent_cancelled")
+
+    def test_expired_intent_rejected(self):
+        intent = self.auth_service.create_account_link_intent(
+            user_id=self.local_user.id,
+            sub="intent_sub_expired",
+            email="link_tester@example.com",
+            validity_minutes=-5,  # Pre-expired
+        )
+        self.assertTrue(intent.is_expired)
+
+        user, err = self.auth_service.link_google_identity(
+            user_id=self.local_user.id,
+            sub="intent_sub_expired",
+            email="link_tester@example.com",
+            password="SecurePassword123!",
+            intent_id=intent.intent_id,
+        )
+        self.assertIsNone(user)
+        self.assertEqual(err, "intent_expired")
+
+    def test_intent_mismatch_rejected(self):
+        intent = self.auth_service.create_account_link_intent(
+            user_id=self.local_user.id,
+            sub="intent_sub_mismatch",
+            email="link_tester@example.com",
+        )
+        # Attempt to link with mismatching sub
+        user, err = self.auth_service.link_google_identity(
+            user_id=self.local_user.id,
+            sub="different_sub",
+            email="link_tester@example.com",
+            password="SecurePassword123!",
+            intent_id=intent.intent_id,
+        )
+        self.assertIsNone(user)
+        self.assertEqual(err, "intent_mismatch")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -9,10 +9,12 @@ from flask import current_app, has_app_context
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.database.connection import get_db, transaction
+from app.models.account_link_intent import AccountLinkIntent
 from app.models.email_verification_token import EmailVerificationToken
 from app.models.external_identity import ExternalIdentity
 from app.models.password_reset_token import PasswordResetToken
 from app.models.user import User, UserRole
+from app.repositories.account_link_intent_repository import AccountLinkIntentRepository
 from app.repositories.email_verification_token_repository import EmailVerificationTokenRepository
 from app.repositories.external_identity_repository import ExternalIdentityRepository
 from app.repositories.password_reset_token_repository import PasswordResetTokenRepository
@@ -37,6 +39,7 @@ class AuthService:
         token_repo: Optional[EmailVerificationTokenRepository] = None,
         external_identity_repo: Optional[ExternalIdentityRepository] = None,
         password_reset_token_repo: Optional[PasswordResetTokenRepository] = None,
+        account_link_intent_repo: Optional[AccountLinkIntentRepository] = None,
         email_sender: Optional[EmailSender] = None,
         conn: Optional[sqlite3.Connection] = None,
         token_validity_hours: int = DEFAULT_TOKEN_VALIDITY_HOURS,
@@ -50,6 +53,7 @@ class AuthService:
             token_repo: Optional EmailVerificationTokenRepository. If omitted, uses default.
             external_identity_repo: Optional ExternalIdentityRepository. If omitted, uses default.
             password_reset_token_repo: Optional PasswordResetTokenRepository. If omitted, uses default.
+            account_link_intent_repo: Optional AccountLinkIntentRepository. If omitted, uses default.
             email_sender: Optional EmailSender. Defaults to InMemoryEmailSender.
             conn: Optional database connection for transaction coordination.
             token_validity_hours: Hours a verification token remains valid (default 24).
@@ -64,6 +68,9 @@ class AuthService:
         )
         self._password_reset_token_repo = (
             password_reset_token_repo or PasswordResetTokenRepository(conn=conn)
+        )
+        self._account_link_intent_repo = (
+            account_link_intent_repo or AccountLinkIntentRepository(conn=conn)
         )
         if email_sender is not None:
             self._email_sender = email_sender
@@ -110,6 +117,11 @@ class AuthService:
     def password_reset_token_repo(self) -> PasswordResetTokenRepository:
         """Return the password reset token repository."""
         return self._password_reset_token_repo
+
+    @property
+    def account_link_intent_repo(self) -> AccountLinkIntentRepository:
+        """Return the account link intent repository."""
+        return self._account_link_intent_repo
 
     @staticmethod
     def validate_password(password: str, confirm_password: Optional[str] = None) -> None:
@@ -646,4 +658,198 @@ class AuthService:
                     return user, None
             if self._user_repo.get_by_email(normalized_email) is not None:
                 return None, "collision"
+            return None, "integrity_error"
+
+    def create_account_link_intent(
+        self,
+        user_id: int,
+        sub: str,
+        email: str,
+        next_url: Optional[str] = None,
+        validity_minutes: int = 10,
+    ) -> AccountLinkIntent:
+        """Create a short-lived single-use account link intent for server-side validation.
+
+        Invalidates any prior pending intents for this user.
+
+        Args:
+            user_id: Target user ID.
+            sub: Provider unique subject identifier.
+            email: Provider verified email.
+            next_url: Optional post-login destination URL.
+            validity_minutes: Duration before expiration (default 10).
+
+        Returns:
+            Persisted AccountLinkIntent instance.
+        """
+        now = datetime.now(timezone.utc)
+        expires_at = now + timedelta(minutes=validity_minutes)
+        intent_token = secrets.token_urlsafe(32)
+
+        with transaction(self.conn):
+            self._account_link_intent_repo.invalidate_pending_for_user(user_id, provider="google")
+            intent = AccountLinkIntent(
+                user_id=user_id,
+                intent_id=intent_token,
+                provider="google",
+                provider_user_id=sub.strip(),
+                email=email.strip().lower(),
+                expires_at=expires_at,
+                next_url=next_url,
+                created_at=now,
+                status="pending",
+            )
+            return self._account_link_intent_repo.create(intent)
+
+    def get_account_link_intent(self, intent_id: str) -> Optional[AccountLinkIntent]:
+        """Retrieve an account link intent by its unique token.
+
+        Args:
+            intent_id: Unique intent token string.
+
+        Returns:
+            AccountLinkIntent if found, None otherwise.
+        """
+        return self._account_link_intent_repo.get_by_intent_id(intent_id)
+
+    def cancel_account_link_intent(self, intent_id: str) -> bool:
+        """Cancel a pending account link intent.
+
+        Args:
+            intent_id: Unique intent token string.
+
+        Returns:
+            True if successfully cancelled, False otherwise.
+        """
+        return self._account_link_intent_repo.mark_as_cancelled(intent_id)
+
+    def link_google_identity(
+        self,
+        user_id: int,
+        sub: str,
+        email: str,
+        password: str,
+        intent_id: Optional[str] = None,
+    ) -> tuple[Optional[User], Optional[str]]:
+        """Confirm password and atomically link a verified Google identity to an existing account.
+
+        Guarantees:
+        - Only verified customer accounts can be linked.
+        - Owner/admin accounts are strictly forbidden from external linking.
+        - Password must be verified using secure constant-time check.
+        - Email of Google identity must match local account email.
+        - If intent_id is provided, enforces single-use server-side consumption and expiration.
+        - Google sub cannot already be linked to another account.
+        - User cannot already have a Google identity linked.
+        - Persistence and intent consumption are atomic within a single SQLite transaction.
+
+        Args:
+            user_id: ID of the local user account to link.
+            sub: Google subject identifier claim ('sub').
+            email: Verified Google email claim.
+            password: User's current local store password.
+            intent_id: Optional server-side intent token to validate and consume atomically.
+
+        Returns:
+            Tuple of (User, None) on success, or (None, error_code) on failure.
+            Possible error codes: 'invalid_inputs', 'user_not_found', 'owner_forbidden',
+            'unverified_user', 'no_password', 'email_mismatch', 'invalid_password',
+            'intent_not_found', 'intent_cancelled', 'intent_already_consumed', 'intent_expired',
+            'intent_mismatch', 'sub_already_linked', 'user_already_linked', 'integrity_error'.
+        """
+        if isinstance(user_id, bool) or not isinstance(user_id, int) or user_id <= 0:
+            return None, "invalid_inputs"
+        if not sub or not isinstance(sub, str) or not sub.strip():
+            return None, "invalid_inputs"
+        if not email or not isinstance(email, str) or not email.strip() or "@" not in email:
+            return None, "invalid_inputs"
+        if not password or not isinstance(password, str):
+            return None, "invalid_inputs"
+        if intent_id is not None and (not isinstance(intent_id, str) or not intent_id.strip()):
+            return None, "invalid_inputs"
+
+        normalized_sub = sub.strip()
+        normalized_email = email.strip().lower()
+
+        user = self._user_repo.get_by_id(user_id)
+        if user is None:
+            return None, "user_not_found"
+
+        if user.role != UserRole.CUSTOMER:
+            return None, "owner_forbidden"
+
+        if not user.is_verified:
+            return None, "unverified_user"
+
+        if not user.password_hash:
+            return None, "no_password"
+
+        if user.email.strip().lower() != normalized_email:
+            return None, "email_mismatch"
+
+        if not check_password_hash(user.password_hash, password):
+            return None, "invalid_password"
+
+        now_utc = datetime.now(timezone.utc)
+        try:
+            with transaction(self.conn):
+                # 1. If an intent_id is provided, atomically validate and consume it
+                if intent_id is not None:
+                    intent = self._account_link_intent_repo.get_by_intent_id(intent_id.strip())
+                    if intent is None:
+                        return None, "intent_not_found"
+                    if intent.status == "cancelled":
+                        return None, "intent_cancelled"
+                    if intent.status == "consumed":
+                        return None, "intent_already_consumed"
+                    if intent.is_expired:
+                        return None, "intent_expired"
+                    if (
+                        intent.user_id != user.id
+                        or intent.provider_user_id != normalized_sub
+                        or intent.email != normalized_email
+                    ):
+                        return None, "intent_mismatch"
+
+                    consumed = self._account_link_intent_repo.mark_as_consumed(
+                        intent_id.strip(), consumed_at=now_utc
+                    )
+                    if not consumed:
+                        return None, "intent_already_consumed"
+
+                # 2. Verify sub is not already linked to another account
+                existing_sub = self._external_identity_repo.get_by_provider_sub(
+                    "google", normalized_sub
+                )
+                if existing_sub is not None:
+                    if existing_sub.user_id == user.id:
+                        return user, None  # Already linked idempotently
+                    return None, "sub_already_linked"
+
+                # 3. Verify user does not already have a Google account linked
+                existing_link = self._external_identity_repo.get_by_user_and_provider(
+                    user.id, "google"
+                )
+                if existing_link is not None:
+                    if existing_link.provider_user_id == normalized_sub:
+                        return user, None  # Already linked idempotently
+                    return None, "user_already_linked"
+
+                # 4. Atomically insert external identity
+                identity = ExternalIdentity(
+                    user_id=user.id,
+                    provider="google",
+                    provider_user_id=normalized_sub,
+                    email=normalized_email,
+                    created_at=now_utc,
+                )
+                self._external_identity_repo.create(identity)
+
+                # 5. Invalidate any other pending intents for this user
+                self._account_link_intent_repo.invalidate_pending_for_user(
+                    user.id, provider="google", invalidation_time=now_utc
+                )
+                return user, None
+        except sqlite3.IntegrityError:
+            return None, "integrity_error"
             return None, "integrity_error"

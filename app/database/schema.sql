@@ -213,3 +213,27 @@ CREATE TABLE IF NOT EXISTS contact_messages (
 
 CREATE INDEX IF NOT EXISTS idx_contact_messages_status_created_at ON contact_messages (status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_contact_messages_created_at ON contact_messages (created_at DESC);
+
+-- -----------------------------------------------------------------------------
+-- 9. account_link_intents
+-- -----------------------------------------------------------------------------
+-- Server-side tracking for single-use OAuth account linking intents.
+-- Protects against signed-cookie replay attacks and handles concurrent browser tabs safely.
+CREATE TABLE IF NOT EXISTS account_link_intents (
+    id INTEGER PRIMARY KEY,
+    intent_id TEXT NOT NULL UNIQUE CHECK(length(trim(intent_id)) > 0),
+    user_id INTEGER NOT NULL,
+    provider TEXT NOT NULL CHECK(length(trim(provider)) > 0),
+    provider_user_id TEXT NOT NULL CHECK(length(trim(provider_user_id)) > 0),
+    email TEXT NOT NULL CHECK(length(trim(email)) > 0),
+    next_url TEXT,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    expires_at TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'consumed', 'cancelled')),
+    consumed_at TEXT,
+    cancelled_at TEXT,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_account_link_intents_intent_id ON account_link_intents (intent_id);
+CREATE INDEX IF NOT EXISTS idx_account_link_intents_user_status ON account_link_intents (user_id, status);

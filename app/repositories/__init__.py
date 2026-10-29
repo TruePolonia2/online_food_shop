@@ -1,4 +1,5 @@
 """Data access repositories for the online food shop application."""
+from app.repositories.account_link_intent_repository import AccountLinkIntentRepository
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.contact_message_repository import ContactMessageRepository
 from app.repositories.customer_repository import CustomerRepository
@@ -10,6 +11,7 @@ from app.repositories.product_repository import ProductRepository
 from app.repositories.user_repository import UserRepository
 
 __all__ = [
+    "AccountLinkIntentRepository",
     "CategoryRepository",
     "ContactMessageRepository",
     "CustomerRepository",

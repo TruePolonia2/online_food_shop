@@ -311,6 +311,35 @@ def _migrate_contact_messages_table_if_needed(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_account_link_intents_table_if_needed(conn: sqlite3.Connection) -> None:
+    """Safely and idempotently ensure the account_link_intents table and indexes exist."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS account_link_intents (
+            id INTEGER PRIMARY KEY,
+            intent_id TEXT NOT NULL UNIQUE CHECK(length(trim(intent_id)) > 0),
+            user_id INTEGER NOT NULL,
+            provider TEXT NOT NULL CHECK(length(trim(provider)) > 0),
+            provider_user_id TEXT NOT NULL CHECK(length(trim(provider_user_id)) > 0),
+            email TEXT NOT NULL CHECK(length(trim(email)) > 0),
+            next_url TEXT,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+            expires_at TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'consumed', 'cancelled')),
+            consumed_at TEXT,
+            cancelled_at TEXT,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_account_link_intents_intent_id ON account_link_intents (intent_id);"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_account_link_intents_user_status ON account_link_intents (user_id, status);"
+    )
+
+
 def init_db(
     conn: Optional[sqlite3.Connection] = None,
     schema_path: Optional[Union[str, Path]] = None,
@@ -344,6 +373,7 @@ def init_db(
     _migrate_external_identities_table_if_needed(conn)
     _migrate_password_reset_tokens_table_if_needed(conn)
     _migrate_contact_messages_table_if_needed(conn)
+    _migrate_account_link_intents_table_if_needed(conn)
     conn.commit()
 
 
