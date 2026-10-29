@@ -42,18 +42,32 @@
                             {{ order.created_at.strftime('%Y-%m-%d %H:%M UTC') if order.created_at else '' }}
                         </td>
                         <td class="py-4 px-4 sm:px-6 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
-                                {% if order.status.value == 'delivered' %}
-                                    bg-emerald-50 text-emerald-800 border border-emerald-200
-                                {% elif order.status.value == 'cancelled' %}
-                                    bg-red-50 text-red-800 border border-red-200
-                                {% elif order.status.value == 'shipped' %}
-                                    bg-blue-50 text-blue-800 border border-blue-200
-                                {% else %}
-                                    bg-amber-50 text-amber-800 border border-amber-200
-                                {% endif %}">
-                                {{ order.status.value | capitalize }}
-                            </span>
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-1.5">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
+                                    {% if order.status.value == 'delivered' %}
+                                        bg-emerald-50 text-emerald-800 border border-emerald-200
+                                    {% elif order.status.value == 'cancelled' %}
+                                        bg-red-50 text-red-800 border border-red-200
+                                    {% elif order.status.value == 'shipped' %}
+                                        bg-blue-50 text-blue-800 border border-blue-200
+                                    {% else %}
+                                        bg-amber-50 text-amber-800 border border-amber-200
+                                    {% endif %}">
+                                    {{ order.status.value | capitalize }}
+                                </span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium
+                                    {% if order.payment_status.value == 'paid' %}
+                                        bg-emerald-50 text-emerald-700
+                                    {% elif order.payment_status.value == 'pending' %}
+                                        bg-amber-50 text-amber-700
+                                    {% elif order.payment_status.value == 'cancelled' %}
+                                        bg-rose-50 text-rose-700
+                                    {% else %}
+                                        bg-gray-100 text-gray-600
+                                    {% endif %}">
+                                    {{ order.payment_status.value | capitalize }}
+                                </span>
+                            </div>
                         </td>
                         <td class="py-4 px-4 sm:px-6 text-center text-gray-600 whitespace-nowrap">
                             {{ order.items | sum(attribute='quantity') }}

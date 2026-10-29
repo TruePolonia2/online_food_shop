@@ -29,6 +29,18 @@
                         {% endif %}">
                         {{ order.status.value | capitalize }}
                     </span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                        {% if order.payment_status.value == 'paid' %}
+                            bg-emerald-50 text-emerald-700
+                        {% elif order.payment_status.value == 'pending' %}
+                            bg-amber-50 text-amber-700
+                        {% elif order.payment_status.value == 'cancelled' %}
+                            bg-rose-50 text-rose-700
+                        {% else %}
+                            bg-gray-100 text-gray-600
+                        {% endif %}">
+                        Payment: {{ order.payment_status.value | capitalize }}
+                    </span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">
                     Placed on {{ order.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if order.created_at else '' }}

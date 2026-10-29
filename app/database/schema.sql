@@ -139,6 +139,10 @@ CREATE TABLE IF NOT EXISTS orders (
     customer_email TEXT,
     customer_phone TEXT,
     customer_address TEXT,
+    payment_method TEXT NOT NULL DEFAULT 'standard',
+    payment_status TEXT NOT NULL DEFAULT 'unpaid' CHECK(payment_status IN ('unpaid', 'pending', 'paid', 'failed', 'cancelled')),
+    stripe_session_id TEXT,
+    checkout_token TEXT,
     FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE RESTRICT,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
 );
@@ -238,3 +242,28 @@ CREATE TABLE IF NOT EXISTS account_link_intents (
 
 CREATE INDEX IF NOT EXISTS idx_account_link_intents_intent_id ON account_link_intents (intent_id);
 CREATE INDEX IF NOT EXISTS idx_account_link_intents_user_status ON account_link_intents (user_id, status);
+
+-- -----------------------------------------------------------------------------
+-- 10. payments
+-- -----------------------------------------------------------------------------
+-- Discrete payment attempts and external payment gateway state (Phase 10.12).
+-- Tracks payment method, payment status, Stripe Checkout session/intent IDs,
+-- and idempotency key to prevent duplicate payment attempts.
+CREATE TABLE IF NOT EXISTS payments (
+    id INTEGER PRIMARY KEY,
+    order_id INTEGER NOT NULL,
+    payment_method TEXT NOT NULL DEFAULT 'stripe',
+    status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'paid', 'failed', 'cancelled')),
+    amount INTEGER NOT NULL CHECK(amount >= 0),
+    currency TEXT NOT NULL DEFAULT 'eur' CHECK(length(trim(currency)) > 0),
+    stripe_session_id TEXT UNIQUE,
+    stripe_payment_intent_id TEXT,
+    idempotency_key TEXT NOT NULL UNIQUE CHECK(length(trim(idempotency_key)) > 0),
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    updated_at TEXT,
+    FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE RESTRICT
+);
+
+CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments (order_id);
+CREATE INDEX IF NOT EXISTS idx_payments_stripe_session_id ON payments (stripe_session_id);
+CREATE INDEX IF NOT EXISTS idx_payments_idempotency_key ON payments (idempotency_key);

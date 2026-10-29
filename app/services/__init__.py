@@ -14,6 +14,7 @@ from app.services.customer_service import CustomerService
 from app.services.email_sender import EmailSender, InMemoryEmailSender
 from app.services.order_service import OrderService
 from app.services.product_service import ProductService
+from app.services.stripe_service import StripePaymentError, StripeService
 
 __all__ = [
     "AuthService",
@@ -29,4 +30,6 @@ __all__ = [
     "InMemoryEmailSender",
     "OrderService",
     "ProductService",
+    "StripePaymentError",
+    "StripeService",
 ]

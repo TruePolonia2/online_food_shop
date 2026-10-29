@@ -172,6 +172,13 @@ def _migrate_orders_table_if_needed(conn: sqlite3.Connection) -> None:
         ("customer_email", "TEXT"),
         ("customer_phone", "TEXT"),
         ("customer_address", "TEXT"),
+        ("payment_method", "TEXT NOT NULL DEFAULT 'standard'"),
+        (
+            "payment_status",
+            "TEXT NOT NULL DEFAULT 'unpaid' CHECK(payment_status IN ('unpaid', 'pending', 'paid', 'failed', 'cancelled'))",
+        ),
+        ("stripe_session_id", "TEXT"),
+        ("checkout_token", "TEXT"),
     ]
     for col_name, col_type in columns_to_add:
         if col_name not in existing_cols:
@@ -181,7 +188,19 @@ def _migrate_orders_table_if_needed(conn: sqlite3.Connection) -> None:
         conn.execute(
             "ALTER TABLE orders ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;"
         )
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders (user_id);")
+
+    idx_cursor = conn.execute("PRAGMA index_list('orders');")
+    existing_indexes = {row[1] for row in idx_cursor.fetchall()}
+    if "idx_orders_user_id" not in existing_indexes:
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders (user_id);")
+    if "idx_orders_stripe_session_id" not in existing_indexes:
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_orders_stripe_session_id ON orders (stripe_session_id);"
+        )
+    if "idx_orders_checkout_token" not in existing_indexes:
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_checkout_token ON orders (checkout_token) WHERE checkout_token IS NOT NULL;"
+        )
 
 
 def _migrate_customers_table_if_needed(conn: sqlite3.Connection) -> None:
@@ -356,6 +375,40 @@ def _migrate_account_link_intents_table_if_needed(conn: sqlite3.Connection) -> N
         )
 
 
+def _migrate_payments_table_if_needed(conn: sqlite3.Connection) -> None:
+    """Safely and idempotently ensure the payments table and indexes exist."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS payments (
+            id INTEGER PRIMARY KEY,
+            order_id INTEGER NOT NULL,
+            payment_method TEXT NOT NULL DEFAULT 'stripe',
+            status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'paid', 'failed', 'cancelled')),
+            amount INTEGER NOT NULL CHECK(amount >= 0),
+            currency TEXT NOT NULL DEFAULT 'eur' CHECK(length(trim(currency)) > 0),
+            stripe_session_id TEXT UNIQUE,
+            stripe_payment_intent_id TEXT,
+            idempotency_key TEXT NOT NULL UNIQUE CHECK(length(trim(idempotency_key)) > 0),
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+            updated_at TEXT,
+            FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE RESTRICT
+        );
+        """
+    )
+    idx_cursor = conn.execute("PRAGMA index_list('payments');")
+    existing_indexes = {row[1] for row in idx_cursor.fetchall()}
+    if "idx_payments_order_id" not in existing_indexes:
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments (order_id);")
+    if "idx_payments_stripe_session_id" not in existing_indexes:
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_payments_stripe_session_id ON payments (stripe_session_id);"
+        )
+    if "idx_payments_idempotency_key" not in existing_indexes:
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_payments_idempotency_key ON payments (idempotency_key);"
+        )
+
+
 def init_db(
     conn: Optional[sqlite3.Connection] = None,
     schema_path: Optional[Union[str, Path]] = None,
@@ -390,6 +443,7 @@ def init_db(
     _migrate_password_reset_tokens_table_if_needed(conn)
     _migrate_contact_messages_table_if_needed(conn)
     _migrate_account_link_intents_table_if_needed(conn)
+    _migrate_payments_table_if_needed(conn)
     conn.commit()
 
 

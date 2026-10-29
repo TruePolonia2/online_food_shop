@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Optional
 
 from app.models.order_item import OrderItem
+from app.models.payment import PaymentStatus
 
 
 class OrderStatus(str, Enum):
@@ -38,10 +39,20 @@ class Order:
     customer_phone: Optional[str] = None
     customer_address: Optional[str] = None
     user_id: Optional[int] = None
+    payment_method: str = "standard"
+    payment_status: PaymentStatus = PaymentStatus.UNPAID
+    stripe_session_id: Optional[str] = None
+    checkout_token: Optional[str] = None
 
     def __post_init__(self) -> None:
         if isinstance(self.status, str) and not isinstance(self.status, OrderStatus):
             self.status = OrderStatus(self.status)
+        if isinstance(self.payment_status, str) and not isinstance(
+            self.payment_status, PaymentStatus
+        ):
+            self.payment_status = PaymentStatus(self.payment_status)
+        if self.payment_method:
+            self.payment_method = self.payment_method.strip().lower()
 
     @property
     def total(self) -> int:

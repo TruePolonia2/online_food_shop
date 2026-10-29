@@ -7,6 +7,7 @@ from app.database.connection import get_db, transaction
 from app.models.cart import Cart
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
+from app.models.payment import PaymentStatus
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.customer_repository import CustomerRepository
 from app.repositories.order_repository import OrderRepository
@@ -139,6 +140,10 @@ class OrderService:
         customer_phone: str | None = None,
         customer_address: str | None = None,
         user_id: int | None = None,
+        payment_method: str = "standard",
+        payment_status: PaymentStatus | str | None = None,
+        stripe_session_id: str | None = None,
+        checkout_token: str | None = None,
     ) -> Order:
         """Execute atomic checkout: validates stock, creates order, and decrements inventory.
 
@@ -251,6 +256,19 @@ class OrderService:
                 )
                 order_items.append(order_item)
 
+            # Resolve payment status based on payment method
+            resolved_method = payment_method.strip().lower() if payment_method else "standard"
+            if payment_status is None:
+                resolved_payment_status = (
+                    PaymentStatus.PENDING if resolved_method == "stripe" else PaymentStatus.UNPAID
+                )
+            else:
+                resolved_payment_status = (
+                    PaymentStatus(payment_status)
+                    if isinstance(payment_status, str)
+                    else payment_status
+                )
+
             # Persist order and line items with immutable delivery snapshot
             order = Order(
                 customer_id=customer_id,
@@ -261,12 +279,27 @@ class OrderService:
                 customer_email=snap_email,
                 customer_phone=snap_phone,
                 customer_address=snap_address,
+                payment_method=resolved_method,
+                payment_status=resolved_payment_status,
+                stripe_session_id=stripe_session_id,
+                checkout_token=checkout_token,
             )
             saved_order = self.order_repo.create(order)
 
         # Reset in-memory cart only after successful transaction completion
         cart.clear()
         return saved_order
+
+    def get_by_checkout_token(self, checkout_token: str) -> Order | None:
+        """Retrieve an order by its unique checkout token.
+
+        Args:
+            checkout_token: The checkout token string.
+
+        Returns:
+            The Order entity if found, None otherwise.
+        """
+        return self.order_repo.get_by_checkout_token(checkout_token)
 
     def update_order_status(
         self, order_id: int, new_status: OrderStatus | str
@@ -328,6 +361,34 @@ class OrderService:
             The cancelled Order entity with status CANCELLED.
         """
         return self.update_order_status(order_id, OrderStatus.CANCELLED)
+
+    def update_payment_status(
+        self,
+        order_id: int,
+        new_payment_status: PaymentStatus | str,
+        stripe_session_id: Optional[str] = None,
+    ) -> Order:
+        """Update an order's payment status and optionally stripe_session_id.
+
+        Args:
+            order_id: The ID of the order to update.
+            new_payment_status: The new payment status.
+            stripe_session_id: Optional Stripe Checkout Session ID.
+
+        Returns:
+            The updated Order entity.
+        """
+        order = self.get_by_id(order_id)
+        if order is None:
+            raise ValueError(f"Order with ID {order_id} not found.")
+
+        self.order_repo.update_payment_status(
+            order_id, new_payment_status, stripe_session_id=stripe_session_id
+        )
+        updated = self.get_by_id(order_id)
+        if updated is None:
+            raise ValueError(f"Order with ID {order_id} not found.")
+        return updated
 
     def get_paginated_orders_for_admin(
         self,

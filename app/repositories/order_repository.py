@@ -6,6 +6,7 @@ import sqlite3
 from app.database.connection import get_db, transaction
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
+from app.models.payment import PaymentStatus
 
 
 def _row_to_order_item(row: sqlite3.Row) -> OrderItem:
@@ -36,6 +37,27 @@ def _row_to_order(row: sqlite3.Row, items: Optional[list[OrderItem]] = None) -> 
     customer_phone = row["customer_phone"] if "customer_phone" in row_keys else None
     customer_address = row["customer_address"] if "customer_address" in row_keys else None
     user_id = row["user_id"] if "user_id" in row_keys else None
+    payment_method = (
+        row["payment_method"]
+        if "payment_method" in row_keys and row["payment_method"] is not None
+        else "standard"
+    )
+    raw_payment_status = (
+        row["payment_status"]
+        if "payment_status" in row_keys and row["payment_status"] is not None
+        else "unpaid"
+    )
+    payment_status = (
+        PaymentStatus(raw_payment_status)
+        if raw_payment_status
+        else PaymentStatus.UNPAID
+    )
+    stripe_session_id = (
+        row["stripe_session_id"] if "stripe_session_id" in row_keys else None
+    )
+    checkout_token = (
+        row["checkout_token"] if "checkout_token" in row_keys else None
+    )
 
     return Order(
         id=row["id"],
@@ -48,6 +70,10 @@ def _row_to_order(row: sqlite3.Row, items: Optional[list[OrderItem]] = None) -> 
         customer_phone=customer_phone,
         customer_address=customer_address,
         user_id=user_id,
+        payment_method=payment_method,
+        payment_status=payment_status,
+        stripe_session_id=stripe_session_id,
+        checkout_token=checkout_token,
     )
 
 
@@ -80,7 +106,8 @@ class OrderRepository:
         """
         cursor = self.conn.execute(
             """SELECT id, customer_id, user_id, status, created_at,
-                      customer_name, customer_email, customer_phone, customer_address
+                      customer_name, customer_email, customer_phone, customer_address,
+                      payment_method, payment_status, stripe_session_id, checkout_token
                FROM orders WHERE id = ?""",
             (order_id,),
         )
@@ -96,6 +123,36 @@ class OrderRepository:
         items = [_row_to_order_item(r) for r in items_cursor.fetchall()]
         return _row_to_order(order_row, items)
 
+    def get_by_checkout_token(self, checkout_token: str) -> Optional[Order]:
+        """Retrieve an order by its unique checkout token.
+
+        Args:
+            checkout_token: The unique checkout attempt token.
+
+        Returns:
+            The Order entity with line items populated, or None if not found.
+        """
+        if not checkout_token or not str(checkout_token).strip():
+            return None
+        cursor = self.conn.execute(
+            """SELECT id, customer_id, user_id, status, created_at,
+                      customer_name, customer_email, customer_phone, customer_address,
+                      payment_method, payment_status, stripe_session_id, checkout_token
+               FROM orders WHERE checkout_token = ?""",
+            (str(checkout_token).strip(),),
+        )
+        order_row = cursor.fetchone()
+        if not order_row:
+            return None
+
+        items_cursor = self.conn.execute(
+            """SELECT id, order_id, product_id, product_name, unit_price, quantity
+               FROM order_items WHERE order_id = ? ORDER BY id ASC""",
+            (order_row["id"],),
+        )
+        items = [_row_to_order_item(r) for r in items_cursor.fetchall()]
+        return _row_to_order(order_row, items)
+
     def get_by_customer_id(self, customer_id: int) -> list[Order]:
         """Retrieve all orders placed by a specific customer, ordered by newest first.
 
@@ -107,7 +164,8 @@ class OrderRepository:
         """
         cursor = self.conn.execute(
             """SELECT id, customer_id, user_id, status, created_at,
-                      customer_name, customer_email, customer_phone, customer_address
+                      customer_name, customer_email, customer_phone, customer_address,
+                      payment_method, payment_status, stripe_session_id, checkout_token
                FROM orders WHERE customer_id = ? ORDER BY created_at DESC, id DESC""",
             (customer_id,),
         )
@@ -128,7 +186,8 @@ class OrderRepository:
         """
         cursor = self.conn.execute(
             """SELECT id, customer_id, user_id, status, created_at,
-                      customer_name, customer_email, customer_phone, customer_address
+                      customer_name, customer_email, customer_phone, customer_address,
+                      payment_method, payment_status, stripe_session_id, checkout_token
                FROM orders WHERE user_id = ? ORDER BY created_at DESC, id DESC""",
             (user_id,),
         )
@@ -164,7 +223,8 @@ class OrderRepository:
 
         cursor = self.conn.execute(
             """SELECT id, customer_id, user_id, status, created_at,
-                      customer_name, customer_email, customer_phone, customer_address
+                      customer_name, customer_email, customer_phone, customer_address,
+                      payment_method, payment_status, stripe_session_id, checkout_token
                FROM orders WHERE id = ? AND user_id = ?""",
             (order_id, user_id),
         )
@@ -188,7 +248,8 @@ class OrderRepository:
         """
         cursor = self.conn.execute(
             """SELECT id, customer_id, user_id, status, created_at,
-                      customer_name, customer_email, customer_phone, customer_address
+                      customer_name, customer_email, customer_phone, customer_address,
+                      payment_method, payment_status, stripe_session_id, checkout_token
                FROM orders ORDER BY created_at DESC, id DESC"""
         )
         order_rows = cursor.fetchall()
@@ -242,7 +303,8 @@ class OrderRepository:
         query_params.extend([page_size, offset])
         order_cursor = self.conn.execute(
             f"""SELECT id, customer_id, user_id, status, created_at,
-                       customer_name, customer_email, customer_phone, customer_address
+                       customer_name, customer_email, customer_phone, customer_address,
+                       payment_method, payment_status, stripe_session_id, checkout_token
                 FROM orders {where_clause}
                 ORDER BY created_at DESC, id DESC
                 LIMIT ? OFFSET ?""",
@@ -302,11 +364,23 @@ class OrderRepository:
                 else str(order.status)
             )
 
+            payment_method_str = (
+                order.payment_method.strip().lower()
+                if order.payment_method
+                else "standard"
+            )
+            payment_status_str = (
+                order.payment_status.value
+                if isinstance(order.payment_status, PaymentStatus)
+                else str(order.payment_status)
+            )
+
             cursor = self.conn.execute(
                 """INSERT INTO orders (
                        customer_id, user_id, status, created_at,
-                       customer_name, customer_email, customer_phone, customer_address
-                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                       customer_name, customer_email, customer_phone, customer_address,
+                       payment_method, payment_status, stripe_session_id, checkout_token
+                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     order.customer_id,
                     order.user_id,
@@ -316,6 +390,10 @@ class OrderRepository:
                     order.customer_email,
                     order.customer_phone,
                     order.customer_address,
+                    payment_method_str,
+                    payment_status_str,
+                    order.stripe_session_id,
+                    order.checkout_token,
                 ),
             )
             order.id = cursor.lastrowid
@@ -387,6 +465,42 @@ class OrderRepository:
                 "UPDATE orders SET status = ? WHERE id = ? AND status = ?",
                 (new_val, order_id, exp_val),
             )
+            return cursor.rowcount > 0
+
+    def update_payment_status(
+        self,
+        order_id: int,
+        payment_status: Union[PaymentStatus, str],
+        stripe_session_id: Optional[str] = None,
+    ) -> bool:
+        """Update an order's payment status and optionally stripe_session_id.
+
+        Args:
+            order_id: The ID of the order to update.
+            payment_status: New PaymentStatus enum value or string.
+            stripe_session_id: Optional Stripe Checkout Session ID.
+
+        Returns:
+            True if the order was updated, False if not found.
+        """
+        status_val = (
+            payment_status.value
+            if isinstance(payment_status, PaymentStatus)
+            else str(payment_status)
+        )
+        PaymentStatus(status_val)  # Validate status enum
+
+        with transaction(self.conn):
+            if stripe_session_id is not None:
+                cursor = self.conn.execute(
+                    "UPDATE orders SET payment_status = ?, stripe_session_id = ? WHERE id = ?",
+                    (status_val, stripe_session_id.strip(), order_id),
+                )
+            else:
+                cursor = self.conn.execute(
+                    "UPDATE orders SET payment_status = ? WHERE id = ?",
+                    (status_val, order_id),
+                )
             return cursor.rowcount > 0
 
     def delete(self, order_id: int) -> bool:

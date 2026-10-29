@@ -1,6 +1,7 @@
 """Configuration settings for the online food shop application."""
 import os
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 
@@ -216,6 +217,72 @@ class _GoogleClientSecretDescriptor:
         return os.environ.get("GOOGLE_CLIENT_SECRET")
 
 
+class _StripeSecretKeyDescriptor:
+    """Descriptor for Config.STRIPE_SECRET_KEY.
+
+    Enforces that only Stripe TEST MODE credentials (sk_test_*) are accepted.
+    Rejects any live credentials (sk_live_*) immediately.
+    """
+
+    def __get__(self, instance, owner):
+        key = os.environ.get("STRIPE_SECRET_KEY")
+        if not key or not key.strip():
+            return None
+        cleaned = key.strip()
+        if cleaned.startswith("sk_live_"):
+            raise ValueError(
+                "Live Stripe credentials are prohibited. Only Stripe test mode keys (sk_test_*) are supported."
+            )
+        if not cleaned.startswith("sk_test_"):
+            raise ValueError(
+                "Invalid Stripe secret key format. Only test mode keys starting with 'sk_test_' are supported."
+            )
+        return cleaned
+
+
+class _StripePublishableKeyDescriptor:
+    """Descriptor for Config.STRIPE_PUBLISHABLE_KEY.
+
+    Validates test mode key format (pk_test_*). Rejects live keys (pk_live_*).
+    """
+
+    def __get__(self, instance, owner):
+        key = os.environ.get("STRIPE_PUBLISHABLE_KEY")
+        if not key or not key.strip():
+            return None
+        cleaned = key.strip()
+        if cleaned.startswith("pk_live_"):
+            raise ValueError(
+                "Live Stripe credentials are prohibited. Only Stripe test mode keys (pk_test_*) are supported."
+            )
+        if not cleaned.startswith("pk_test_"):
+            raise ValueError(
+                "Invalid Stripe publishable key format. Only test mode keys starting with 'pk_test_' are supported."
+            )
+        return cleaned
+
+
+class _StripeWebhookSecretDescriptor:
+    """Descriptor for Config.STRIPE_WEBHOOK_SECRET.
+
+    Stores the webhook signing secret for Stripe event verification.
+    """
+
+    def __get__(self, instance, owner):
+        key = os.environ.get("STRIPE_WEBHOOK_SECRET")
+        if not key or not key.strip():
+            return None
+        return key.strip()
+
+
+class _StripeCurrencyDescriptor:
+    """Descriptor for Config.STRIPE_CURRENCY (defaults to 'eur')."""
+
+    def __get__(self, instance, owner):
+        curr = os.environ.get("STRIPE_CURRENCY", "eur")
+        return curr.strip().lower() if curr else "eur"
+
+
 class Config:
     """Base application configuration.
 
@@ -236,6 +303,12 @@ class Config:
     # Google OAuth 2.0 / OpenID Connect credentials
     GOOGLE_CLIENT_ID = _GoogleClientIdDescriptor()
     GOOGLE_CLIENT_SECRET = _GoogleClientSecretDescriptor()
+
+    # Stripe Payment Configuration (Phase 10.12 - Test Mode Only)
+    STRIPE_SECRET_KEY = _StripeSecretKeyDescriptor()
+    STRIPE_PUBLISHABLE_KEY = _StripePublishableKeyDescriptor()
+    STRIPE_WEBHOOK_SECRET = _StripeWebhookSecretDescriptor()
+    STRIPE_CURRENCY = _StripeCurrencyDescriptor()
 
     # Email Delivery Configuration (Phase 10.11)
     EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "memory").strip().lower()
@@ -348,3 +421,34 @@ def get_config_by_name(name: str | None = None) -> type[Config]:
     raise ValueError(
         f"Unknown configuration name '{name}'. Valid options are: {valid_options}."
     )
+
+
+def is_stripe_configured(config: Any = None) -> bool:
+    """Check whether Stripe integration is configured with a valid test mode key.
+
+    Args:
+        config: Application configuration dictionary or Config object.
+            If omitted or None, uses current_app.config or os.environ.
+
+    Returns:
+        True if STRIPE_SECRET_KEY is configured with a test key starting with 'sk_test_'.
+    """
+    if config is not None:
+        if hasattr(config, "get"):
+            key = config.get("STRIPE_SECRET_KEY")
+        else:
+            key = getattr(config, "STRIPE_SECRET_KEY", None)
+    else:
+        try:
+            from flask import current_app, has_app_context
+
+            if has_app_context() and current_app:
+                key = current_app.config.get("STRIPE_SECRET_KEY")
+            else:
+                key = os.environ.get("STRIPE_SECRET_KEY")
+        except ImportError:
+            key = os.environ.get("STRIPE_SECRET_KEY")
+
+    if not key or not isinstance(key, str) or not key.strip():
+        return False
+    return key.strip().startswith("sk_test_")

@@ -27,9 +27,14 @@
                     Date: {{ order.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if order.created_at else '' }}
                 </p>
             </div>
-            <span class="text-xs font-medium px-2.5 py-1 rounded bg-gray-100 text-gray-700">
-                Payment: Standard
-            </span>
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-medium px-2.5 py-1 rounded bg-gray-100 text-gray-700">
+                    Payment: {{ order.payment_method | capitalize }}
+                </span>
+                <span class="text-xs font-medium px-2.5 py-1 rounded {% if order.payment_status.value == 'paid' %}bg-emerald-100 text-emerald-800{% elif order.payment_status.value == 'pending' %}bg-amber-100 text-amber-800{% elif order.payment_status.value == 'cancelled' %}bg-rose-100 text-rose-800{% else %}bg-gray-100 text-gray-700{% endif %}">
+                    {{ order.payment_status.value | capitalize }}
+                </span>
+            </div>
         </div>
 
         <!-- Customer & Delivery Details (from order immutable snapshot) -->

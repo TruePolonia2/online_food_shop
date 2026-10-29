@@ -7,6 +7,7 @@ from app.repositories.email_verification_token_repository import EmailVerificati
 from app.repositories.external_identity_repository import ExternalIdentityRepository
 from app.repositories.order_repository import OrderRepository
 from app.repositories.password_reset_token_repository import PasswordResetTokenRepository
+from app.repositories.payment_repository import PaymentRepository
 from app.repositories.product_repository import ProductRepository
 from app.repositories.user_repository import UserRepository
 
@@ -19,6 +20,7 @@ __all__ = [
     "ExternalIdentityRepository",
     "OrderRepository",
     "PasswordResetTokenRepository",
+    "PaymentRepository",
     "ProductRepository",
     "UserRepository",
 ]

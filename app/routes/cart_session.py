@@ -159,6 +159,8 @@ def save_cart_to_session(cart: Cart) -> None:
 
 
 def clear_cart_session() -> None:
-    """Remove the shopping cart data from the session."""
+    """Remove the shopping cart data and associated checkout tokens from the session."""
     session.pop(SESSION_CART_KEY, None)
+    session.pop("checkout_token", None)
+    session.pop("cart_fingerprint", None)
     session.modified = True

@@ -41,6 +41,7 @@ def create_app(config_class=None) -> Flask:
     from app.formatting import format_euro
     from app.oauth import init_oauth, is_google_auth_configured
     from app.services.email_sender import init_email
+    from app.config import is_stripe_configured
 
     init_csrf(app)
     init_oauth(app)
@@ -58,6 +59,7 @@ def create_app(config_class=None) -> Flask:
             "cart_count": count,
             "current_user": get_current_user(),
             "google_auth_enabled": is_google_auth_configured(),
+            "stripe_enabled": is_stripe_configured(),
         }
 
     from app.routes.account import account_bp
