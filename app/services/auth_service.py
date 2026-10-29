@@ -687,19 +687,116 @@ class AuthService:
         intent_token = secrets.token_urlsafe(32)
 
         with transaction(self.conn):
-            self._account_link_intent_repo.invalidate_pending_for_user(user_id, provider="google")
+            self._account_link_intent_repo.invalidate_pending_for_user(
+                user_id, provider="google", action="link"
+            )
             intent = AccountLinkIntent(
                 user_id=user_id,
                 intent_id=intent_token,
                 provider="google",
                 provider_user_id=sub.strip(),
                 email=email.strip().lower(),
+                action="link",
                 expires_at=expires_at,
                 next_url=next_url,
                 created_at=now,
                 status="pending",
             )
             return self._account_link_intent_repo.create(intent)
+
+    def create_account_deletion_intent(
+        self,
+        user_id: int,
+        sub: str,
+        email: str,
+        validity_minutes: int = 5,
+    ) -> AccountLinkIntent:
+        """Create a short-lived single-use account deletion intent for server-side validation.
+
+        Invalidates any prior pending deletion intents for this user.
+
+        Args:
+            user_id: Target user ID.
+            sub: Provider unique subject identifier.
+            email: Provider verified email.
+            validity_minutes: Duration before expiration (default 5).
+
+        Returns:
+            Persisted AccountLinkIntent instance with action='delete_account'.
+        """
+        now = datetime.now(timezone.utc)
+        expires_at = now + timedelta(minutes=validity_minutes)
+        intent_token = secrets.token_urlsafe(32)
+
+        with transaction(self.conn):
+            self._account_link_intent_repo.invalidate_pending_for_user(
+                user_id, provider="google", action="delete_account"
+            )
+            intent = AccountLinkIntent(
+                user_id=user_id,
+                intent_id=intent_token,
+                provider="google",
+                provider_user_id=sub.strip(),
+                email=email.strip().lower(),
+                action="delete_account",
+                expires_at=expires_at,
+                created_at=now,
+                status="pending",
+            )
+            return self._account_link_intent_repo.create(intent)
+
+    def consume_account_deletion_intent(
+        self,
+        intent_id: str,
+        user_id: int,
+        sub: str,
+        email: str,
+    ) -> tuple[bool, Optional[str]]:
+        """Validate and atomically consume a deletion intent server-side.
+
+        Enforces server-side expiration, single-use consumption, and identity binding
+        (user_id, Google sub, and email). Protects against signed-cookie restoration
+        and concurrent submission replay.
+
+        Args:
+            intent_id: Unique intent token string.
+            user_id: Expected user ID.
+            sub: Expected Google sub identifier.
+            email: Expected user email.
+
+        Returns:
+            Tuple of (success: bool, error_code: Optional[str]).
+        """
+        if not intent_id or not isinstance(intent_id, str):
+            return False, "invalid_intent_id"
+
+        intent = self._account_link_intent_repo.get_by_intent_id(intent_id.strip())
+        if intent is None:
+            return False, "intent_not_found"
+        if intent.action != "delete_account":
+            return False, "intent_action_mismatch"
+        if intent.status == "cancelled":
+            return False, "intent_cancelled"
+        if intent.status == "consumed":
+            return False, "intent_already_consumed"
+        if intent.is_expired:
+            return False, "intent_expired"
+        if (
+            intent.user_id != user_id
+            or intent.provider_user_id != sub.strip()
+            or intent.email.strip().lower() != email.strip().lower()
+        ):
+            return False, "intent_mismatch"
+
+        # Atomically consume via SQLite WHERE status = 'pending' AND action = 'delete_account'
+        now_utc = datetime.now(timezone.utc)
+        consumed = self._account_link_intent_repo.mark_as_consumed(
+            intent_id.strip(), expected_action="delete_account", consumed_at=now_utc
+        )
+        if not consumed:
+            return False, "intent_already_consumed"
+
+        return True, None
 
     def get_account_link_intent(self, intent_id: str) -> Optional[AccountLinkIntent]:
         """Retrieve an account link intent by its unique token.
@@ -804,6 +901,8 @@ class AuthService:
                         return None, "intent_already_consumed"
                     if intent.is_expired:
                         return None, "intent_expired"
+                    if intent.action != "link":
+                        return None, "intent_mismatch"
                     if (
                         intent.user_id != user.id
                         or intent.provider_user_id != normalized_sub
@@ -812,7 +911,7 @@ class AuthService:
                         return None, "intent_mismatch"
 
                     consumed = self._account_link_intent_repo.mark_as_consumed(
-                        intent_id.strip(), consumed_at=now_utc
+                        intent_id.strip(), expected_action="link", consumed_at=now_utc
                     )
                     if not consumed:
                         return None, "intent_already_consumed"
@@ -845,11 +944,102 @@ class AuthService:
                 )
                 self._external_identity_repo.create(identity)
 
-                # 5. Invalidate any other pending intents for this user
+                # 5. Invalidate any other pending link intents for this user
                 self._account_link_intent_repo.invalidate_pending_for_user(
-                    user.id, provider="google", invalidation_time=now_utc
+                    user.id, provider="google", action="link", invalidation_time=now_utc
                 )
                 return user, None
         except sqlite3.IntegrityError:
             return None, "integrity_error"
-            return None, "integrity_error"
+
+    def delete_customer_account(self, user_id: int) -> tuple[bool, Optional[str]]:
+        """Permanently delete a customer account and anonymize associated historical records.
+
+        Atomically removes user credentials, external identities, verification tokens,
+        password reset tokens, and pending account link intents.
+        Anonymizes orders to preserve financial and accounting records (sets orders.user_id = NULL
+        and snapshot fields customer_name = 'Deleted Customer', customer_email = 'deleted@deleted.invalid',
+        customer_phone = NULL, customer_address = 'Redacted').
+        If the associated customer profile has existing orders, anonymizes the customer profile
+        due to ON DELETE RESTRICT on orders.customer_id. If no orders exist, deletes the customer profile.
+        Frees the user's email address so it can be re-registered immediately.
+
+        Args:
+            user_id: The ID of the customer user account to delete.
+
+        Returns:
+            Tuple of (success: bool, error_code: Optional[str]).
+            Error codes: 'invalid_user_id', 'user_not_found', 'owner_forbidden', 'database_error'.
+        """
+        if isinstance(user_id, bool) or not isinstance(user_id, int) or user_id <= 0:
+            return False, "invalid_user_id"
+
+        user = self._user_repo.get_by_id(user_id)
+        if user is None:
+            return False, "user_not_found"
+
+        if user.role == UserRole.OWNER or (isinstance(user.role, str) and user.role == "owner"):
+            return False, "owner_forbidden"
+
+        try:
+            with transaction(self.conn):
+                # 1. Look up any customer records matching this user (by user_id or case-insensitive email)
+                cursor = self.conn.execute(
+                    "SELECT id, email FROM customers WHERE user_id = ? OR lower(email) = lower(?)",
+                    (user.id, user.email),
+                )
+                customer_rows = cursor.fetchall()
+
+                for crow in customer_rows:
+                    cid = crow["id"]
+                    cnt_cursor = self.conn.execute(
+                        "SELECT COUNT(*) FROM orders WHERE customer_id = ?",
+                        (cid,),
+                    )
+                    order_count = cnt_cursor.fetchone()[0]
+                    if order_count > 0:
+                        # Anonymize customer row to satisfy ON DELETE RESTRICT on orders.customer_id
+                        dummy_email = f"deleted_{user.id}_{cid}@deleted.invalid"
+                        self.conn.execute(
+                            """UPDATE customers
+                               SET name = 'Deleted Customer',
+                                   email = ?,
+                                   phone = NULL,
+                                   address = NULL,
+                                   user_id = NULL
+                               WHERE id = ?""",
+                            (dummy_email, cid),
+                        )
+                        # Anonymize historical order snapshots for this customer
+                        self.conn.execute(
+                            """UPDATE orders
+                               SET customer_name = 'Deleted Customer',
+                                   customer_email = 'deleted@deleted.invalid',
+                                   customer_phone = NULL,
+                                   customer_address = 'Redacted'
+                               WHERE customer_id = ?""",
+                            (cid,),
+                        )
+                    else:
+                        # No orders: safely delete the customer record
+                        self.conn.execute("DELETE FROM customers WHERE id = ?", (cid,))
+
+                # 2. Anonymize any orders directly associated with this user_id
+                self.conn.execute(
+                    """UPDATE orders
+                       SET user_id = NULL,
+                           customer_name = 'Deleted Customer',
+                           customer_email = 'deleted@deleted.invalid',
+                           customer_phone = NULL,
+                           customer_address = 'Redacted'
+                       WHERE user_id = ?""",
+                    (user.id,),
+                )
+
+                # 3. Delete user row (cascades to tokens, external identities, and link intents)
+                self.conn.execute("DELETE FROM users WHERE id = ?", (user.id,))
+
+            return True, None
+        except sqlite3.Error as exc:
+            logger.exception("Database error while deleting customer account %s: %s", user_id, exc)
+            return False, "database_error"

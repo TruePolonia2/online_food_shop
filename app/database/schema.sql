@@ -226,6 +226,7 @@ CREATE TABLE IF NOT EXISTS account_link_intents (
     provider TEXT NOT NULL CHECK(length(trim(provider)) > 0),
     provider_user_id TEXT NOT NULL CHECK(length(trim(provider_user_id)) > 0),
     email TEXT NOT NULL CHECK(length(trim(email)) > 0),
+    action TEXT NOT NULL DEFAULT 'link' CHECK(action IN ('link', 'delete_account')),
     next_url TEXT,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     expires_at TEXT NOT NULL,

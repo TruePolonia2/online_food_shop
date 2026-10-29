@@ -10,6 +10,7 @@ from urllib.parse import unquote, urljoin, urlparse
 from flask import (
     Blueprint,
     Response,
+    abort,
     current_app,
     flash,
     g,
@@ -686,9 +687,23 @@ def google_callback():
         flash("Google sign-in is not currently configured.", "error")
         return redirect(url_for("auth.login"))
 
+    # Extract state-bound return destination and action before token exchange consumes the state
+    state_param = request.args.get("state")
+    state_data = (
+        oauth.google.framework.get_state_data(session, state_param)
+        if state_param
+        else None
+    )
+
     # Handle provider cancellation or errors
     error = request.args.get("error")
     if error:
+        if state_data and state_data.get("action") == "delete_account":
+            if state_param:
+                oauth.google.framework.clear_state_data(session, state_param)
+            flash("Google reauthentication was cancelled.", "info")
+            return redirect(url_for("account.delete_account_page"))
+
         if error in ("access_denied", "cancelled"):
             flash("Google sign-in was cancelled.", "info")
         else:
@@ -696,13 +711,98 @@ def google_callback():
             flash("Google sign-in failed. Please try again or sign in with your password.", "error")
         return redirect(url_for("auth.login"))
 
-    # Extract state-bound return destination before token exchange consumes the state
-    state_param = request.args.get("state")
-    state_data = (
-        oauth.google.framework.get_state_data(session, state_param)
-        if state_param
-        else None
-    )
+    # Dedicated account deletion reauthentication verification
+    if state_data and state_data.get("action") == "delete_account":
+        current_user = get_current_user()
+        expected_user_id = state_data.get("expected_user_id")
+        if current_user is None or current_user.id != expected_user_id:
+            if state_param:
+                oauth.google.framework.clear_state_data(session, state_param)
+            flash("Your session has expired or is invalid. Please sign in again.", "warning")
+            return redirect(url_for("auth.login"))
+
+        if current_user.role == UserRole.OWNER or (
+            isinstance(current_user.role, str) and current_user.role == "owner"
+        ):
+            if state_param:
+                oauth.google.framework.clear_state_data(session, state_param)
+            abort(403)
+
+        try:
+            token = oauth.google.authorize_access_token()
+        except Exception as exc:
+            logger.warning("Google OAuth token exchange for deletion reauth failed: %s", exc)
+            flash("Google reauthentication failed. Please try again.", "error")
+            return redirect(url_for("account.delete_account_page"))
+
+        userinfo = token.get("userinfo") if token else None
+        if not userinfo or not isinstance(userinfo, dict):
+            logger.warning("Missing or invalid userinfo in Google reauth token response")
+            flash("Google reauthentication failed to obtain verified account identity.", "error")
+            return redirect(url_for("account.delete_account_page"))
+
+        sub = userinfo.get("sub")
+        email = userinfo.get("email")
+        email_verified = userinfo.get("email_verified")
+
+        if not sub or not isinstance(sub, str) or not sub.strip():
+            logger.warning("Invalid or missing sub claim from Google in deletion reauth")
+            flash("Invalid identity information received from Google.", "error")
+            return redirect(url_for("account.delete_account_page"))
+
+        if not email or not isinstance(email, str) or not email.strip() or "@" not in email:
+            logger.warning("Invalid or missing email claim from Google in deletion reauth")
+            flash("No valid email address was provided by Google.", "error")
+            return redirect(url_for("account.delete_account_page"))
+
+        is_verified = email_verified is True or str(email_verified).lower() == "true"
+        if not is_verified:
+            logger.warning("Unverified Google email claim in deletion reauth for '%s'", email)
+            flash(
+                "Your Google email address is not verified. Please verify your email with Google first.",
+                "error",
+            )
+            return redirect(url_for("account.delete_account_page"))
+
+        auth_service = AuthService()
+        linked_identity = auth_service.external_identity_repo.get_by_user_and_provider(
+            current_user.id, "google"
+        )
+        if linked_identity is None or linked_identity.provider_user_id != sub.strip():
+            logger.warning("Google reauthentication sub mismatch for user %s", current_user.id)
+            flash(
+                "The selected Google account does not match the Google account linked to this profile.",
+                "error",
+            )
+            return redirect(url_for("account.delete_account_page"))
+
+        if email.strip().lower() != current_user.email.strip().lower():
+            logger.warning("Google reauthentication email mismatch for user %s", current_user.id)
+            flash(
+                "The Google account email does not match your store account email.",
+                "error",
+            )
+            return redirect(url_for("account.delete_account_page"))
+
+        # Create server-side single-use deletion intent bound to user, provider sub, and deletion action
+        deletion_intent = auth_service.create_account_deletion_intent(
+            user_id=current_user.id,
+            sub=sub.strip(),
+            email=current_user.email,
+            validity_minutes=5,
+        )
+        session["_reauth_delete_token"] = {
+            "intent_id": deletion_intent.intent_id,
+            "user_id": current_user.id,
+            "expires_at": deletion_intent.expires_at.timestamp(),
+        }
+        session.modified = True
+        flash(
+            "Google identity verified. Please review the warning and submit final confirmation below to permanently delete your account.",
+            "info",
+        )
+        return redirect(url_for("account.delete_account_page"))
+
     next_url = state_data.get("next_url") if state_data else None
     if not is_safe_redirect_url(next_url):
         next_url = None

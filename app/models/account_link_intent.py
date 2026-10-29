@@ -18,6 +18,7 @@ class AccountLinkIntent:
     email: str
     expires_at: datetime
     id: Optional[int] = None
+    action: str = "link"
     next_url: Optional[str] = None
     status: str = "pending"
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -46,6 +47,12 @@ class AccountLinkIntent:
 
         if self.status not in ("pending", "consumed", "cancelled"):
             raise ValueError(f"Invalid intent status: {self.status}")
+
+        if not self.action or not isinstance(self.action, str) or not self.action.strip():
+            raise ValueError("Intent action cannot be empty.")
+        self.action = self.action.strip().lower()
+        if self.action not in ("link", "delete_account"):
+            raise ValueError(f"Invalid intent action: {self.action}")
 
         # Parse string timestamps if needed and ensure UTC timezone awareness
         if isinstance(self.expires_at, str):

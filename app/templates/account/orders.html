@@ -91,5 +91,20 @@
         </div>
     </div>
     {% endif %}
+
+    <!-- Account Management / Danger Zone -->
+    {% if current_user and current_user.role != 'owner' %}
+    <div class="mt-12 pt-8 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-base font-bold text-gray-900">Account Settings</h2>
+            <p class="text-sm text-gray-500 mt-0.5">Manage your credentials, privacy settings, or delete your customer account.</p>
+        </div>
+        <div>
+            <a id="delete-account-link" href="{{ url_for('account.delete_account_page') }}" class="inline-flex items-center text-sm font-medium text-red-600 hover:text-red-700 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500 rounded p-1">
+                Delete Account &rarr;
+            </a>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

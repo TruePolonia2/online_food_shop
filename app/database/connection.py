@@ -322,6 +322,7 @@ def _migrate_account_link_intents_table_if_needed(conn: sqlite3.Connection) -> N
             provider TEXT NOT NULL CHECK(length(trim(provider)) > 0),
             provider_user_id TEXT NOT NULL CHECK(length(trim(provider_user_id)) > 0),
             email TEXT NOT NULL CHECK(length(trim(email)) > 0),
+            action TEXT NOT NULL DEFAULT 'link' CHECK(action IN ('link', 'delete_account')),
             next_url TEXT,
             created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
             expires_at TEXT NOT NULL,
@@ -332,12 +333,27 @@ def _migrate_account_link_intents_table_if_needed(conn: sqlite3.Connection) -> N
         );
         """
     )
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_account_link_intents_intent_id ON account_link_intents (intent_id);"
-    )
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_account_link_intents_user_status ON account_link_intents (user_id, status);"
-    )
+    cursor = conn.execute("PRAGMA table_info(account_link_intents);")
+    existing_cols = {row[1] for row in cursor.fetchall()}
+    if "action" not in existing_cols:
+        conn.execute(
+            "ALTER TABLE account_link_intents ADD COLUMN action TEXT NOT NULL DEFAULT 'link' CHECK(action IN ('link', 'delete_account'));"
+        )
+
+    idx_cursor = conn.execute("PRAGMA index_list('account_link_intents');")
+    existing_indexes = {row[1] for row in idx_cursor.fetchall()}
+    if "idx_account_link_intents_intent_id" not in existing_indexes:
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_account_link_intents_intent_id ON account_link_intents (intent_id);"
+        )
+    if "idx_account_link_intents_user_status" not in existing_indexes:
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_account_link_intents_user_status ON account_link_intents (user_id, status);"
+        )
+    if "idx_account_link_intents_action_status" not in existing_indexes:
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_account_link_intents_action_status ON account_link_intents (user_id, action, status);"
+        )
 
 
 def init_db(
