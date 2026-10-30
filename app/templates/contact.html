@@ -26,12 +26,12 @@
     {% endif %}
 
     <!-- Contact Form -->
-    <form action="{{ url_for('contact.contact') }}" method="POST" class="mt-8 space-y-6 bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs transition-colors" novalidate>
+    <form action="{{ url_for('contact.contact') }}" method="POST" class="mt-8 space-y-6 bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl border border-stone-200/90 dark:border-slate-700 shadow-xs transition-colors" novalidate>
         {{ csrf_input() }}
 
         <!-- Name Field -->
         <div>
-            <label for="name" class="block text-sm font-semibold text-gray-900 dark:text-slate-200 mb-1">
+            <label for="name" class="block text-sm font-semibold text-stone-900 dark:text-slate-200 mb-1">
                 Your Name <span class="text-red-500" aria-hidden="true">*</span>
             </label>
             <input
@@ -42,7 +42,7 @@
                 maxlength="100"
                 value="{{ form_data.name|default('', true) }}"
                 aria-describedby="{% if errors and errors.name %}name-error{% endif %}"
-                class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-gray-900 dark:text-slate-100 bg-white dark:bg-slate-900 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors {% if errors and errors.name %}border-red-500 focus:ring-red-500 bg-red-50/20 dark:bg-red-950/20{% else %}border-gray-300 dark:border-slate-600 focus:border-emerald-500 focus:ring-emerald-500{% endif %}"
+                class="w-full px-3.5 py-2.5 rounded-xl border text-sm text-stone-900 dark:text-slate-100 bg-white dark:bg-slate-900 placeholder-stone-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors {% if errors and errors.name %}border-red-500 focus:ring-red-500 bg-red-50/20 dark:bg-red-950/20{% else %}border-stone-300 dark:border-slate-600 focus:border-emerald-500 focus:ring-emerald-500{% endif %}"
                 placeholder="Jane Doe"
             >
             {% if errors and errors.name %}

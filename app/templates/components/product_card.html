@@ -1,33 +1,42 @@
 {# Reusable Product Card Component #}
 {% macro product_card(product) %}
-<article class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden p-6">
+<article class="bg-white dark:bg-slate-800 rounded-3xl border border-stone-200/90 dark:border-slate-700 shadow-xs hover:shadow-md hover:border-orange-300 dark:hover:border-orange-500/50 transition-all duration-200 flex flex-col justify-between overflow-hidden p-6 group">
     <div>
-        <div class="flex items-start justify-between gap-2 mb-2">
-            <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">
-                <a href="{{ url_for('catalog.product_detail', product_id=product.id) }}" class="focus:outline-none focus:underline">
-                    {{ product.name }}
-                </a>
-            </h2>
+        <!-- Illustrated Header Tile echoing the brand's food & grocery motifs -->
+        <div class="rounded-2xl bg-gradient-to-br from-amber-50/80 via-white to-orange-50/40 dark:from-slate-750 dark:via-slate-800 dark:to-slate-750 border border-stone-200/60 dark:border-slate-700/60 p-3.5 mb-4 flex items-center justify-between transition-transform duration-200 group-hover:scale-[1.01]">
+            <div class="w-9 h-9 rounded-full bg-white dark:bg-slate-700 shadow-2xs flex items-center justify-center text-orange-500 dark:text-orange-400 shrink-0">
+                <svg class="w-5 h-5" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+            </div>
             {% if product.is_in_stock %}
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 shrink-0">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                 In Stock
             </span>
             {% else %}
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-800 border border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800 shrink-0">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800 shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                 Out of Stock
             </span>
             {% endif %}
         </div>
 
+        <h2 class="text-lg font-bold text-stone-900 dark:text-slate-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
+            <a href="{{ url_for('catalog.product_detail', product_id=product.id) }}" class="focus:outline-none focus:underline">
+                {{ product.name }}
+            </a>
+        </h2>
+
         {% if product.description %}
-        <p class="text-sm text-gray-600 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed">{{ product.description }}</p>
+        <p class="text-sm text-stone-600 dark:text-slate-400 line-clamp-2 mt-1.5 leading-relaxed">{{ product.description }}</p>
         {% endif %}
     </div>
 
-    <div class="pt-4 border-t border-gray-100 dark:border-slate-700/80 mt-4">
+    <div class="pt-4 border-t border-stone-100 dark:border-slate-700/80 mt-4">
         <div class="flex items-baseline justify-between mb-4">
-            <span class="text-2xl font-extrabold text-gray-900 dark:text-slate-100">{{ product.price | format_euro }}</span>
-            <span class="text-xs font-medium text-gray-500 dark:text-slate-400">Stock: {{ product.stock_quantity }}</span>
+            <span class="text-2xl font-extrabold text-stone-900 dark:text-slate-100 tracking-tight">{{ product.price | format_euro }}</span>
+            <span class="text-xs font-medium text-stone-500 dark:text-slate-400">Stock: {{ product.stock_quantity }}</span>
         </div>
 
         <form action="{{ url_for('cart.add_item') }}" method="post" class="space-y-3">
@@ -42,12 +51,15 @@
                        value="1"
                        min="1"
                        max="{{ product.stock_quantity }}"
-                       class="w-16 px-2 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 rounded-lg text-sm text-center focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-50"
+                       class="w-16 px-2 py-2 border border-stone-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-stone-900 dark:text-slate-100 rounded-xl text-sm text-center font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-50"
                        {% if not product.is_in_stock %}disabled{% endif %}>
                 <button type="submit"
-                        class="flex-1 inline-flex justify-center items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="flex-1 inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl shadow-xs hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         {% if not product.is_in_stock %}disabled{% endif %}>
-                    Add to Cart
+                    <svg class="w-4 h-4 shrink-0" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span>Add to Cart</span>
                 </button>
             </div>
         </form>

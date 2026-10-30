@@ -71,16 +71,23 @@ class TestComponentsAndTheme(unittest.TestCase):
         self.assertIn("document.documentElement.classList.remove('dark')", html)
 
     def test_brand_logo_emblem_rendering(self) -> None:
-        """Brand emblem component must render circular vector emblem with dual brand coloring."""
+        """Brand emblem component must render the approved logo.png with accessible attributes."""
         res = self.client.get("/")
         self.assertEqual(res.status_code, 200)
         html = res.data.decode("utf-8")
 
         self.assertIn("Online Food Shop", html)
-        # Emblem SVG attributes
-        self.assertIn('viewBox="0 0 32 32"', html)
-        self.assertIn('fill="#ea580c"', html)
-        self.assertIn('fill="#059669"', html)
+        self.assertIn('/static/images/logo.png', html)
+        self.assertIn('alt="Online Food Shop Logo"', html)
+        self.assertIn('width="36"', html)
+        self.assertIn('height="36"', html)
+
+    def test_logo_image_asset_served(self) -> None:
+        """Verify the approved logo.png image file is served by the static endpoint."""
+        res = self.client.get("/static/images/logo.png")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("image/png", res.content_type)
+        self.assertGreater(len(res.data), 1000)
 
     def test_mobile_menu_drawer_and_toggle(self) -> None:
         """Mobile navigation toggle button and collapsible drawer must be present with ARIA attributes."""

@@ -6,7 +6,29 @@
  * in offline presentation environments and when CDN scripts are suppressed.
  */
 
-/* 1. Reset & Box Sizing */
+/* 1. Design Tokens, Reset & Box Sizing */
+:root {
+    --color-brand-green: #059669;
+    --color-brand-green-hover: #047857;
+    --color-brand-green-light: #ecfdf5;
+    --color-brand-orange: #ea580c;
+    --color-brand-orange-hover: #c2410c;
+    --color-brand-orange-light: #fff7ed;
+    --color-bg-light: #fdfbf7;
+    --color-card-light: #ffffff;
+    --color-border-light: #f0ebe1;
+    --color-text-main: #1c1917;
+    --color-text-muted: #78716c;
+}
+
+.dark {
+    --color-bg-dark: #0f172a;
+    --color-card-dark: #1e293b;
+    --color-border-dark: #334155;
+    --color-text-dark-main: #f8fafc;
+    --color-text-dark-muted: #94a3b8;
+}
+
 *, *::before, *::after {
     box-sizing: border-box;
 }
@@ -21,8 +43,8 @@ html {
 body {
     margin: 0;
     line-height: inherit;
-    background-color: #f9fafb;
-    color: #111827;
+    background-color: #fdfbf7;
+    color: #1c1917;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -131,6 +153,11 @@ nav a, nav button {
 .text-emerald-800 { color: #065f46; }
 .text-emerald-900 { color: #064e3b; }
 
+.text-orange-500 { color: #f97316; }
+.text-orange-600 { color: #ea580c; }
+.text-orange-700 { color: #c2410c; }
+.text-orange-800 { color: #9a3412; }
+
 .text-amber-600 { color: #d97706; }
 .text-amber-800 { color: #92400e; }
 .text-amber-900 { color: #78350f; }
@@ -156,6 +183,11 @@ nav a, nav button {
 .bg-emerald-600 { background-color: #059669; }
 .bg-emerald-700 { background-color: #047857; }
 .bg-emerald-800 { background-color: #065f46; }
+.bg-orange-50 { background-color: #fff7ed; }
+.bg-orange-100 { background-color: #ffedd5; }
+.bg-orange-500 { background-color: #f97316; }
+.bg-orange-600 { background-color: #ea580c; }
+.bg-orange-700 { background-color: #c2410c; }
 .bg-amber-50 { background-color: #fffbeb; }
 .bg-amber-100 { background-color: #fef3c7; }
 .bg-red-50 { background-color: #fef2f2; }
@@ -170,6 +202,8 @@ nav a, nav button {
 .border-emerald-200 { border-color: #a7f3d0; }
 .border-emerald-600 { border-color: #059669; }
 .border-amber-200 { border-color: #fde68a; }
+.border-orange-200 { border-color: #fed7aa; }
+.border-orange-500 { border-color: #f97316; }
 .border-red-200 { border-color: #fecaca; }
 .border-blue-200 { border-color: #bfdbfe; }
 
@@ -177,6 +211,7 @@ nav a, nav button {
 .rounded-lg { border-radius: 0.5rem; }
 .rounded-xl { border-radius: 0.75rem; }
 .rounded-2xl { border-radius: 1rem; }
+.rounded-3xl { border-radius: 1.5rem; }
 .rounded-full { border-radius: 9999px; }
 
 .shadow-xs { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }

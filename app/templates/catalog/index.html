@@ -7,27 +7,73 @@
 
 {% block content %}
 <div class="space-y-8">
-    <!-- Page Header -->
-    <div>
-        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">Product Catalog</h1>
-        <p class="mt-2 text-base text-gray-600 dark:text-slate-400">Explore fresh, locally sourced food, bakery items, and organic produce.</p>
-    </div>
+    <!-- Distinctive Food Shop Hero Section -->
+    <section class="relative bg-gradient-to-br from-amber-50/80 via-white to-emerald-50/60 dark:from-slate-800 dark:via-slate-850 dark:to-emerald-950/20 rounded-3xl border border-stone-200/80 dark:border-slate-700/80 p-6 sm:p-10 shadow-xs overflow-hidden transition-colors">
+        <!-- Circular soft background accents echoing the logo's playful circular composition -->
+        <div class="absolute -top-16 -right-16 w-52 h-52 rounded-full bg-orange-100/50 dark:bg-orange-950/20 blur-2xl pointer-events-none" aria-hidden="true"></div>
+        <div class="absolute -bottom-16 -left-16 w-52 h-52 rounded-full bg-emerald-100/50 dark:bg-emerald-950/20 blur-2xl pointer-events-none" aria-hidden="true"></div>
+
+        <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div class="max-w-2xl space-y-3">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 dark:bg-orange-950/70 dark:text-orange-300 border border-orange-200/80 dark:border-orange-800/60">
+                    <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+                    <span>Fresh &amp; Wholesome Everyday</span>
+                </div>
+                <h1 class="text-3xl sm:text-4xl font-extrabold text-stone-900 dark:text-slate-100 tracking-tight leading-tight">
+                    Farm-fresh food, savory steaks, eggs &amp; artisan harvest
+                </h1>
+                <p class="text-base text-stone-600 dark:text-slate-300 leading-relaxed">
+                    Explore fresh, locally sourced food, bakery items, and organic produce. Hand-selected for premium quality and delicious meals.
+                </p>
+                <div class="pt-2 flex flex-wrap items-center gap-3">
+                    <a href="#catalog-items" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 shadow-xs hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all">
+                        <span>Browse Catalog</span>
+                        <svg class="w-4 h-4" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </a>
+                    <span class="text-xs font-medium text-stone-500 dark:text-slate-400 flex items-center gap-1.5 py-1">
+                        <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                        Same-day fresh packing &amp; safe checkout
+                    </span>
+                </div>
+            </div>
+
+            <!-- Approved Brand Seal Accent -->
+            <div class="hidden sm:flex flex-col items-center justify-center p-4 bg-white/70 dark:bg-slate-800/70 rounded-2xl border border-stone-200/70 dark:border-slate-700/70 shadow-2xs shrink-0 self-center md:self-auto text-center">
+                <img src="{{ url_for('static', filename='images/logo.png') }}"
+                     alt="Online Food Shop Emblem"
+                     width="72"
+                     height="72"
+                     class="w-18 h-18 object-contain rounded-full transition-transform hover:scale-105 duration-200" />
+                <span class="text-xs font-bold text-stone-700 dark:text-slate-300 mt-2">100% Quality Guaranteed</span>
+                <span class="text-[11px] text-stone-500 dark:text-slate-400">Authentic Food Market</span>
+            </div>
+        </div>
+    </section>
 
     <!-- Category Filter Navigation -->
-    <nav aria-label="Categories" class="flex flex-wrap items-center gap-2 pb-2 border-b border-gray-200 dark:border-slate-800">
-        {{ all_categories_pill(is_selected=(not selected_category)) }}
-        {% for cat in categories %}
-        {{ category_pill(cat, is_selected=(selected_category and selected_category.id == cat.id)) }}
-        {% endfor %}
-    </nav>
+    <div id="catalog-items" class="space-y-4 pt-2">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-bold text-stone-900 dark:text-slate-100">
+                {% if selected_category %}Category: {{ selected_category.name }}{% else %}All Products{% endif %}
+            </h2>
+            {% if selected_category %}
+            <a href="{{ url_for('catalog.index') }}" class="text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300">
+                Clear filter
+            </a>
+            {% endif %}
+        </div>
 
-    <!-- Category Title Indicator (if filtered) -->
-    {% if selected_category %}
-    <div class="flex items-center justify-between">
-        <h2 class="text-xl font-bold text-gray-800 dark:text-slate-200">Category: {{ selected_category.name }}</h2>
-        <a href="{{ url_for('catalog.index') }}" class="text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300">Clear filter</a>
+        <nav aria-label="Categories" class="flex flex-wrap items-center gap-2 pb-2 border-b border-stone-200/80 dark:border-slate-800">
+            {{ all_categories_pill(is_selected=(not selected_category)) }}
+            {% for cat in categories %}
+            {{ category_pill(cat, is_selected=(selected_category and selected_category.id == cat.id)) }}
+            {% endfor %}
+        </nav>
     </div>
-    {% endif %}
 
     <!-- Products Grid -->
     {% if products %}

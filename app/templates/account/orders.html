@@ -18,28 +18,28 @@
 
     <!-- Orders Content -->
     {% if orders %}
-    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs overflow-hidden transition-colors">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl border border-stone-200/90 dark:border-slate-700 shadow-xs overflow-hidden transition-colors">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm border-collapse" aria-label="Order History">
                 <thead>
-                    <tr class="bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 text-xs font-semibold uppercase text-gray-500 dark:text-slate-400">
-                        <th scope="col" class="py-3 px-4 sm:px-6">Order</th>
-                        <th scope="col" class="py-3 px-4 sm:px-6">Date</th>
-                        <th scope="col" class="py-3 px-4 sm:px-6">Status</th>
-                        <th scope="col" class="py-3 px-4 sm:px-6 text-center">Items</th>
-                        <th scope="col" class="py-3 px-4 sm:px-6 text-right">Total</th>
-                        <th scope="col" class="py-3 px-4 sm:px-6 text-right">Action</th>
+                    <tr class="bg-stone-50 dark:bg-slate-900 border-b border-stone-200 dark:border-slate-700 text-xs font-semibold uppercase text-stone-500 dark:text-slate-400">
+                        <th scope="col" class="py-3.5 px-4 sm:px-6">Order</th>
+                        <th scope="col" class="py-3.5 px-4 sm:px-6">Date</th>
+                        <th scope="col" class="py-3.5 px-4 sm:px-6">Status</th>
+                        <th scope="col" class="py-3.5 px-4 sm:px-6 text-center">Items</th>
+                        <th scope="col" class="py-3.5 px-4 sm:px-6 text-right">Total</th>
+                        <th scope="col" class="py-3.5 px-4 sm:px-6 text-right">Action</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-slate-700/80">
+                <tbody class="divide-y divide-stone-100 dark:divide-slate-700/80">
                     {% for order in orders %}
-                    <tr class="hover:bg-gray-50/80 dark:hover:bg-slate-750/50 transition-colors">
-                        <td class="py-4 px-4 sm:px-6 font-bold text-gray-900 dark:text-slate-100">
+                    <tr class="hover:bg-amber-50/30 dark:hover:bg-slate-750/50 transition-colors">
+                        <td class="py-4 px-4 sm:px-6 font-bold text-stone-900 dark:text-slate-100">
                             <a href="{{ url_for('account.order_detail', order_id=order.id) }}" class="text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:underline focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded">
                                 #{{ order.id }}
                             </a>
                         </td>
-                        <td class="py-4 px-4 sm:px-6 text-gray-600 dark:text-slate-400 whitespace-nowrap">
+                        <td class="py-4 px-4 sm:px-6 text-stone-600 dark:text-slate-400 whitespace-nowrap">
                             {{ order.created_at.strftime('%Y-%m-%d %H:%M UTC') if order.created_at else '' }}
                         </td>
                         <td class="py-4 px-4 sm:px-6 whitespace-nowrap">
@@ -48,10 +48,10 @@
                                 {{ status_badge(order.payment_status) }}
                             </div>
                         </td>
-                        <td class="py-4 px-4 sm:px-6 text-center text-gray-600 dark:text-slate-400 whitespace-nowrap">
+                        <td class="py-4 px-4 sm:px-6 text-center text-stone-600 dark:text-slate-400 whitespace-nowrap">
                             {{ order.items | sum(attribute='quantity') }}
                         </td>
-                        <td class="py-4 px-4 sm:px-6 text-right font-bold text-gray-900 dark:text-slate-100 whitespace-nowrap">
+                        <td class="py-4 px-4 sm:px-6 text-right font-bold text-stone-900 dark:text-slate-100 whitespace-nowrap">
                             {{ order.total | format_euro }}
                         </td>
                         <td class="py-4 px-4 sm:px-6 text-right whitespace-nowrap">
@@ -67,7 +67,7 @@
     </div>
     {% else %}
     <!-- Empty State (preserving id="empty-orders-state") -->
-    <div id="empty-orders-state" class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-8 sm:p-12 text-center shadow-xs space-y-4 transition-colors">
+    <div id="empty-orders-state" class="bg-white dark:bg-slate-800 rounded-3xl border border-stone-200/90 dark:border-slate-700 p-8 sm:p-12 text-center shadow-xs space-y-4 transition-colors">
         <div class="w-16 h-16 bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-400 rounded-full flex items-center justify-center mx-auto">
             <svg class="w-8 h-8" width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
