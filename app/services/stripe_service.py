@@ -254,7 +254,8 @@ class StripeService:
                     )
                 payment.stripe_session_id = existing_session.id
                 order.stripe_session_id = existing_session.id
-                self.validate_redirect_url(existing_session.url)
+                if getattr(existing_session, "url", None):
+                    self.validate_redirect_url(existing_session.url)
                 return existing_session
 
             # 2. Previous attempt definitively failed without creating a usable session.
@@ -365,18 +366,74 @@ class StripeService:
         except Exception as exc:
             raise StripePaymentError(f"Error retrieving Stripe session: {exc}") from exc
 
+    def is_valid_session_for_order(self, session: Any, order: Order) -> bool:
+        """Validate that a Stripe Checkout Session candidate authoritatively matches an Order.
+
+        Verifies:
+        - Session operates strictly in TEST MODE (livemode is False)
+        - Session mode is 'payment'
+        - Currency matches 'eur' exactly (case-insensitive)
+        - amount_total matches order.total (exact integer cents)
+        - client_reference_id or metadata.order_id matches order.id
+
+        Returns:
+            True if all constraints are satisfied, False otherwise.
+        """
+        if session is None or order is None:
+            return False
+
+        # 1. Strict test-mode check: never accept a livemode session in test-mode environment
+        if getattr(session, "livemode", None) is not False:
+            return False
+
+        # 2. Session mode must be 'payment'
+        if getattr(session, "mode", None) != "payment":
+            return False
+
+        # 3. Currency must be 'eur'
+        if str(getattr(session, "currency", "") or "").strip().lower() != "eur":
+            return False
+
+        # 4. Total must match exact integer cents
+        if getattr(session, "amount_total", None) != order.total:
+            return False
+
+        # 5. Order reference check (client_reference_id or metadata.order_id)
+        client_ref = str(getattr(session, "client_reference_id", "") or "").strip()
+        meta = getattr(session, "metadata", None) or {}
+        meta_dict = (
+            meta.to_dict()
+            if hasattr(meta, "to_dict")
+            else dict(meta)
+            if isinstance(meta, dict)
+            else {}
+        )
+        meta_order_id = str(meta_dict.get("order_id", "") or "").strip()
+        target_str = str(order.id).strip()
+
+        return client_ref == target_str or meta_order_id == target_str
+
     def find_session_for_order(self, order_id: int) -> Optional[stripe.checkout.Session]:
         """Look up an existing Stripe Checkout Session associated with an order.
 
         Inspects local database associations first. If not yet recorded locally,
         queries the Stripe API for active or completed sessions matching the order ID.
+        Strictly verifies that any returned session candidate matches the order's
+        amount, currency, mode, test-mode status, and identifiers.
         """
-        # 1. Check local order record
         order = self.order_repo.get_by_id(order_id)
-        if order and order.stripe_session_id:
+        if order is None:
+            return None
+
+        # 1. Check local order record
+        if order.stripe_session_id:
             try:
                 session = self.retrieve_checkout_session(order.stripe_session_id)
-                if session and getattr(session, "status", None) in ("open", "complete"):
+                if (
+                    session
+                    and getattr(session, "status", None) in ("open", "complete")
+                    and self.is_valid_session_for_order(session, order)
+                ):
                     return session
             except Exception:
                 pass
@@ -387,7 +444,11 @@ class StripeService:
             if p.stripe_session_id:
                 try:
                     session = self.retrieve_checkout_session(p.stripe_session_id)
-                    if session and getattr(session, "status", None) in ("open", "complete"):
+                    if (
+                        session
+                        and getattr(session, "status", None) in ("open", "complete")
+                        and self.is_valid_session_for_order(session, order)
+                    ):
                         return session
                 except Exception:
                     pass
@@ -397,16 +458,10 @@ class StripeService:
             secret_key = self.get_secret_key()
             stripe.api_key = secret_key
             sessions = stripe.checkout.Session.list(limit=25)
-            target_str = str(order_id).strip()
             for s in getattr(sessions, "data", []):
-                client_ref = str(getattr(s, "client_reference_id", "") or "").strip()
-                meta = getattr(s, "metadata", None) or {}
-                meta_dict = meta.to_dict() if hasattr(meta, "to_dict") else dict(meta) if isinstance(meta, dict) else {}
-                meta_order_id = str(meta_dict.get("order_id", "") or "").strip()
-                if client_ref == target_str or meta_order_id == target_str:
-                    status = getattr(s, "status", None)
-                    if status in ("open", "complete"):
-                        return s
+                status = getattr(s, "status", None)
+                if status in ("open", "complete") and self.is_valid_session_for_order(s, order):
+                    return s
         except Exception as exc:
             logger.warning("Error querying Stripe API for existing order #%s session: %s", order_id, exc)
 

@@ -1588,3 +1588,172 @@ class TestStripeIdempotencyRecoveryAndParameterConflict(BaseStripeTestCase):
             self.assertEqual(len(orders), 1)
             self.assertEqual(self.product_repo.get_by_id(self.apple.id).stock_quantity, 49)
 
+
+class TestStripeReconciliationSecurityAndAsyncSafety(BaseStripeTestCase):
+    """Tests verifying authoritative session validation and asynchronous payment safety."""
+
+    def test_is_valid_session_for_order_constraints(self) -> None:
+        """Verify strict constraint validation on checkout session candidates."""
+        stripe_service = StripeService()
+        with self.app.app_context():
+            customer = self.customer_repo.create(Customer(name="Valid User", email="valid@example.com"))
+            order = self.order_repo.create(
+                Order(
+                    customer_id=customer.id,
+                    items=[OrderItem(product_id=self.apple.id, product_name="Apple", unit_price=200, quantity=2)],
+                    payment_method="stripe",
+                    payment_status=PaymentStatus.PENDING,
+                )
+            )
+            # order.total = 400 cents
+
+            # Base valid session
+            base_session = MagicMock(
+                livemode=False,
+                mode="payment",
+                currency="eur",
+                amount_total=400,
+                client_reference_id=str(order.id),
+                metadata={"order_id": str(order.id)},
+            )
+            self.assertTrue(stripe_service.is_valid_session_for_order(base_session, order))
+
+            # 1. Livemode True must be rejected
+            live_session = MagicMock(
+                livemode=True,
+                mode="payment",
+                currency="eur",
+                amount_total=400,
+                client_reference_id=str(order.id),
+                metadata={"order_id": str(order.id)},
+            )
+            self.assertFalse(stripe_service.is_valid_session_for_order(live_session, order))
+
+            # 2. Mode other than 'payment' must be rejected
+            sub_session = MagicMock(
+                livemode=False,
+                mode="subscription",
+                currency="eur",
+                amount_total=400,
+                client_reference_id=str(order.id),
+                metadata={"order_id": str(order.id)},
+            )
+            self.assertFalse(stripe_service.is_valid_session_for_order(sub_session, order))
+
+            # 3. Currency other than 'eur' must be rejected
+            usd_session = MagicMock(
+                livemode=False,
+                mode="payment",
+                currency="usd",
+                amount_total=400,
+                client_reference_id=str(order.id),
+                metadata={"order_id": str(order.id)},
+            )
+            self.assertFalse(stripe_service.is_valid_session_for_order(usd_session, order))
+
+            # 4. Amount mismatch must be rejected
+            tampered_amt = MagicMock(
+                livemode=False,
+                mode="payment",
+                currency="eur",
+                amount_total=100,  # Expected 400
+                client_reference_id=str(order.id),
+                metadata={"order_id": str(order.id)},
+            )
+            self.assertFalse(stripe_service.is_valid_session_for_order(tampered_amt, order))
+
+            # 5. Order ID mismatch must be rejected
+            wrong_order = MagicMock(
+                livemode=False,
+                mode="payment",
+                currency="eur",
+                amount_total=400,
+                client_reference_id="999",
+                metadata={"order_id": "999"},
+            )
+            self.assertFalse(stripe_service.is_valid_session_for_order(wrong_order, order))
+
+    @patch("stripe.checkout.Session.create")
+    def test_async_payment_method_complete_unpaid_preserves_pending_in_checkout(
+        self, mock_stripe_create
+    ) -> None:
+        """Asynchronous payment method with status='complete' and payment_status='unpaid' preserves PENDING."""
+        with self.client.session_transaction() as sess:
+            sess["cart"] = {str(self.apple.id): 2}
+
+        self.client.get("/checkout")
+        with self.client.session_transaction() as sess:
+            token = sess["checkout_token"]
+
+        # Simulate an existing session for this order with status='complete' but payment_status='unpaid' (e.g. SEPA)
+        mock_async_session = MagicMock(
+            id="cs_test_async_unpaid_201",
+            url=None,
+            status="complete",
+            payment_status="unpaid",
+            livemode=False,
+            mode="payment",
+            currency="eur",
+            amount_total=400,
+            client_reference_id="1",
+            metadata={"order_id": "1"},
+        )
+
+        with patch.object(StripeService, "find_session_for_order", return_value=mock_async_session):
+            resp = self.client.post(
+                "/checkout",
+                data={"name": "Async User", "email": "async@example.com", "payment_method": "stripe", "checkout_token": token},
+                follow_redirects=False,
+            )
+            self.assertEqual(resp.status_code, 302)
+            self.assertIn("/order/stripe/success?session_id=cs_test_async_unpaid_201", resp.location)
+
+        with self.app.app_context():
+            orders = self.order_repo.get_all()
+            self.assertEqual(len(orders), 1)
+            # CRITICAL INVARIANT: Order and payment MUST remain PENDING (NOT CONFIRMED, NOT PAID)
+            self.assertEqual(orders[0].status, OrderStatus.PENDING)
+            self.assertEqual(orders[0].payment_status, PaymentStatus.PENDING)
+
+            payments = self.payment_repo.get_by_order_id(orders[0].id)
+            self.assertEqual(len(payments), 1)
+            self.assertEqual(payments[0].status, PaymentStatus.PENDING)
+
+            # Reserved inventory must remain held (50 - 2 = 48)
+            self.assertEqual(self.product_repo.get_by_id(self.apple.id).stock_quantity, 48)
+
+    @patch("stripe.checkout.Session.list")
+    def test_find_session_for_order_rejects_livemode_or_amount_mismatch(
+        self, mock_session_list
+    ) -> None:
+        """find_session_for_order filters out sessions failing security criteria."""
+        stripe_service = StripeService()
+        with self.app.app_context():
+            customer = self.customer_repo.create(Customer(name="Finder User", email="finder@example.com"))
+            order = self.order_repo.create(
+                Order(
+                    customer_id=customer.id,
+                    items=[OrderItem(product_id=self.apple.id, product_name="Apple", unit_price=200, quantity=1)],
+                    payment_method="stripe",
+                    payment_status=PaymentStatus.PENDING,
+                )
+            )
+
+            # Stripe returns a session with matching order ID but livemode=True
+            mock_session_list.return_value = MagicMock(
+                data=[
+                    MagicMock(
+                        id="cs_live_fake",
+                        livemode=True,  # LIVE MODE!
+                        mode="payment",
+                        currency="eur",
+                        amount_total=200,
+                        client_reference_id=str(order.id),
+                        status="open",
+                    )
+                ]
+            )
+
+            found = stripe_service.find_session_for_order(order.id)
+            self.assertIsNone(found)
+

@@ -241,10 +241,7 @@ def process_checkout():
                 # Cart contents, totals, or customer details changed between attempts!
                 # Before replacing, check whether Stripe already created a Checkout Session
                 existing_session = stripe_service.find_session_for_order(order.id)
-                if existing_session and (
-                    getattr(existing_session, "payment_status", None) == "paid"
-                    or getattr(existing_session, "status", None) == "complete"
-                ):
+                if existing_session and getattr(existing_session, "payment_status", None) == "paid":
                     # Order was already paid! Reconcile and redirect to success
                     clear_cart_session()
                     session["last_order_id"] = order.id
@@ -330,10 +327,7 @@ def process_checkout():
             existing_session = stripe_service.find_session_for_order(order.id)
 
         if existing_session and getattr(existing_session, "status", None) in ("open", "complete"):
-            if (
-                getattr(existing_session, "payment_status", None) == "paid"
-                or getattr(existing_session, "status", None) == "complete"
-            ):
+            if getattr(existing_session, "payment_status", None) == "paid":
                 with transaction(payment_repo.conn):
                     if payment and payment.id is not None:
                         payment_repo.update_status(payment.id, PaymentStatus.PAID)
@@ -341,6 +335,16 @@ def process_checkout():
                         order.id, PaymentStatus.PAID, stripe_session_id=existing_session.id
                     )
                     order_repo.update_status(order.id, OrderStatus.CONFIRMED)
+                clear_cart_session()
+                session["last_order_id"] = order.id
+                session["stripe_session_id"] = existing_session.id
+                session.modified = True
+                return redirect(url_for("order.stripe_success", session_id=existing_session.id))
+            elif getattr(existing_session, "status", None) == "complete":
+                # Asynchronous payment method (e.g., SEPA Direct Debit, bank transfer):
+                # The session is complete in Stripe UI, but payment_status is 'unpaid'.
+                # INVARIANT: Browser checkout routes must NEVER mark payments as PAID
+                # or orders as CONFIRMED until authoritative webhook confirmation.
                 clear_cart_session()
                 session["last_order_id"] = order.id
                 session["stripe_session_id"] = existing_session.id
