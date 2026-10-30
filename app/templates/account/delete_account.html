@@ -5,22 +5,22 @@
 
 {% block content %}
 <div class="max-w-xl mx-auto py-8">
-    <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-red-200">
+    <div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-red-200 dark:border-red-900/60 transition-colors">
         <!-- Header & Warning Icon -->
         <div class="text-center mb-6">
-            <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-100 text-red-600 mb-4 mx-auto">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 mb-4 mx-auto border border-red-200 dark:border-red-900/50">
                 <svg class="w-8 h-8" width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
             </div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Delete Your Account</h1>
-            <p class="text-sm text-red-600 font-semibold mt-1">This action is permanent and cannot be undone.</p>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">Delete Your Account</h1>
+            <p class="text-sm text-red-600 dark:text-red-400 font-semibold mt-1">This action is permanent and cannot be undone.</p>
         </div>
 
         <!-- Explanatory Warning Box -->
-        <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-950 text-sm space-y-2">
+        <div class="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-950 dark:text-red-200 text-sm space-y-2">
             <p class="font-bold">Before deleting your account, please note:</p>
-            <ul class="list-disc list-inside space-y-1 text-xs sm:text-sm text-red-900">
+            <ul class="list-disc list-inside space-y-1 text-xs sm:text-sm text-red-900 dark:text-red-300">
                 <li>All login credentials, saved sessions, and linked Google accounts will be permanently erased.</li>
                 <li>You will permanently lose private access to your order history and receipt details.</li>
                 <li>Existing orders will be anonymized to preserve store accounting records while removing your personal details.</li>
@@ -29,25 +29,25 @@
         </div>
 
         {% if error %}
-        <div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-900 text-sm font-medium" role="alert">
+        <div class="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-900 dark:text-red-200 text-sm font-medium" role="alert">
             {{ error }}
         </div>
         {% endif %}
 
         {% if rate_limit_error %}
-        <div class="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-sm font-medium" role="alert">
+        <div class="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-200 text-sm font-medium" role="alert">
             {{ rate_limit_error }}
         </div>
         {% endif %}
 
         {% if google_reauthenticated %}
-        <div class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-3">
-            <svg class="w-6 h-6 text-emerald-600 shrink-0" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <div class="mb-6 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center gap-3">
+            <svg class="w-6 h-6 text-emerald-600 dark:text-emerald-400 shrink-0" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-                <p class="text-sm font-semibold text-emerald-900">Google Reauthentication Verified</p>
-                <p class="text-xs text-emerald-700">Identity confirmed for <span class="font-bold">{{ user.email }}</span>. You may now permanently delete your account.</p>
+                <p class="text-sm font-semibold text-emerald-900 dark:text-emerald-200">Google Reauthentication Verified</p>
+                <p class="text-xs text-emerald-700 dark:text-emerald-300">Identity confirmed for <span class="font-bold">{{ user.email }}</span>. You may now permanently delete your account.</p>
             </div>
         </div>
         {% endif %}
@@ -62,7 +62,7 @@
 
             {% if has_password and not google_reauthenticated %}
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="password" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                         Current Store Password <span class="text-red-600" aria-hidden="true">*</span>
                     </label>
                     <input type="password"
@@ -71,22 +71,22 @@
                            required
                            autocomplete="current-password"
                            autofocus
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
                            placeholder="Enter your current password">
-                    <p class="text-xs text-gray-500 mt-1">
+                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
                         Please enter your password to confirm identity before account deletion.
                     </p>
                 </div>
             {% endif %}
 
             {% if not has_password and not google_reauthenticated and has_google %}
-                <div class="p-4 rounded-xl bg-gray-50 border border-gray-200 text-center space-y-3">
-                    <p class="text-sm text-gray-700 font-medium">
+                <div class="p-4 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-center space-y-3">
+                    <p class="text-sm text-gray-700 dark:text-slate-300 font-medium">
                         Your account signs in using Google. Please re-authenticate with Google to confirm your identity.
                     </p>
                     <a href="{{ url_for('account.delete_account_google') }}"
                        id="btn-google-reauth"
-                       class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs transition-colors">
+                       class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-semibold text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs transition-colors">
                         <svg class="w-4 h-4" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -100,15 +100,15 @@
 
             {% if has_password and has_google and not google_reauthenticated %}
                 <div class="relative flex py-1 items-center">
-                    <div class="flex-grow border-t border-gray-200"></div>
-                    <span class="flex-shrink mx-3 text-xs text-gray-400 font-medium">OR CONFIRM VIA</span>
-                    <div class="flex-grow border-t border-gray-200"></div>
+                    <div class="flex-grow border-t border-gray-200 dark:border-slate-700"></div>
+                    <span class="flex-shrink mx-3 text-xs text-gray-400 dark:text-slate-500 font-medium">OR CONFIRM VIA</span>
+                    <div class="flex-grow border-t border-gray-200 dark:border-slate-700"></div>
                 </div>
 
                 <div class="text-center">
                     <a href="{{ url_for('account.delete_account_google') }}"
                        id="btn-google-reauth"
-                       class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs transition-colors">
+                       class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-semibold text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs transition-colors">
                         <svg class="w-4 h-4" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -124,13 +124,13 @@
                 {% if has_password or google_reauthenticated %}
                 <button type="submit"
                         id="btn-confirm-delete"
-                        class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                        class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
                     Permanently Delete My Account
                 </button>
                 {% else %}
                 <button type="button"
                         disabled
-                        class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-gray-400 bg-gray-200 cursor-not-allowed">
+                        class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-gray-400 dark:text-slate-500 bg-gray-200 dark:bg-slate-700 cursor-not-allowed">
                     Verification Required Before Deletion
                 </button>
                 {% endif %}
@@ -138,17 +138,17 @@
         </form>
 
         <!-- Safe Cancel Return -->
-        <div class="mt-6 border-t border-gray-200 pt-4 flex items-center justify-between">
+        <div class="mt-6 border-t border-gray-200 dark:border-slate-700 pt-4 flex items-center justify-between">
             <form method="POST" action="{{ url_for('account.cancel_delete_account') }}" class="inline m-0 p-0">
                 {{ csrf_input() }}
                 <button type="submit"
                         id="btn-cancel-delete"
-                        class="text-sm font-semibold text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded p-1 bg-transparent border-0 cursor-pointer">
+                        class="text-sm font-semibold text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded p-1 bg-transparent border-0 cursor-pointer">
                     &larr; Cancel and return to My Orders
                 </button>
             </form>
             <a href="{{ url_for('catalog.index') }}"
-               class="text-xs text-gray-500 hover:text-gray-700 underline focus:outline-none focus:ring-2 focus:ring-gray-500 rounded">
+               class="text-xs text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 underline focus:outline-none focus:ring-2 focus:ring-gray-500 rounded">
                 Continue Shopping
             </a>
         </div>

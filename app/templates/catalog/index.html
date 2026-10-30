@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% from 'components/category_card.html' import all_categories_pill, category_pill %}
+{% from 'components/product_card.html' import product_card %}
+{% from 'components/empty_state.html' import empty_state %}
 
 {% block title %}Product Catalog - Online Food Shop{% endblock %}
 
@@ -6,29 +9,23 @@
 <div class="space-y-8">
     <!-- Page Header -->
     <div>
-        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Product Catalog</h1>
-        <p class="mt-2 text-base text-gray-600">Explore fresh, locally sourced food, bakery items, and organic produce.</p>
+        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">Product Catalog</h1>
+        <p class="mt-2 text-base text-gray-600 dark:text-slate-400">Explore fresh, locally sourced food, bakery items, and organic produce.</p>
     </div>
 
     <!-- Category Filter Navigation -->
-    <nav aria-label="Categories" class="flex flex-wrap items-center gap-2 pb-2 border-b border-gray-200">
-        <a href="{{ url_for('catalog.index') }}"
-           class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 {% if not selected_category %}bg-emerald-700 text-white shadow-xs{% else %}bg-white text-gray-700 hover:bg-gray-100 hover:text-emerald-700 border border-gray-200{% endif %}">
-            All Categories
-        </a>
+    <nav aria-label="Categories" class="flex flex-wrap items-center gap-2 pb-2 border-b border-gray-200 dark:border-slate-800">
+        {{ all_categories_pill(is_selected=(not selected_category)) }}
         {% for cat in categories %}
-        <a href="{{ url_for('catalog.index', category_id=cat.id) }}"
-           class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 {% if selected_category and selected_category.id == cat.id %}bg-emerald-700 text-white shadow-xs{% else %}bg-white text-gray-700 hover:bg-gray-100 hover:text-emerald-700 border border-gray-200{% endif %}">
-            {{ cat.name }}
-        </a>
+        {{ category_pill(cat, is_selected=(selected_category and selected_category.id == cat.id)) }}
         {% endfor %}
     </nav>
 
     <!-- Category Title Indicator (if filtered) -->
     {% if selected_category %}
     <div class="flex items-center justify-between">
-        <h2 class="text-xl font-bold text-gray-800">Category: {{ selected_category.name }}</h2>
-        <a href="{{ url_for('catalog.index') }}" class="text-sm font-medium text-emerald-700 hover:text-emerald-800">Clear filter</a>
+        <h2 class="text-xl font-bold text-gray-800 dark:text-slate-200">Category: {{ selected_category.name }}</h2>
+        <a href="{{ url_for('catalog.index') }}" class="text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300">Clear filter</a>
     </div>
     {% endif %}
 
@@ -36,74 +33,17 @@
     {% if products %}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for product in products %}
-        <article class="bg-white rounded-xl border border-gray-200 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between overflow-hidden p-6">
-            <div>
-                <div class="flex items-start justify-between gap-2 mb-2">
-                    <h2 class="text-lg font-bold text-gray-900 hover:text-emerald-700 transition-colors">
-                        <a href="{{ url_for('catalog.product_detail', product_id=product.id) }}" class="focus:outline-none focus:underline">
-                            {{ product.name }}
-                        </a>
-                    </h2>
-                    {% if product.is_in_stock %}
-                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0">
-                        In Stock
-                    </span>
-                    {% else %}
-                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-800 border border-red-200 shrink-0">
-                        Out of Stock
-                    </span>
-                    {% endif %}
-                </div>
-
-                {% if product.description %}
-                <p class="text-sm text-gray-600 line-clamp-2 mb-4">{{ product.description }}</p>
-                {% endif %}
-            </div>
-
-            <div class="pt-4 border-t border-gray-100 mt-4">
-                <div class="flex items-baseline justify-between mb-4">
-                    <span class="text-2xl font-bold text-gray-900">{{ product.price | format_euro }}</span>
-                    <span class="text-xs text-gray-500">Stock: {{ product.stock_quantity }}</span>
-                </div>
-
-                <form action="{{ url_for('cart.add_item') }}" method="post" class="space-y-3">
-                    {% from "_macros.html" import csrf_input %}
-                    {{ csrf_input() }}
-                    <input type="hidden" name="product_id" value="{{ product.id }}">
-                    <div class="flex items-center gap-2">
-                        <label for="qty-{{ product.id }}" class="sr-only">Quantity for {{ product.name }}</label>
-                        <input id="qty-{{ product.id }}"
-                               type="number"
-                               name="quantity"
-                               value="1"
-                               min="1"
-                               max="{{ product.stock_quantity }}"
-                               class="w-16 px-2 py-2 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                               {% if not product.is_in_stock %}disabled{% endif %}>
-                        <button type="submit"
-                                class="flex-1 inline-flex justify-center items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                {% if not product.is_in_stock %}disabled{% endif %}>
-                            Add to Cart
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </article>
+        {{ product_card(product) }}
         {% endfor %}
     </div>
     {% else %}
-    <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
-        <svg class="mx-auto h-12 w-12 text-gray-400 mb-3" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-        </svg>
-        <p class="text-base font-semibold text-gray-900">No products found.</p>
-        <p class="mt-1 text-sm text-gray-500">There are currently no products available in this category.</p>
-        <div class="mt-6">
-            <a href="{{ url_for('catalog.index') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-xs text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-                View All Products
-            </a>
-        </div>
-    </div>
+    {{ empty_state(
+        title="No products found.",
+        description="There are currently no products available in this category.",
+        action_url=url_for('catalog.index'),
+        action_label="View All Products",
+        icon="box"
+    ) }}
     {% endif %}
 </div>
 {% endblock %}

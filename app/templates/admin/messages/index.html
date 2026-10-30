@@ -6,54 +6,54 @@
 {% block content %}
 <div class="max-w-7xl mx-auto space-y-6">
     <!-- Breadcrumb & Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200 dark:border-slate-700">
         <div>
-            <nav class="flex items-center gap-2 text-xs text-gray-500 mb-1" aria-label="Breadcrumb">
-                <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-700">Store Administration</a>
+            <nav class="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 mb-1" aria-label="Breadcrumb">
+                <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-700 dark:hover:text-slate-300">Store Administration</a>
                 <span>&rsaquo;</span>
-                <span class="text-gray-900 font-semibold" aria-current="page">Support Messages</span>
+                <span class="text-gray-900 dark:text-slate-100 font-semibold" aria-current="page">Support Messages</span>
             </nav>
             <div class="flex items-center gap-3">
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Customer Support Inbox</h1>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">Customer Support Inbox</h1>
                 {% if status_counts.new > 0 %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                     {{ status_counts.new }} Unread
                 </span>
                 {% endif %}
             </div>
-            <p class="text-sm text-gray-600 mt-1">Review inbound customer inquiries, track response status, and manage resolution.</p>
+            <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">Review inbound customer inquiries, track response status, and manage resolution.</p>
         </div>
         <div class="flex items-center gap-3">
-            <a href="{{ url_for('admin.dashboard') }}" class="inline-flex items-center text-sm font-semibold text-gray-600 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded-md px-3 py-2">
+            <a href="{{ url_for('admin.dashboard') }}" class="inline-flex items-center text-sm font-semibold text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded-md px-3 py-2">
                 &larr; Dashboard
             </a>
         </div>
     </div>
 
     <!-- Filter Tabs & Stats Bar -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <!-- Status Filter Tabs -->
         <div class="flex flex-wrap items-center gap-2" role="tablist" aria-label="Filter messages by status">
             <a href="{{ url_for('admin.list_messages') }}"
-               class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors {% if not current_status %}bg-emerald-700 text-white shadow-xs{% else %}bg-gray-100 hover:bg-gray-200 text-gray-700{% endif %}"
+               class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors {% if not current_status %}bg-emerald-700 text-white shadow-xs{% else %}bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200{% endif %}"
                role="tab"
                aria-selected="{% if not current_status %}true{% else %}false{% endif %}">
                 All ({{ status_counts.all }})
             </a>
             <a href="{{ url_for('admin.list_messages', status='new') }}"
-               class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center gap-1.5 {% if current_status == 'new' %}bg-amber-600 text-white shadow-xs{% else %}bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200{% endif %}"
+               class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center gap-1.5 {% if current_status == 'new' %}bg-amber-600 text-white shadow-xs{% else %}bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800{% endif %}"
                role="tab"
                aria-selected="{% if current_status == 'new' %}true{% else %}false{% endif %}">
                 New ({{ status_counts.new }})
             </a>
             <a href="{{ url_for('admin.list_messages', status='read') }}"
-               class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors {% if current_status == 'read' %}bg-blue-600 text-white shadow-xs{% else %}bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200{% endif %}"
+               class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors {% if current_status == 'read' %}bg-blue-600 text-white shadow-xs{% else %}bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800{% endif %}"
                role="tab"
                aria-selected="{% if current_status == 'read' %}true{% else %}false{% endif %}">
                 Read ({{ status_counts.read }})
             </a>
             <a href="{{ url_for('admin.list_messages', status='resolved') }}"
-               class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors {% if current_status == 'resolved' %}bg-emerald-600 text-white shadow-xs{% else %}bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200{% endif %}"
+               class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors {% if current_status == 'resolved' %}bg-emerald-600 text-white shadow-xs{% else %}bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800{% endif %}"
                role="tab"
                aria-selected="{% if current_status == 'resolved' %}true{% else %}false{% endif %}">
                 Resolved ({{ status_counts.resolved }})
@@ -61,18 +61,18 @@
         </div>
 
         <!-- Summary Counter -->
-        <div class="text-xs text-gray-500 sm:text-right">
-            Showing <span class="font-bold text-gray-900">{{ messages|length }}</span> of <span class="font-bold text-gray-900">{{ total_count }}</span> message{{ 's' if total_count != 1 else '' }}
+        <div class="text-xs text-gray-500 dark:text-slate-400 sm:text-right">
+            Showing <span class="font-bold text-gray-900 dark:text-slate-100">{{ messages|length }}</span> of <span class="font-bold text-gray-900 dark:text-slate-100">{{ total_count }}</span> message{{ 's' if total_count != 1 else '' }}
         </div>
     </div>
 
     <!-- Messages Table -->
     {% if messages %}
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm border-collapse" aria-label="Customer Support Messages Table">
                 <thead>
-                    <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold uppercase text-gray-500">
+                    <tr class="bg-gray-50 dark:bg-slate-850/80 border-b border-gray-200 dark:border-slate-700 text-xs font-semibold uppercase text-gray-500 dark:text-slate-400">
                         <th scope="col" class="py-3 px-4 sm:px-6">Status</th>
                         <th scope="col" class="py-3 px-4 sm:px-6">Date</th>
                         <th scope="col" class="py-3 px-4 sm:px-6">Sender</th>
@@ -80,42 +80,42 @@
                         <th scope="col" class="py-3 px-4 sm:px-6 text-right">Action</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-gray-100 dark:divide-slate-700/60">
                     {% for m in messages %}
-                    <tr class="hover:bg-gray-50/80 transition-colors {% if m.status.value == 'new' %}bg-amber-50/30{% endif %}">
+                    <tr class="hover:bg-gray-50/80 dark:hover:bg-slate-700/40 transition-colors {% if m.status.value == 'new' %}bg-amber-50/30 dark:bg-amber-950/20{% endif %}">
                         <td class="py-4 px-4 sm:px-6 whitespace-nowrap">
                             {% if m.status.value == 'new' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                                 New
                             </span>
                             {% elif m.status.value == 'read' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                                 Read
                             </span>
                             {% elif m.status.value == 'resolved' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                                 Resolved
                             </span>
                             {% else %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-slate-300 border border-gray-200 dark:border-slate-600">
                                 {{ m.status.value | capitalize }}
                             </span>
                             {% endif %}
                         </td>
-                        <td class="py-4 px-4 sm:px-6 text-xs text-gray-500 whitespace-nowrap">
+                        <td class="py-4 px-4 sm:px-6 text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap">
                             {{ m.created_at.strftime('%Y-%m-%d %H:%M UTC') }}
                         </td>
                         <td class="py-4 px-4 sm:px-6">
-                            <div class="font-semibold text-gray-900">{{ m.name }}</div>
-                            <a href="mailto:{{ m.email }}" class="text-xs text-gray-500 hover:text-emerald-700 underline truncate block max-w-xs">
+                            <div class="font-semibold text-gray-900 dark:text-slate-100">{{ m.name }}</div>
+                            <a href="mailto:{{ m.email }}" class="text-xs text-gray-500 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-400 underline truncate block max-w-xs">
                                 {{ m.email }}
                             </a>
                         </td>
                         <td class="py-4 px-4 sm:px-6">
-                            <a href="{{ url_for('admin.view_message', message_id=m.id) }}" class="font-medium text-gray-900 hover:text-emerald-700 block truncate max-w-md">
+                            <a href="{{ url_for('admin.view_message', message_id=m.id) }}" class="font-medium text-gray-900 dark:text-slate-100 hover:text-emerald-700 dark:hover:text-emerald-400 block truncate max-w-md">
                                 {{ m.subject }}
                             </a>
-                            <span class="text-xs text-gray-400 truncate block max-w-md mt-0.5">
+                            <span class="text-xs text-gray-400 dark:text-slate-500 truncate block max-w-md mt-0.5">
                                 {{ m.message[:80] }}{% if m.message|length > 80 %}&hellip;{% endif %}
                             </span>
                         </td>
@@ -126,12 +126,12 @@
                                 <input type="hidden" name="status" value="read">
                                 <input type="hidden" name="redirect_to" value="index">
                                 <button type="submit"
-                                        class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors">
+                                        class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 transition-colors">
                                     Mark Read
                                 </button>
                             </form>
                             {% endif %}
-                            <a href="{{ url_for('admin.view_message', message_id=m.id) }}" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors">
+                            <a href="{{ url_for('admin.view_message', message_id=m.id) }}" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 transition-colors">
                                 View Message &rarr;
                             </a>
                         </td>
@@ -143,20 +143,20 @@
 
         <!-- Pagination Controls -->
         {% if total_pages > 1 %}
-        <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between sm:px-6">
-            <div class="text-xs text-gray-500">
-                Page <span class="font-semibold text-gray-900">{{ page }}</span> of <span class="font-semibold text-gray-900">{{ total_pages }}</span>
+        <div class="px-4 py-3 bg-gray-50 dark:bg-slate-850/80 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between sm:px-6">
+            <div class="text-xs text-gray-500 dark:text-slate-400">
+                Page <span class="font-semibold text-gray-900 dark:text-slate-100">{{ page }}</span> of <span class="font-semibold text-gray-900 dark:text-slate-100">{{ total_pages }}</span>
             </div>
             <div class="flex items-center gap-2">
                 {% if page > 1 %}
                 <a href="{{ url_for('admin.list_messages', status=current_status, page=page - 1) }}"
-                   class="px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50">
+                   class="px-3 py-1.5 rounded-md border border-gray-300 dark:border-slate-600 text-xs font-medium text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700">
                     &larr; Previous
                 </a>
                 {% endif %}
                 {% if page < total_pages %}
                 <a href="{{ url_for('admin.list_messages', status=current_status, page=page + 1) }}"
-                   class="px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50">
+                   class="px-3 py-1.5 rounded-md border border-gray-300 dark:border-slate-600 text-xs font-medium text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700">
                     Next &rarr;
                 </a>
                 {% endif %}
@@ -166,12 +166,12 @@
     </div>
     {% else %}
     <!-- Empty State -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-12 text-center">
-        <svg class="w-12 h-12 mx-auto text-gray-400" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-12 text-center">
+        <svg class="w-12 h-12 mx-auto text-gray-400 dark:text-slate-500" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
-        <h3 class="mt-4 text-base font-semibold text-gray-900">No messages found</h3>
-        <p class="mt-1 text-sm text-gray-500">
+        <h3 class="mt-4 text-base font-semibold text-gray-900 dark:text-slate-100">No messages found</h3>
+        <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">
             {% if current_status %}
             No support messages currently match the '{{ current_status }}' status filter.
             {% else %}

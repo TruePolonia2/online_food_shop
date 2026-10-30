@@ -13,11 +13,16 @@
     margin: 3rem auto;
     background: #ffffff;
     padding: 1.5rem;
-    border-radius: 0.75rem;
+    border-radius: 1rem;
     border: 1px solid #e5e7eb;
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     text-align: center;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.dark .verification-card {
+    background: #1e293b;
+    border-color: #334155;
+    color: #f1f5f9;
 }
 .verification-icon-wrap {
     display: inline-flex;
@@ -30,6 +35,10 @@
     color: #059669;
     margin-bottom: 1rem;
 }
+.dark .verification-icon-wrap {
+    background-color: rgba(6, 78, 59, 0.4);
+    color: #34d399;
+}
 .verification-icon-wrap svg {
     width: 1.5rem;
     height: 1.5rem;
@@ -40,10 +49,16 @@
     color: #111827;
     margin-bottom: 0.5rem;
 }
+.dark .verification-title {
+    color: #f1f5f9;
+}
 .verification-desc {
     font-size: 0.875rem;
     color: #4b5563;
     margin-bottom: 1.5rem;
+}
+.dark .verification-desc {
+    color: #94a3b8;
 }
 .verification-btn {
     width: 100%;
@@ -72,13 +87,22 @@
     padding-top: 1rem;
     text-align: center;
 }
+.dark .verification-footer {
+    border-color: #334155;
+}
 .verification-link {
     font-size: 0.875rem;
     color: #4b5563;
     text-decoration: underline;
 }
+.dark .verification-link {
+    color: #94a3b8;
+}
 .verification-link:hover {
     color: #047857;
+}
+.dark .verification-link:hover {
+    color: #34d399;
 }
 </style>
 {% endblock %}
@@ -86,16 +110,16 @@
 {% block title %}Confirm Email Verification - Online Food Shop{% endblock %}
 
 {% block content %}
-<div class="max-w-md mx-auto py-12 verification-card">
-    <div class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-gray-200 text-center">
-        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mb-4 verification-icon-wrap">
+<div class="max-w-md mx-auto py-12">
+    <div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 text-center verification-card">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 mb-4 verification-icon-wrap">
             <svg class="w-6 h-6" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
             </svg>
         </div>
 
-        <h1 class="text-2xl font-bold text-gray-900 tracking-tight mb-2 verification-title">Verify Your Email Address</h1>
-        <p class="text-sm text-gray-600 mb-6 verification-desc">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight mb-2 verification-title">Verify Your Email Address</h1>
+        <p class="text-sm text-gray-600 dark:text-slate-400 mb-6 verification-desc">
             Click the button below to confirm your verification request and activate your account.
         </p>
 
@@ -109,8 +133,8 @@
             </button>
         </form>
 
-        <div class="mt-6 border-t border-gray-200 pt-4 text-center verification-footer">
-            <a href="{{ url_for('catalog.index') }}" class="text-sm font-medium text-gray-600 hover:text-emerald-700 underline focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded verification-link">
+        <div class="mt-6 border-t border-gray-200 dark:border-slate-700 pt-4 text-center verification-footer">
+            <a href="{{ url_for('catalog.index') }}" class="text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-400 underline focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded verification-link">
                 Return to home page
             </a>
         </div>

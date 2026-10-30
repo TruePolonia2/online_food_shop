@@ -1,0 +1,56 @@
+{# Reusable Product Card Component #}
+{% macro product_card(product) %}
+<article class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden p-6">
+    <div>
+        <div class="flex items-start justify-between gap-2 mb-2">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">
+                <a href="{{ url_for('catalog.product_detail', product_id=product.id) }}" class="focus:outline-none focus:underline">
+                    {{ product.name }}
+                </a>
+            </h2>
+            {% if product.is_in_stock %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 shrink-0">
+                In Stock
+            </span>
+            {% else %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-800 border border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800 shrink-0">
+                Out of Stock
+            </span>
+            {% endif %}
+        </div>
+
+        {% if product.description %}
+        <p class="text-sm text-gray-600 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed">{{ product.description }}</p>
+        {% endif %}
+    </div>
+
+    <div class="pt-4 border-t border-gray-100 dark:border-slate-700/80 mt-4">
+        <div class="flex items-baseline justify-between mb-4">
+            <span class="text-2xl font-extrabold text-gray-900 dark:text-slate-100">{{ product.price | format_euro }}</span>
+            <span class="text-xs font-medium text-gray-500 dark:text-slate-400">Stock: {{ product.stock_quantity }}</span>
+        </div>
+
+        <form action="{{ url_for('cart.add_item') }}" method="post" class="space-y-3">
+            {% from "_macros.html" import csrf_input %}
+            {{ csrf_input() }}
+            <input type="hidden" name="product_id" value="{{ product.id }}">
+            <div class="flex items-center gap-2">
+                <label for="qty-{{ product.id }}" class="sr-only">Quantity for {{ product.name }}</label>
+                <input id="qty-{{ product.id }}"
+                       type="number"
+                       name="quantity"
+                       value="1"
+                       min="1"
+                       max="{{ product.stock_quantity }}"
+                       class="w-16 px-2 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 rounded-lg text-sm text-center focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-50"
+                       {% if not product.is_in_stock %}disabled{% endif %}>
+                <button type="submit"
+                        class="flex-1 inline-flex justify-center items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        {% if not product.is_in_stock %}disabled{% endif %}>
+                    Add to Cart
+                </button>
+            </div>
+        </form>
+    </div>
+</article>
+{% endmacro %}

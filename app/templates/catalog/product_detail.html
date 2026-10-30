@@ -6,7 +6,7 @@
 <div class="max-w-4xl mx-auto space-y-6">
     <!-- Breadcrumb navigation back to catalog -->
     <nav aria-label="Breadcrumb">
-        <a href="{{ url_for('catalog.index') }}" class="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 hover:text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-md">
+        <a href="{{ url_for('catalog.index') }}" class="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-md">
             <svg class="w-4 h-4" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -15,32 +15,32 @@
     </nav>
 
     <!-- Product Detail Card -->
-    <article class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 sm:p-10">
+    <article class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-6 sm:p-10 transition-colors">
         <div class="space-y-6">
             <!-- Header section with category badge and title -->
             <div>
                 {% if category %}
                 <a href="{{ url_for('catalog.index', category_id=category.id) }}"
-                   class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors mb-3">
+                   class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors mb-3">
                     {{ category.name }}
                 </a>
                 {% endif %}
-                <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">{{ product.name }}</h1>
+                <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">{{ product.name }}</h1>
             </div>
 
             <!-- Price and Stock Status -->
-            <div class="flex flex-wrap items-baseline gap-4 py-3 border-y border-gray-100">
-                <span class="text-3xl font-extrabold text-gray-900">{{ product.price | format_euro }}</span>
+            <div class="flex flex-wrap items-baseline gap-4 py-3 border-y border-gray-100 dark:border-slate-700/80">
+                <span class="text-3xl font-extrabold text-gray-900 dark:text-slate-100">{{ product.price | format_euro }}</span>
                 {% if product.is_in_stock %}
-                <span class="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                    <svg class="w-4 h-4 text-emerald-600" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <span class="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+                    <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                     </svg>
                     In Stock ({{ product.stock_quantity }} available)
                 </span>
                 {% else %}
-                <span class="inline-flex items-center gap-1 text-sm font-semibold text-red-700 bg-red-50 px-2.5 py-1 rounded-full border border-red-200">
-                    <svg class="w-4 h-4 text-red-600" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <span class="inline-flex items-center gap-1 text-sm font-semibold text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/60 px-2.5 py-1 rounded-full border border-red-200 dark:border-red-800">
+                    <svg class="w-4 h-4 text-red-600 dark:text-red-400" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                     </svg>
                     Currently Out of Stock
@@ -51,8 +51,8 @@
             <!-- Product Description -->
             {% if product.description %}
             <div>
-                <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-2">Description</h2>
-                <p class="text-base text-gray-700 leading-relaxed">{{ product.description }}</p>
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Description</h2>
+                <p class="text-base text-gray-700 dark:text-slate-300 leading-relaxed">{{ product.description }}</p>
             </div>
             {% endif %}
 
@@ -65,18 +65,18 @@
 
                     <div class="flex flex-col sm:flex-row sm:items-center gap-4">
                         <div class="flex items-center gap-3">
-                            <label for="quantity" class="text-sm font-semibold text-gray-700">Quantity:</label>
+                            <label for="quantity" class="text-sm font-semibold text-gray-700 dark:text-slate-300">Quantity:</label>
                             <input id="quantity"
                                    type="number"
                                    name="quantity"
                                    value="1"
                                    min="1"
                                    max="{{ product.stock_quantity }}"
-                                   class="w-20 px-3 py-2 border border-gray-300 rounded-lg text-base text-center font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                   class="w-20 px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 rounded-lg text-base text-center font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                                    {% if not product.is_in_stock %}disabled{% endif %}>
                         </div>
                         <button type="submit"
-                                class="flex-1 inline-flex justify-center items-center px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-semibold rounded-lg shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                class="flex-1 inline-flex justify-center items-center px-6 py-3 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-base font-semibold rounded-xl shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 {% if not product.is_in_stock %}disabled{% endif %}>
                             Add to Cart
                         </button>

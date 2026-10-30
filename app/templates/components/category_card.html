@@ -1,0 +1,14 @@
+{# Reusable Category Pill Navigation Component #}
+{% macro all_categories_pill(is_selected=False) %}
+<a href="{{ url_for('catalog.index') }}"
+   class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 {% if is_selected %}bg-emerald-700 text-white dark:bg-emerald-600 shadow-xs{% else %}bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-emerald-700 dark:hover:text-emerald-400 border border-gray-200 dark:border-slate-700{% endif %}">
+    All Categories
+</a>
+{% endmacro %}
+
+{% macro category_pill(category, is_selected=False) %}
+<a href="{{ url_for('catalog.index', category_id=category.id) }}"
+   class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 {% if is_selected %}bg-emerald-700 text-white dark:bg-emerald-600 shadow-xs{% else %}bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-emerald-700 dark:hover:text-emerald-400 border border-gray-200 dark:border-slate-700{% endif %}">
+    {{ category.name }}
+</a>
+{% endmacro %}

@@ -1,97 +1,48 @@
 {% extends "base.html" %}
+{% from "components/badge.html" import status_badge %}
 
 {% block title %}Order #{{ order.id }} - Store Administration{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto space-y-6">
     <!-- Breadcrumb & Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200 dark:border-slate-700">
         <div>
-            <nav class="flex items-center gap-2 text-xs text-gray-500 mb-1" aria-label="Breadcrumb">
-                <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-700">Store Administration</a>
+            <nav class="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 mb-1" aria-label="Breadcrumb">
+                <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-700 dark:hover:text-slate-300">Store Administration</a>
                 <span>&rsaquo;</span>
-                <a href="{{ url_for('admin.list_orders') }}" class="hover:text-gray-700">Orders</a>
+                <a href="{{ url_for('admin.list_orders') }}" class="hover:text-gray-700 dark:hover:text-slate-300">Orders</a>
                 <span>&rsaquo;</span>
-                <span class="text-gray-900 font-semibold" aria-current="page">Order #{{ order.id }}</span>
+                <span class="text-gray-900 dark:text-slate-100 font-semibold" aria-current="page">Order #{{ order.id }}</span>
             </nav>
             <div class="flex flex-wrap items-center gap-3 mt-1">
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Order #{{ order.id }}</h1>
-                <!-- Status Badge -->
-                {% if order.status.value == 'pending' %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                    Pending
-                </span>
-                {% elif order.status.value == 'confirmed' %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
-                    Confirmed
-                </span>
-                {% elif order.status.value == 'paid' %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    Paid
-                </span>
-                {% elif order.status.value == 'shipped' %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
-                    Shipped
-                </span>
-                {% elif order.status.value == 'delivered' %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
-                    Delivered
-                </span>
-                {% elif order.status.value == 'cancelled' %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
-                    Cancelled
-                </span>
-                {% else %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
-                    {{ order.status.value | capitalize }}
-                </span>
-                {% endif %}
-
-                <!-- Payment Status Badge -->
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">Order #{{ order.id }}</h1>
+                <!-- Status Badges -->
+                {{ status_badge(order.status.value, "order") }}
                 {% set p_status = order.payment_status.value if order.payment_status else 'unpaid' %}
-                {% if p_status == 'paid' %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    Payment: Paid
-                </span>
-                {% elif p_status == 'pending' %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                    Payment: Pending
-                </span>
-                {% elif p_status == 'failed' %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
-                    Payment: Failed
-                </span>
-                {% elif p_status == 'cancelled' %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
-                    Payment: Cancelled
-                </span>
-                {% else %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
-                    Payment: Unpaid
-                </span>
-                {% endif %}
+                {{ status_badge(p_status, "payment") }}
             </div>
-            <p class="text-xs text-gray-500 mt-1">
+            <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
                 Placed on {{ order.created_at.strftime('%B %d, %Y at %H:%M UTC') }}
             </p>
         </div>
         <div class="flex items-center gap-3">
-            <a href="{{ url_for('admin.list_orders') }}" class="inline-flex items-center text-sm font-semibold text-gray-600 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded-md px-3 py-2">
+            <a href="{{ url_for('admin.list_orders') }}" class="inline-flex items-center text-sm font-semibold text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded-md px-3 py-2">
                 &larr; Back to Orders
             </a>
         </div>
     </div>
 
     <!-- Status Transition Card -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6">
-        <h2 class="text-base font-bold text-gray-900 mb-2">Order Lifecycle & Status Management</h2>
-        <p class="text-xs text-gray-500 mb-4">
-            Current status is <span class="font-semibold text-gray-800">{{ order.status.value }}</span>.
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-6">
+        <h2 class="text-base font-bold text-gray-900 dark:text-slate-100 mb-2">Order Lifecycle & Status Management</h2>
+        <p class="text-xs text-gray-500 dark:text-slate-400 mb-4">
+            Current status is <span class="font-semibold text-gray-800 dark:text-slate-200">{{ order.status.value }}</span>.
             Status updates are conditional and atomic to protect against concurrent modifications.
         </p>
 
         {% if allowed_transitions %}
-        <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-gray-100">
+        <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-gray-100 dark:border-slate-700">
             {% if 'confirmed' in allowed_transitions %}
             <form method="POST" action="{{ url_for('admin.update_order_status', order_id=order.id) }}" class="inline">
                 {% from "_macros.html" import csrf_input %}
@@ -128,7 +79,7 @@
             {% endif %}
         </div>
         {% else %}
-        <div class="bg-gray-50 rounded-lg p-3 text-xs text-gray-500 border border-gray-200">
+        <div class="bg-gray-50 dark:bg-slate-900 rounded-lg p-3 text-xs text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-700">
             {% if order.status.value == 'cancelled' %}
             This order has been cancelled and has reached a permanent terminal status.
             {% elif order.status.value in ['paid', 'shipped', 'delivered'] %}
@@ -145,45 +96,45 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Order Items (2 cols) -->
         <div class="lg:col-span-2 space-y-6">
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
-                <div class="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between">
-                    <h2 class="text-base font-bold text-gray-900">Purchased Items</h2>
-                    <span class="text-xs text-gray-500">{{ order.items|length }} item{{ 's' if order.items|length != 1 else '' }}</span>
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs overflow-hidden">
+                <div class="p-4 sm:p-6 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                    <h2 class="text-base font-bold text-gray-900 dark:text-slate-100">Purchased Items</h2>
+                    <span class="text-xs text-gray-500 dark:text-slate-400">{{ order.items|length }} item{{ 's' if order.items|length != 1 else '' }}</span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm border-collapse" aria-label="Order Items Table">
                         <thead>
-                            <tr class="bg-gray-50 border-b border-gray-100 text-xs font-semibold uppercase text-gray-500">
+                            <tr class="bg-gray-50 dark:bg-slate-850/80 border-b border-gray-100 dark:border-slate-700 text-xs font-semibold uppercase text-gray-500 dark:text-slate-400">
                                 <th scope="col" class="py-3 px-4 sm:px-6">Product</th>
                                 <th scope="col" class="py-3 px-4 sm:px-6 text-center">Qty</th>
                                 <th scope="col" class="py-3 px-4 sm:px-6 text-right">Unit Price</th>
                                 <th scope="col" class="py-3 px-4 sm:px-6 text-right">Subtotal</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100">
+                        <tbody class="divide-y divide-gray-100 dark:divide-slate-700/60">
                             {% for item in order.items %}
                             <tr>
-                                <td class="py-3.5 px-4 sm:px-6 font-medium text-gray-900">
+                                <td class="py-3.5 px-4 sm:px-6 font-medium text-gray-900 dark:text-slate-100">
                                     {{ item.product_name }}
                                 </td>
-                                <td class="py-3.5 px-4 sm:px-6 text-center text-gray-600">
+                                <td class="py-3.5 px-4 sm:px-6 text-center text-gray-600 dark:text-slate-400">
                                     {{ item.quantity }}
                                 </td>
-                                <td class="py-3.5 px-4 sm:px-6 text-right text-gray-600 whitespace-nowrap">
+                                <td class="py-3.5 px-4 sm:px-6 text-right text-gray-600 dark:text-slate-400 whitespace-nowrap">
                                     {{ item.unit_price | format_euro }}
                                 </td>
-                                <td class="py-3.5 px-4 sm:px-6 text-right font-semibold text-gray-900 whitespace-nowrap">
+                                <td class="py-3.5 px-4 sm:px-6 text-right font-semibold text-gray-900 dark:text-slate-100 whitespace-nowrap">
                                     {{ item.subtotal | format_euro }}
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                         <tfoot>
-                            <tr class="bg-gray-50 border-t-2 border-gray-200">
-                                <th scope="row" colspan="3" class="py-4 px-4 sm:px-6 text-right font-bold text-gray-900 text-sm">
+                            <tr class="bg-gray-50 dark:bg-slate-850/80 border-t-2 border-gray-200 dark:border-slate-700">
+                                <th scope="row" colspan="3" class="py-4 px-4 sm:px-6 text-right font-bold text-gray-900 dark:text-slate-100 text-sm">
                                     Total Order Value:
                                 </th>
-                                <td class="py-4 px-4 sm:px-6 text-right font-extrabold text-gray-900 text-base whitespace-nowrap">
+                                <td class="py-4 px-4 sm:px-6 text-right font-extrabold text-gray-900 dark:text-slate-100 text-base whitespace-nowrap">
                                     {{ order.total | format_euro }}
                                 </td>
                             </tr>
@@ -196,16 +147,16 @@
         <!-- Delivery & Customer Snapshot (1 col) -->
         <div class="space-y-6">
             <!-- Payment Details Snapshot -->
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6">
-                <h2 class="text-base font-bold text-gray-900 mb-4 pb-2 border-b border-gray-100 flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-6">
+                <h2 class="text-base font-bold text-gray-900 dark:text-slate-100 mb-4 pb-2 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
                     <span>Payment Details</span>
-                    <span class="text-xs font-normal text-gray-400">Transaction Status</span>
+                    <span class="text-xs font-normal text-gray-400 dark:text-slate-500">Transaction Status</span>
                 </h2>
 
                 <dl class="space-y-3 text-sm">
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Payment Method</dt>
-                        <dd class="mt-0.5 text-gray-900 font-medium">
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Payment Method</dt>
+                        <dd class="mt-0.5 text-gray-900 dark:text-slate-100 font-medium">
                             {% if order.payment_method == 'stripe' %}
                                 Stripe (Card)
                             {% elif order.payment_method == 'standard' %}
@@ -217,44 +168,23 @@
                     </div>
 
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Payment Status</dt>
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Payment Status</dt>
                         <dd class="mt-0.5">
-                            {% set p_status = order.payment_status.value if order.payment_status else 'unpaid' %}
-                            {% if p_status == 'paid' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                Paid
-                            </span>
-                            {% elif p_status == 'pending' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                                Pending
-                            </span>
-                            {% elif p_status == 'failed' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
-                                Failed
-                            </span>
-                            {% elif p_status == 'cancelled' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
-                                Cancelled
-                            </span>
-                            {% else %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
-                                Unpaid
-                            </span>
-                            {% endif %}
+                            {{ status_badge(p_status, "payment") }}
                         </dd>
                     </div>
 
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Stripe Checkout Session ID</dt>
-                        <dd class="mt-0.5 text-gray-900 font-mono text-xs break-all">
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Stripe Checkout Session ID</dt>
+                        <dd class="mt-0.5 text-gray-900 dark:text-slate-100 font-mono text-xs break-all">
                             {{ order.stripe_session_id or (latest_payment.stripe_session_id if latest_payment else None) or '—' }}
                         </dd>
                     </div>
 
                     {% if latest_payment and latest_payment.stripe_payment_intent_id %}
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Stripe Payment Intent ID</dt>
-                        <dd class="mt-0.5 text-gray-900 font-mono text-xs break-all">
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Stripe Payment Intent ID</dt>
+                        <dd class="mt-0.5 text-gray-900 dark:text-slate-100 font-mono text-xs break-all">
                             {{ latest_payment.stripe_payment_intent_id }}
                         </dd>
                     </div>
@@ -263,62 +193,62 @@
             </div>
 
             <!-- Delivery Details Snapshot -->
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6">
-                <h2 class="text-base font-bold text-gray-900 mb-4 pb-2 border-b border-gray-100 flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-6">
+                <h2 class="text-base font-bold text-gray-900 dark:text-slate-100 mb-4 pb-2 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
                     <span>Fulfillment Snapshot</span>
-                    <span class="text-xs font-normal text-gray-400">Captured at Checkout</span>
+                    <span class="text-xs font-normal text-gray-400 dark:text-slate-500">Captured at Checkout</span>
                 </h2>
 
                 <dl class="space-y-3 text-sm">
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Recipient Name</dt>
-                        <dd class="mt-0.5 text-gray-900 font-medium">{{ order.customer_name or order.delivery_name or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Recipient Name</dt>
+                        <dd class="mt-0.5 text-gray-900 dark:text-slate-100 font-medium">{{ order.customer_name or order.delivery_name or '—' }}</dd>
                     </div>
 
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact Email</dt>
-                        <dd class="mt-0.5 text-gray-900 font-medium">{{ order.customer_email or order.delivery_email or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Contact Email</dt>
+                        <dd class="mt-0.5 text-gray-900 dark:text-slate-100 font-medium">{{ order.customer_email or order.delivery_email or '—' }}</dd>
                     </div>
 
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact Phone</dt>
-                        <dd class="mt-0.5 text-gray-900 font-medium">{{ order.customer_phone or order.delivery_phone or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Contact Phone</dt>
+                        <dd class="mt-0.5 text-gray-900 dark:text-slate-100 font-medium">{{ order.customer_phone or order.delivery_phone or '—' }}</dd>
                     </div>
 
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Delivery Address</dt>
-                        <dd class="mt-0.5 text-gray-900 font-medium whitespace-pre-line">{{ order.customer_address or order.delivery_address or '—' }}</dd>
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Delivery Address</dt>
+                        <dd class="mt-0.5 text-gray-900 dark:text-slate-100 font-medium whitespace-pre-line">{{ order.customer_address or order.delivery_address or '—' }}</dd>
                     </div>
                 </dl>
             </div>
 
             <!-- Customer Account Association -->
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6">
-                <h2 class="text-base font-bold text-gray-900 mb-3 pb-2 border-b border-gray-100">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-6">
+                <h2 class="text-base font-bold text-gray-900 dark:text-slate-100 mb-3 pb-2 border-b border-gray-100 dark:border-slate-700">
                     Account Association
                 </h2>
 
                 {% if order.user_id %}
-                <div class="space-y-2 text-xs text-gray-600">
+                <div class="space-y-2 text-xs text-gray-600 dark:text-slate-400">
                     <p class="flex items-center gap-2">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-800 border border-blue-200">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                             Registered Customer
                         </span>
-                        <span>User Account ID: <strong class="text-gray-900">#{{ order.user_id }}</strong></span>
+                        <span>User Account ID: <strong class="text-gray-900 dark:text-slate-100">#{{ order.user_id }}</strong></span>
                     </p>
-                    <p class="text-gray-500">
+                    <p class="text-gray-500 dark:text-slate-400">
                         Associated with authenticated user account at checkout time.
                     </p>
                 </div>
                 {% else %}
-                <div class="space-y-2 text-xs text-gray-600">
+                <div class="space-y-2 text-xs text-gray-600 dark:text-slate-400">
                     <p class="flex items-center gap-2">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-600">
                             Guest Order
                         </span>
                         <span>No associated registered user</span>
                     </p>
-                    <p class="text-gray-500">
+                    <p class="text-gray-500 dark:text-slate-400">
                         Placed via guest checkout. Guest orders remain permanently unlinked to customer accounts.
                     </p>
                 </div>

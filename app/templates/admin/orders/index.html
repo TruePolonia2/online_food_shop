@@ -1,38 +1,39 @@
 {% extends "base.html" %}
+{% from "components/badge.html" import status_badge %}
 
 {% block title %}Order Management - Store Administration{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto space-y-6">
     <!-- Breadcrumb & Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200 dark:border-slate-700">
         <div>
-            <nav class="flex items-center gap-2 text-xs text-gray-500 mb-1" aria-label="Breadcrumb">
-                <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-700">Store Administration</a>
+            <nav class="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 mb-1" aria-label="Breadcrumb">
+                <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-700 dark:hover:text-slate-300">Store Administration</a>
                 <span>&rsaquo;</span>
-                <span class="text-gray-900 font-semibold" aria-current="page">Orders</span>
+                <span class="text-gray-900 dark:text-slate-100 font-semibold" aria-current="page">Orders</span>
             </nav>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Order Management</h1>
-            <p class="text-sm text-gray-600 mt-1">Review orders, manage fulfillment workflows, and transition lifecycle statuses.</p>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">Order Management</h1>
+            <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">Review orders, manage fulfillment workflows, and transition lifecycle statuses.</p>
         </div>
         <div class="flex items-center gap-3">
-            <a href="{{ url_for('admin.dashboard') }}" class="inline-flex items-center text-sm font-semibold text-gray-600 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded-md px-3 py-2">
+            <a href="{{ url_for('admin.dashboard') }}" class="inline-flex items-center text-sm font-semibold text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded-md px-3 py-2">
                 &larr; Dashboard
             </a>
         </div>
     </div>
 
     <!-- Filters & Stats Bar -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <!-- Status Filter Form -->
         <form method="GET" action="{{ url_for('admin.list_orders') }}" class="flex flex-wrap items-center gap-3">
-            <label for="status-filter" class="text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <label for="status-filter" class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">
                 Filter by Status:
             </label>
             <select id="status-filter"
                     name="status"
                     onchange="this.form.submit()"
-                    class="rounded-lg border border-gray-300 text-gray-900 py-1.5 px-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs">
+                    class="rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 py-1.5 px-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs">
                 <option value="" {% if not active_status %}selected{% endif %}>All Orders</option>
                 {% for st in all_statuses %}
                 <option value="{{ st }}" {% if active_status == st %}selected{% endif %}>
@@ -41,30 +42,30 @@
                 {% endfor %}
             </select>
             <noscript>
-                <button type="submit" class="py-1.5 px-3 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700">
+                <button type="submit" class="py-1.5 px-3 text-xs font-semibold rounded-lg bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200">
                     Apply Filter
                 </button>
             </noscript>
             {% if active_status %}
-            <a href="{{ url_for('admin.list_orders') }}" class="text-xs font-medium text-emerald-700 hover:text-emerald-800 underline">
+            <a href="{{ url_for('admin.list_orders') }}" class="text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 underline">
                 Clear Filter
             </a>
             {% endif %}
         </form>
 
         <!-- Order Summary Counter -->
-        <div class="text-xs text-gray-500 sm:text-right">
+        <div class="text-xs text-gray-500 dark:text-slate-400 sm:text-right">
             Showing <span class="font-bold text-gray-900">{{ orders|length }}</span> of <span class="font-bold text-gray-900">{{ total_count }}</span> order{{ 's' if total_count != 1 else '' }}
         </div>
     </div>
 
     <!-- Orders Table -->
     {% if orders %}
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm border-collapse" aria-label="Orders Management Table">
                 <thead>
-                    <tr class="bg-gray-50 border-b border-gray-200 text-xs font-semibold uppercase text-gray-500">
+                    <tr class="bg-gray-50 dark:bg-slate-850/80 border-b border-gray-200 dark:border-slate-700 text-xs font-semibold uppercase text-gray-500 dark:text-slate-400">
                         <th scope="col" class="py-3 px-4 sm:px-6">Order ID</th>
                         <th scope="col" class="py-3 px-4 sm:px-6">Date</th>
                         <th scope="col" class="py-3 px-4 sm:px-6">Account</th>
@@ -74,89 +75,48 @@
                         <th scope="col" class="py-3 px-4 sm:px-6 text-right">Action</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-gray-100 dark:divide-slate-700/60">
                     {% for o in orders %}
-                    <tr class="hover:bg-gray-50/80 transition-colors">
-                        <td class="py-4 px-4 sm:px-6 font-bold text-gray-900">
-                            <a href="{{ url_for('admin.order_detail', order_id=o.id) }}" class="text-emerald-700 hover:text-emerald-800 hover:underline">
+                    <tr class="hover:bg-gray-50/80 dark:hover:bg-slate-700/40 transition-colors">
+                        <td class="py-4 px-4 sm:px-6 font-bold text-gray-900 dark:text-slate-100">
+                            <a href="{{ url_for('admin.order_detail', order_id=o.id) }}" class="text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:underline">
                                 #{{ o.id }}
                             </a>
                         </td>
-                        <td class="py-4 px-4 sm:px-6 text-xs text-gray-600 whitespace-nowrap">
+                        <td class="py-4 px-4 sm:px-6 text-xs text-gray-600 dark:text-slate-400 whitespace-nowrap">
                             {{ o.created_at.strftime('%Y-%m-%d %H:%M UTC') }}
                         </td>
                         <td class="py-4 px-4 sm:px-6 text-xs">
                             {% if o.user_id %}
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-800 border border-blue-200">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                                 Registered (ID #{{ o.user_id }})
                             </span>
                             {% else %}
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-600">
                                 Guest Checkout
                             </span>
                             {% endif %}
                         </td>
-                        <td class="py-4 px-4 sm:px-6 text-sm text-gray-900">
+                        <td class="py-4 px-4 sm:px-6 text-sm text-gray-900 dark:text-slate-100">
                             {{ o.customer_name or o.delivery_name or '—' }}
                         </td>
                         <td class="py-4 px-4 sm:px-6 text-center">
                             <div class="flex flex-col items-center gap-1.5">
                                 <div>
-                                    {% if o.status.value == 'pending' %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                                        Pending
-                                    </span>
-                                    {% elif o.status.value == 'confirmed' %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
-                                        Confirmed
-                                    </span>
-                                    {% elif o.status.value == 'paid' %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                        Paid
-                                    </span>
-                                    {% elif o.status.value == 'shipped' %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
-                                        Shipped
-                                    </span>
-                                    {% elif o.status.value == 'delivered' %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
-                                        Delivered
-                                    </span>
-                                    {% elif o.status.value == 'cancelled' %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
-                                        Cancelled
-                                    </span>
-                                    {% else %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
-                                        {{ o.status.value | capitalize }}
-                                    </span>
-                                    {% endif %}
+                                    {{ status_badge(o.status.value, "order") }}
                                 </div>
                                 <div>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium
-                                        {% if o.payment_status.value == 'paid' %}
-                                            bg-emerald-50 text-emerald-700 border border-emerald-200
-                                        {% elif o.payment_status.value == 'pending' %}
-                                            bg-amber-50 text-amber-700 border border-amber-200
-                                        {% elif o.payment_status.value == 'failed' %}
-                                            bg-rose-50 text-rose-700 border border-rose-200
-                                        {% elif o.payment_status.value == 'cancelled' %}
-                                            bg-rose-50 text-rose-700 border border-rose-200
-                                        {% else %}
-                                            bg-gray-100 text-gray-600 border border-gray-200
-                                        {% endif %}" title="Payment Status">
-                                        Payment: {{ o.payment_status.value | capitalize }}
-                                    </span>
+                                    {{ status_badge(o.payment_status.value, "payment", prefix="Payment: ") }}
                                 </div>
                             </div>
                         </td>
-                        <td class="py-4 px-4 sm:px-6 text-right font-bold text-gray-900 whitespace-nowrap">
+                        <td class="py-4 px-4 sm:px-6 text-right font-bold text-gray-900 dark:text-slate-100 whitespace-nowrap">
                             {{ o.total | format_euro }}
                         </td>
                         <td class="py-4 px-4 sm:px-6 text-right whitespace-nowrap">
                             <a href="{{ url_for('admin.order_detail', order_id=o.id) }}"
                                id="view-order-{{ o.id }}"
-                               class="inline-flex items-center text-xs font-semibold text-emerald-700 hover:text-emerald-900 hover:underline">
+                               class="inline-flex items-center text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300 hover:underline">
                                 View Details &rarr;
                             </a>
                         </td>
@@ -168,22 +128,22 @@
 
         <!-- Pagination Bar -->
         {% if total_pages > 1 %}
-        <div class="px-4 py-3 sm:px-6 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+        <div class="px-4 py-3 sm:px-6 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-850/80 flex items-center justify-between">
             <div>
                 {% if page > 1 %}
                 <a href="{{ url_for('admin.list_orders', page=page-1, status=active_status) }}"
                    id="pagination-prev"
-                   class="inline-flex items-center px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 shadow-xs">
+                   class="inline-flex items-center px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-xs">
                     &larr; Previous
                 </a>
                 {% else %}
-                <span class="inline-flex items-center px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-100 text-xs font-medium text-gray-400 cursor-not-allowed">
+                <span class="inline-flex items-center px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-100 dark:bg-slate-800 text-xs font-medium text-gray-400 dark:text-slate-500 cursor-not-allowed">
                     &larr; Previous
                 </span>
                 {% endif %}
             </div>
 
-            <div class="text-xs text-gray-500">
+            <div class="text-xs text-gray-500 dark:text-slate-400">
                 Page <span class="font-bold text-gray-900">{{ page }}</span> of <span class="font-bold text-gray-900">{{ total_pages }}</span>
             </div>
 
@@ -191,11 +151,11 @@
                 {% if page < total_pages %}
                 <a href="{{ url_for('admin.list_orders', page=page+1, status=active_status) }}"
                    id="pagination-next"
-                   class="inline-flex items-center px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 shadow-xs">
+                   class="inline-flex items-center px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-xs">
                     Next &rarr;
                 </a>
                 {% else %}
-                <span class="inline-flex items-center px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-100 text-xs font-medium text-gray-400 cursor-not-allowed">
+                <span class="inline-flex items-center px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-100 dark:bg-slate-800 text-xs font-medium text-gray-400 dark:text-slate-500 cursor-not-allowed">
                     Next &rarr;
                 </span>
                 {% endif %}
@@ -205,23 +165,23 @@
     </div>
     {% else %}
     <!-- Accessible Empty State -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-12 text-center" role="region" aria-label="Empty order list">
-        <div class="w-12 h-12 mx-auto rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-12 text-center" role="region" aria-label="Empty order list">
+        <div class="w-12 h-12 mx-auto rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-400 dark:text-slate-400 mb-4">
             <svg class="w-6 h-6" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
         </div>
-        <h3 class="text-base font-bold text-gray-900">No Orders Found</h3>
-        <p class="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
+        <h3 class="text-base font-bold text-gray-900 dark:text-slate-100">No Orders Found</h3>
+        <p class="text-sm text-gray-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
             {% if active_status %}
-            There are currently no orders with status <span class="font-semibold text-gray-700">'{{ active_status }}'</span>.
+            There are currently no orders with status <span class="font-semibold text-gray-700 dark:text-slate-300">'{{ active_status }}'</span>.
             {% else %}
             No customer orders have been placed in the shop yet.
             {% endif %}
         </p>
         {% if active_status %}
         <div class="mt-4">
-            <a href="{{ url_for('admin.list_orders') }}" class="inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100">
+            <a href="{{ url_for('admin.list_orders') }}" class="inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50">
                 Show All Orders
             </a>
         </div>

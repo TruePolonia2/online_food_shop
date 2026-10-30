@@ -6,18 +6,18 @@
 {% block content %}
 <div class="max-w-2xl mx-auto py-8 px-4 sm:px-6">
     <!-- Header -->
-    <div class="text-center pb-8 border-b border-gray-200">
-        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Contact Customer Support</h1>
-        <p class="text-sm text-gray-600 mt-2">
+    <div class="text-center pb-8 border-b border-gray-200 dark:border-slate-800">
+        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">Contact Customer Support</h1>
+        <p class="text-sm text-gray-600 dark:text-slate-400 mt-2">
             Have questions about an order, our products, or store delivery? Send us a message and our support team will get back to you shortly.
         </p>
     </div>
 
     <!-- Rate limit error alert if triggered -->
     {% if errors and errors.rate_limit %}
-    <div class="mt-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-900 text-sm font-medium" role="alert">
+    <div class="mt-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-900 dark:text-red-200 text-sm font-medium" role="alert">
         <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 text-red-600 shrink-0" width="20" height="20" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+            <svg class="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" width="20" height="20" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
             </svg>
             <span>{{ errors.rate_limit }}</span>
@@ -26,12 +26,12 @@
     {% endif %}
 
     <!-- Contact Form -->
-    <form action="{{ url_for('contact.contact') }}" method="POST" class="mt-8 space-y-6 bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-xs" novalidate>
+    <form action="{{ url_for('contact.contact') }}" method="POST" class="mt-8 space-y-6 bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs transition-colors" novalidate>
         {{ csrf_input() }}
 
         <!-- Name Field -->
         <div>
-            <label for="name" class="block text-sm font-semibold text-gray-900 mb-1">
+            <label for="name" class="block text-sm font-semibold text-gray-900 dark:text-slate-200 mb-1">
                 Your Name <span class="text-red-500" aria-hidden="true">*</span>
             </label>
             <input
@@ -42,17 +42,17 @@
                 maxlength="100"
                 value="{{ form_data.name|default('', true) }}"
                 aria-describedby="{% if errors and errors.name %}name-error{% endif %}"
-                class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-gray-900 focus:outline-none focus:ring-2 transition-colors {% if errors and errors.name %}border-red-500 focus:ring-red-500 bg-red-50/20{% else %}border-gray-300 focus:border-emerald-500 focus:ring-emerald-500{% endif %}"
+                class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-gray-900 dark:text-slate-100 bg-white dark:bg-slate-900 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors {% if errors and errors.name %}border-red-500 focus:ring-red-500 bg-red-50/20 dark:bg-red-950/20{% else %}border-gray-300 dark:border-slate-600 focus:border-emerald-500 focus:ring-emerald-500{% endif %}"
                 placeholder="Jane Doe"
             >
             {% if errors and errors.name %}
-            <p id="name-error" class="text-xs text-red-600 mt-1.5 font-medium" role="alert">{{ errors.name }}</p>
+            <p id="name-error" class="text-xs text-red-600 dark:text-red-400 mt-1.5 font-medium" role="alert">{{ errors.name }}</p>
             {% endif %}
         </div>
 
         <!-- Email Field -->
         <div>
-            <label for="email" class="block text-sm font-semibold text-gray-900 mb-1">
+            <label for="email" class="block text-sm font-semibold text-gray-900 dark:text-slate-200 mb-1">
                 Email Address <span class="text-red-500" aria-hidden="true">*</span>
             </label>
             <input
@@ -63,17 +63,17 @@
                 maxlength="254"
                 value="{{ form_data.email|default('', true) }}"
                 aria-describedby="{% if errors and errors.email %}email-error{% endif %}"
-                class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-gray-900 focus:outline-none focus:ring-2 transition-colors {% if errors and errors.email %}border-red-500 focus:ring-red-500 bg-red-50/20{% else %}border-gray-300 focus:border-emerald-500 focus:ring-emerald-500{% endif %}"
+                class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-gray-900 dark:text-slate-100 bg-white dark:bg-slate-900 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors {% if errors and errors.email %}border-red-500 focus:ring-red-500 bg-red-50/20 dark:bg-red-950/20{% else %}border-gray-300 dark:border-slate-600 focus:border-emerald-500 focus:ring-emerald-500{% endif %}"
                 placeholder="jane@example.com"
             >
             {% if errors and errors.email %}
-            <p id="email-error" class="text-xs text-red-600 mt-1.5 font-medium" role="alert">{{ errors.email }}</p>
+            <p id="email-error" class="text-xs text-red-600 dark:text-red-400 mt-1.5 font-medium" role="alert">{{ errors.email }}</p>
             {% endif %}
         </div>
 
         <!-- Subject Field -->
         <div>
-            <label for="subject" class="block text-sm font-semibold text-gray-900 mb-1">
+            <label for="subject" class="block text-sm font-semibold text-gray-900 dark:text-slate-200 mb-1">
                 Subject <span class="text-red-500" aria-hidden="true">*</span>
             </label>
             <input
@@ -84,50 +84,43 @@
                 maxlength="150"
                 value="{{ form_data.subject|default('', true) }}"
                 aria-describedby="{% if errors and errors.subject %}subject-error{% endif %}"
-                class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-gray-900 focus:outline-none focus:ring-2 transition-colors {% if errors and errors.subject %}border-red-500 focus:ring-red-500 bg-red-50/20{% else %}border-gray-300 focus:border-emerald-500 focus:ring-emerald-500{% endif %}"
+                class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-gray-900 dark:text-slate-100 bg-white dark:bg-slate-900 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors {% if errors and errors.subject %}border-red-500 focus:ring-red-500 bg-red-50/20 dark:bg-red-950/20{% else %}border-gray-300 dark:border-slate-600 focus:border-emerald-500 focus:ring-emerald-500{% endif %}"
                 placeholder="Question about product delivery"
             >
             {% if errors and errors.subject %}
-            <p id="subject-error" class="text-xs text-red-600 mt-1.5 font-medium" role="alert">{{ errors.subject }}</p>
+            <p id="subject-error" class="text-xs text-red-600 dark:text-red-400 mt-1.5 font-medium" role="alert">{{ errors.subject }}</p>
             {% endif %}
         </div>
 
         <!-- Message Field -->
         <div>
-            <label for="message" class="block text-sm font-semibold text-gray-900 mb-1">
+            <label for="message" class="block text-sm font-semibold text-gray-900 dark:text-slate-200 mb-1">
                 Message <span class="text-red-500" aria-hidden="true">*</span>
             </label>
             <textarea
                 id="message"
                 name="message"
-                rows="6"
                 required
-                maxlength="5000"
+                rows="5"
+                maxlength="3000"
                 aria-describedby="{% if errors and errors.message %}message-error{% endif %}"
-                class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-gray-900 focus:outline-none focus:ring-2 transition-colors {% if errors and errors.message %}border-red-500 focus:ring-red-500 bg-red-50/20{% else %}border-gray-300 focus:border-emerald-500 focus:ring-emerald-500{% endif %}"
-                placeholder="Please describe how we can assist you..."
+                class="w-full px-3.5 py-2.5 rounded-lg border text-sm text-gray-900 dark:text-slate-100 bg-white dark:bg-slate-900 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 transition-colors {% if errors and errors.message %}border-red-500 focus:ring-red-500 bg-red-50/20 dark:bg-red-950/20{% else %}border-gray-300 dark:border-slate-600 focus:border-emerald-500 focus:ring-emerald-500{% endif %}"
+                placeholder="Write your question or feedback here..."
             >{{ form_data.message|default('', true) }}</textarea>
             {% if errors and errors.message %}
-            <p id="message-error" class="text-xs text-red-600 mt-1.5 font-medium" role="alert">{{ errors.message }}</p>
+            <p id="message-error" class="text-xs text-red-600 dark:text-red-400 mt-1.5 font-medium" role="alert">{{ errors.message }}</p>
             {% endif %}
-            <p class="text-xs text-gray-400 mt-1 text-right">Maximum 5,000 characters</p>
         </div>
 
         <!-- Submit Button -->
-        <div class="pt-2">
+        <div>
             <button
                 type="submit"
-                id="submit-contact-button"
-                class="w-full inline-flex justify-center items-center py-3 px-4 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors"
+                class="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 border border-transparent rounded-xl shadow-xs text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors cursor-pointer"
             >
                 Send Message
             </button>
         </div>
     </form>
-
-    <!-- Support Notice -->
-    <div class="mt-8 text-center text-xs text-gray-500">
-        <p>Inquiries are reviewed by our team during regular business hours (Monday &ndash; Friday). We strive to respond within 24&ndash;48 hours.</p>
-    </div>
 </div>
 {% endblock %}

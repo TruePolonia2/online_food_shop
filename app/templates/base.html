@@ -1,6 +1,6 @@
 {% from '_macros.html' import csrf_input %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,97 +8,85 @@
     <meta name="referrer" content="strict-origin-when-cross-origin">
     {% endblock %}
     <title>{% block title %}Online Food Shop{% endblock %}</title>
+
+    <!-- Synchronous early theme detection to eliminate Flash of Unstyled Content (FOUC) -->
+    <script type="text/javascript">
+        (function() {
+            try {
+                var theme = localStorage.getItem('theme');
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (theme === 'dark' || (!theme && prefersDark)) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
+
     <!-- Local CSS styling ensures robust rendering offline and when CDN is disabled -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     {% block head_scripts %}
-    <!-- Tailwind CSS CDN for development -->
+    <!-- Tailwind CSS CDN for development with class-based dark mode -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript">
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: 'rgb(236, 253, 245)',
+                            100: 'rgb(209, 250, 229)',
+                            200: 'rgb(167, 243, 208)',
+                            300: 'rgb(110, 231, 183)',
+                            400: 'rgb(52, 211, 153)',
+                            500: 'rgb(16, 185, 129)',
+                            600: 'rgb(5, 150, 105)',
+                            700: 'rgb(4, 120, 87)',
+                            800: 'rgb(6, 95, 70)',
+                            900: 'rgb(6, 78, 59)',
+                        },
+                        accent: {
+                            50: 'rgb(255, 247, 237)',
+                            100: 'rgb(255, 237, 213)',
+                            200: 'rgb(254, 215, 170)',
+                            300: 'rgb(253, 186, 116)',
+                            400: 'rgb(251, 146, 60)',
+                            500: 'rgb(249, 115, 22)',
+                            600: 'rgb(234, 88, 12)',
+                            700: 'rgb(194, 65, 12)',
+                            800: 'rgb(154, 52, 18)',
+                            900: 'rgb(124, 45, 18)',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
     {% endblock %}
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col antialiased">
+<body class="bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased transition-colors">
     <!-- Accessible Skip to Main Content Link -->
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-emerald-700 focus:text-white focus:rounded-md focus:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
         Skip to main content
     </a>
 
-    <!-- Header and Navigation -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <!-- Shop Brand / Home Link -->
-                <a href="{{ url_for('catalog.index') }}" class="flex items-center gap-2 text-xl font-bold text-emerald-700 hover:text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 rounded-md transition-colors" aria-label="Online Food Shop - Home">
-                    <svg class="w-6 h-6 text-emerald-600" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                    <span>Online Food Shop</span>
-                </a>
-
-                <!-- Navigation Links -->
-                <nav class="flex items-center gap-2 sm:gap-6" aria-label="Main navigation">
-                    <a href="{{ url_for('catalog.index') }}" class="text-sm font-medium text-gray-700 hover:text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 rounded-md px-2 py-1.5 transition-colors">
-                        Products
-                    </a>
-                    <a href="{{ url_for('contact.contact') }}" class="text-sm font-medium text-gray-700 hover:text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 rounded-md px-2 py-1.5 transition-colors">
-                        Contact
-                    </a>
-
-                    <!-- Cart Link with Item Counter -->
-                    <a href="{{ url_for('cart.view_cart') }}" class="relative inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-emerald-700 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 rounded-lg border border-gray-200 transition-colors" aria-label="Shopping Cart, {{ cart_item_count }} items">
-                        <svg class="w-5 h-5 text-gray-600" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        <span>Cart</span>
-                        <span id="cart-counter" class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-semibold rounded-full {% if cart_item_count > 0 %}bg-emerald-700 text-white{% else %}bg-gray-100 text-gray-600{% endif %}" data-count="{{ cart_item_count }}">
-                            {{ cart_item_count }}
-                        </span>
-                    </a>
-
-                    <!-- Authentication Links -->
-                    {% if current_user %}
-                    {% if current_user.role == 'owner' and current_user.is_verified %}
-                    <a href="{{ url_for('admin.dashboard') }}" id="admin-nav-link" class="text-sm font-semibold text-purple-700 hover:text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 rounded-md px-2 py-1.5 transition-colors">
-                        Admin
-                    </a>
-                    {% endif %}
-                    <a href="{{ url_for('account.order_history') }}" id="my-orders-link" class="text-sm font-medium text-gray-700 hover:text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 rounded-md px-2 py-1.5 transition-colors">
-                        My Orders
-                    </a>
-                    <span id="user-badge" class="text-xs sm:text-sm text-gray-700 font-medium px-2.5 py-1 rounded-full bg-gray-100 max-w-[140px] sm:max-w-xs truncate" title="{{ current_user.email }}">
-                        {{ current_user.email }}
-                    </span>
-                    <form action="{{ url_for('auth.logout') }}" method="POST" class="inline">
-                        {{ csrf_input() }}
-                        <button type="submit" id="logout-button" class="text-sm font-medium text-gray-700 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded-md px-2 py-1.5 transition-colors">
-                            Logout
-                        </button>
-                    </form>
-                    {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="text-sm font-medium text-gray-700 hover:text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 rounded-md px-2 py-1.5 transition-colors">
-                        Login
-                    </a>
-                    <a href="{{ url_for('auth.register') }}" class="text-sm font-medium text-white bg-emerald-700 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 rounded-md px-3 py-1.5 transition-colors">
-                        Register
-                    </a>
-                    {% endif %}
-
-                    {% block nav %}{% endblock %}
-                </nav>
-            </div>
-        </div>
-    </header>
+    <!-- Header and Navigation Component -->
+    {% include "components/navbar.html" %}
 
     <!-- Verification Notice Banner for Authenticated Unverified Users -->
     {% if current_user and not current_user.is_verified %}
-    <div id="unverified-email-banner" class="bg-amber-50 border-b border-amber-200 px-4 py-2.5 sm:px-6" role="region" aria-label="Account verification notice">
-        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 text-sm text-amber-900 font-medium">
+    <div id="unverified-email-banner" class="bg-amber-50 dark:bg-amber-950/50 border-b border-amber-200 dark:border-amber-900/60 px-4 py-2.5 sm:px-6 transition-colors" role="region" aria-label="Account verification notice">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 text-sm text-amber-900 dark:text-amber-200 font-medium">
             <div class="flex items-center gap-2">
-                <svg class="w-5 h-5 text-amber-600 shrink-0" width="20" height="20" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" width="20" height="20" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                     <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                 </svg>
                 <span>Your email address is unverified. Please verify your email or request a new verification link.</span>
             </div>
-            <a href="{{ url_for('auth.resend_verification_form') }}" class="underline hover:text-amber-950 whitespace-nowrap text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 rounded">
+            <a href="{{ url_for('auth.resend_verification_form') }}" class="underline hover:text-amber-950 dark:hover:text-amber-100 whitespace-nowrap text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 rounded">
                 Resend link
             </a>
         </div>
@@ -107,69 +95,81 @@
 
     <!-- Main Content -->
     <main id="main-content" class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 focus:outline-none" tabindex="-1">
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="mb-6 space-y-3" aria-live="polite">
-            {% for category, message in messages %}
-            <div class="flash flash-{{ category }} flex items-start gap-3 p-4 rounded-lg border text-sm font-medium
-                {% if category == 'error' %}
-                    bg-red-50 border-red-200 text-red-900 border-l-4 border-l-red-600
-                {% elif category == 'warning' %}
-                    bg-amber-50 border-amber-200 text-amber-900 border-l-4 border-l-amber-500
-                {% elif category == 'success' %}
-                    bg-emerald-50 border-emerald-200 text-emerald-900 border-l-4 border-l-emerald-600
-                {% else %}
-                    bg-blue-50 border-blue-200 text-blue-900 border-l-4 border-l-blue-600
-                {% endif %}"
-                {% if category == 'error' %}role="alert" aria-live="assertive"{% else %}role="status"{% endif %}>
-                
-                <span class="inline-flex shrink-0 mt-0.5">
-                    {% if category == 'error' %}
-                    <svg class="w-5 h-5 text-red-600" width="20" height="20" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                    </svg>
-                    <span class="sr-only">Error:</span>
-                    {% elif category == 'warning' %}
-                    <svg class="w-5 h-5 text-amber-600" width="20" height="20" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                    </svg>
-                    <span class="sr-only">Warning:</span>
-                    {% elif category == 'success' %}
-                    <svg class="w-5 h-5 text-emerald-600" width="20" height="20" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                    </svg>
-                    <span class="sr-only">Success:</span>
-                    {% else %}
-                    <svg class="w-5 h-5 text-blue-600" width="20" height="20" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                    </svg>
-                    <span class="sr-only">Info:</span>
-                    {% endif %}
-                </span>
-                <div class="flex-1">
-                    {{ message }}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% endwith %}
+        <!-- Reusable Flash Alerts Component -->
+        {% from "components/alert.html" import render_flash_messages %}
+        {{ render_flash_messages() }}
 
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-            <p>&copy; {{ current_year | default(2026) }} Online Food Shop. All rights reserved.</p>
-            <div class="flex items-center gap-6">
-                <a href="{{ url_for('catalog.index') }}" class="hover:text-emerald-700 transition-colors">Products</a>
-                <a href="{{ url_for('contact.contact') }}" class="hover:text-emerald-700 transition-colors">Contact Us</a>
-            </div>
-        </div>
-    </footer>
+    <!-- Footer Component -->
+    {% include "components/footer.html" %}
 
+    <!-- Client-side Interactive Scripts (Theme & Mobile Menu) -->
+    <script type="text/javascript">
+        function toggleTheme() {
+            var isDark = document.documentElement.classList.toggle('dark');
+            try {
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            } catch (e) {}
+            updateThemeIcons();
+        }
+
+        function updateThemeIcons() {
+            var isDark = document.documentElement.classList.contains('dark');
+            var lightIcons = document.querySelectorAll('.theme-toggle-light-icon');
+            var darkIcons = document.querySelectorAll('.theme-toggle-dark-icon');
+            lightIcons.forEach(function(icon) {
+                if (isDark) {
+                    icon.classList.remove('hidden');
+                    icon.classList.add('block');
+                } else {
+                    icon.classList.add('hidden');
+                    icon.classList.remove('block');
+                }
+            });
+            darkIcons.forEach(function(icon) {
+                if (isDark) {
+                    icon.classList.add('hidden');
+                    icon.classList.remove('block');
+                } else {
+                    icon.classList.remove('hidden');
+                    icon.classList.add('block');
+                }
+            });
+        }
+
+        function toggleMobileMenu() {
+            var menu = document.getElementById('mobile-menu');
+            var btn = document.getElementById('mobile-menu-button');
+            if (menu && btn) {
+                var isExpanded = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', !isExpanded);
+                menu.classList.toggle('hidden');
+            }
+        }
+
+        // Initialize theme icons on DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', function() {
+            updateThemeIcons();
+
+            // Listen for system color-scheme changes if user hasn't explicitly chosen
+            if (window.matchMedia) {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+                    try {
+                        if (!localStorage.getItem('theme')) {
+                            if (e.matches) {
+                                document.documentElement.classList.add('dark');
+                            } else {
+                                document.documentElement.classList.remove('dark');
+                            }
+                            updateThemeIcons();
+                        }
+                    } catch (err) {}
+                });
+            }
+        });
+    </script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

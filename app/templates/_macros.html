@@ -1,3 +1,9 @@
 {% macro csrf_input() %}
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 {% endmacro %}
+
+{% from 'components/badge.html' import status_badge with context %}
+{% from 'components/empty_state.html' import empty_state with context %}
+{% from 'components/category_card.html' import category_pill, all_categories_pill with context %}
+{% from 'components/product_card.html' import product_card with context %}
+{% from 'components/form_input.html' import form_field, form_textarea with context %}
