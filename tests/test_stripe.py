@@ -245,6 +245,9 @@ class TestStripeSessionCreationAndSecurity(BaseStripeTestCase):
             self.assertEqual(kwargs["metadata"]["order_id"], str(order.id))
             self.assertEqual(kwargs["metadata"]["payment_id"], str(payment.id))
 
+            # Verify unsupported legacy parameter 'payment_method_types' is omitted (dynamic payment methods)
+            self.assertNotIn("payment_method_types", kwargs)
+
             # Verify line items
             line_items = kwargs["line_items"]
             self.assertEqual(len(line_items), 1)
@@ -261,6 +264,46 @@ class TestStripeSessionCreationAndSecurity(BaseStripeTestCase):
             self.assertEqual(updated_payment.stripe_session_id, "cs_test_session_abc123")
             updated_order = self.order_repo.get_by_id(order.id)
             self.assertEqual(updated_order.stripe_session_id, "cs_test_session_abc123")
+
+    @patch("stripe.checkout.Session.create")
+    def test_checkout_session_creation_omits_unsupported_payment_method_types(self, mock_stripe_create) -> None:
+        """Regression test ensuring Checkout Session creation omits payment_method_types.
+
+        Modern Stripe API versions prohibit payment_method_types when creating
+        Checkout Sessions, managing payment methods dynamically from Dashboard settings.
+        """
+        mock_stripe_create.return_value = MagicMock(
+            id="cs_test_session_reg123",
+            url="https://checkout.stripe.com/c/pay/cs_test_session_reg123",
+        )
+
+        with self.app.app_context():
+            customer = self.customer_repo.create(Customer(name="Bob", email="bob@example.com"))
+            order = self.order_repo.create(
+                Order(
+                    customer_id=customer.id,
+                    customer_email="bob@example.com",
+                    items=[
+                        OrderItem(product_id=self.apple.id, product_name=self.apple.name, unit_price=150, quantity=1),
+                    ],
+                )
+            )
+            payment = self.payment_repo.create(
+                Payment(
+                    order_id=order.id,
+                    amount=order.total,
+                    currency="eur",
+                    idempotency_key="idemp_key_regression_1",
+                )
+            )
+
+            service = StripeService(payment_repo=self.payment_repo, order_repo=self.order_repo)
+            service.create_checkout_session(order=order, payment=payment)
+
+            mock_stripe_create.assert_called_once()
+            _, kwargs = mock_stripe_create.call_args
+            self.assertNotIn("payment_method_types", kwargs)
+            self.assertEqual(kwargs["mode"], "payment")
 
     def test_safe_redirect_url_validation(self) -> None:
         service = StripeService()
@@ -1182,4 +1225,366 @@ class TestStripeUIRendering(BaseStripeTestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertNotIn(b"Test Mode Only", resp.data)
         self.assertIn(b"Standard Checkout (Pay on Delivery)", resp.data)
+
+
+class TestStripeIdempotencyRecoveryAndParameterConflict(BaseStripeTestCase):
+    """Regression tests covering idempotency conflict recovery, parameter migration, and session reuse."""
+
+    @patch("stripe.checkout.Session.create")
+    def test_idempotency_conflict_recovers_with_new_key_and_updated_params(
+        self, mock_stripe_create
+    ) -> None:
+        """1. Old idempotency key with changed parameters triggers IdempotencyError and recovers with fresh key."""
+        idempotency_err = stripe.error.IdempotencyError(
+            "Keys for idempotent requests can only be used with the same parameters they were first used with.",
+            http_status=400,
+        )
+        mock_stripe_create.side_effect = [
+            idempotency_err,
+            MagicMock(
+                id="cs_test_recovered_key_101",
+                url="https://checkout.stripe.com/pay/cs_test_recovered_key_101",
+            ),
+        ]
+
+        with self.client.session_transaction() as sess:
+            sess["cart"] = {str(self.apple.id): 2}
+
+        self.client.get("/checkout")
+        with self.client.session_transaction() as sess:
+            checkout_token = sess["checkout_token"]
+
+        resp = self.client.post(
+            "/checkout",
+            data={
+                "name": "Alice Wonderland",
+                "email": "alice@example.com",
+                "payment_method": "stripe",
+                "checkout_token": checkout_token,
+            },
+            follow_redirects=False,
+        )
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.location, "https://checkout.stripe.com/pay/cs_test_recovered_key_101")
+        self.assertEqual(mock_stripe_create.call_count, 2)
+
+        # Inspect the two calls: second call used an updated, non-colliding idempotency key
+        call1_kwargs = mock_stripe_create.call_args_list[0][1]
+        call2_kwargs = mock_stripe_create.call_args_list[1][1]
+        self.assertNotEqual(call1_kwargs["idempotency_key"], call2_kwargs["idempotency_key"])
+
+        # Exactly ONE order exists, exactly ONE payment attempt, stock decremented only once
+        with self.app.app_context():
+            orders = self.order_repo.get_all()
+            self.assertEqual(len(orders), 1)
+            self.assertEqual(orders[0].stripe_session_id, "cs_test_recovered_key_101")
+            payments = self.payment_repo.get_by_order_id(orders[0].id)
+            self.assertEqual(len(payments), 1)
+            self.assertEqual(payments[0].stripe_session_id, "cs_test_recovered_key_101")
+            self.assertEqual(payments[0].idempotency_key, call2_kwargs["idempotency_key"])
+
+            apple_prod = self.product_repo.get_by_id(self.apple.id)
+            self.assertEqual(apple_prod.stock_quantity, 48)
+
+    @patch("stripe.checkout.Session.create")
+    def test_repeated_identical_checkout_submissions_reuses_session_and_key(
+        self, mock_stripe_create
+    ) -> None:
+        """2. Repeated identical checkout submissions reuse the existing session without calling create twice."""
+        mock_stripe_create.return_value = MagicMock(
+            id="cs_test_repeat_ident_102",
+            url="https://checkout.stripe.com/pay/cs_test_repeat_ident_102",
+            status="open",
+            payment_status="unpaid",
+        )
+
+        with self.client.session_transaction() as sess:
+            sess["cart"] = {str(self.apple.id): 2}
+
+        self.client.get("/checkout")
+        with self.client.session_transaction() as sess:
+            token = sess["checkout_token"]
+
+        # First submit
+        r1 = self.client.post(
+            "/checkout",
+            data={"name": "Alice", "email": "alice@example.com", "payment_method": "stripe", "checkout_token": token},
+            follow_redirects=False,
+        )
+        self.assertEqual(r1.status_code, 302)
+        self.assertEqual(mock_stripe_create.call_count, 1)
+
+        # Second submit with identical inputs
+        with patch.object(
+            StripeService,
+            "retrieve_checkout_session",
+            return_value=MagicMock(
+                id="cs_test_repeat_ident_102",
+                url="https://checkout.stripe.com/pay/cs_test_repeat_ident_102",
+                status="open",
+                payment_status="unpaid",
+            ),
+        ):
+            r2 = self.client.post(
+                "/checkout",
+                data={"name": "Alice", "email": "alice@example.com", "payment_method": "stripe", "checkout_token": token},
+                follow_redirects=False,
+            )
+            self.assertEqual(r2.status_code, 302)
+            self.assertEqual(r2.location, "https://checkout.stripe.com/pay/cs_test_repeat_ident_102")
+            # create was NOT called again
+            self.assertEqual(mock_stripe_create.call_count, 1)
+
+    @patch("stripe.checkout.Session.create")
+    def test_previous_request_definitely_failed_allows_clean_new_attempt(
+        self, mock_stripe_create
+    ) -> None:
+        """3. When a previous request definitely failed, subsequent attempt starts fresh without reusing cancelled state."""
+        mock_stripe_create.side_effect = stripe.InvalidRequestError("Invalid param", "param")
+
+        with self.client.session_transaction() as sess:
+            sess["cart"] = {str(self.apple.id): 2}
+
+        self.client.get("/checkout")
+        with self.client.session_transaction() as sess:
+            first_token = sess["checkout_token"]
+
+        # Attempt 1: Fails definitively
+        r1 = self.client.post(
+            "/checkout",
+            data={"name": "Alice", "email": "alice@example.com", "payment_method": "stripe", "checkout_token": first_token},
+            follow_redirects=True,
+        )
+        self.assertEqual(r1.status_code, 200)
+
+        # First order was cancelled and inventory restored
+        with self.app.app_context():
+            orders = self.order_repo.get_all()
+            self.assertEqual(len(orders), 1)
+            self.assertEqual(orders[0].status, OrderStatus.CANCELLED)
+            self.assertEqual(self.product_repo.get_by_id(self.apple.id).stock_quantity, 50)
+
+        # Attempt 2: Fixed parameters now succeed
+        mock_stripe_create.side_effect = None
+        mock_stripe_create.return_value = MagicMock(
+            id="cs_test_new_clean_103",
+            url="https://checkout.stripe.com/pay/cs_test_new_clean_103",
+        )
+
+        r2 = self.client.post(
+            "/checkout",
+            data={"name": "Alice", "email": "alice@example.com", "payment_method": "stripe", "checkout_token": first_token},
+            follow_redirects=False,
+        )
+        self.assertEqual(r2.status_code, 302)
+        self.assertEqual(r2.location, "https://checkout.stripe.com/pay/cs_test_new_clean_103")
+
+        with self.app.app_context():
+            orders = self.order_repo.get_all()
+            self.assertEqual(len(orders), 2)
+            order1 = self.order_repo.get_by_id(1)
+            order2 = self.order_repo.get_by_id(2)
+            self.assertEqual(order1.status, OrderStatus.CANCELLED)
+            self.assertEqual(order2.status, OrderStatus.PENDING)
+            self.assertEqual(order2.stripe_session_id, "cs_test_new_clean_103")
+            # Stock is reserved for order 2 (50 - 2 = 48), NOT double-decremented
+            self.assertEqual(self.product_repo.get_by_id(self.apple.id).stock_quantity, 48)
+
+    @patch("stripe.checkout.Session.create")
+    def test_previous_request_outcome_ambiguous_preserves_pending_order_and_recovers(
+        self, mock_stripe_create
+    ) -> None:
+        """4. Ambiguous timeout preserves pending order reservation and recovers safely on retry."""
+        mock_stripe_create.side_effect = stripe.APIConnectionError("Timeout connecting to Stripe")
+
+        with self.client.session_transaction() as sess:
+            sess["cart"] = {str(self.apple.id): 2}
+
+        self.client.get("/checkout")
+        with self.client.session_transaction() as sess:
+            token = sess["checkout_token"]
+
+        # Attempt 1: Network timeout
+        r1 = self.client.post(
+            "/checkout",
+            data={"name": "Alice", "email": "alice@example.com", "payment_method": "stripe", "checkout_token": token},
+            follow_redirects=True,
+        )
+        self.assertEqual(r1.status_code, 200)
+
+        with self.app.app_context():
+            orders = self.order_repo.get_all()
+            self.assertEqual(len(orders), 1)
+            self.assertEqual(orders[0].status, OrderStatus.PENDING)
+            self.assertEqual(self.product_repo.get_by_id(self.apple.id).stock_quantity, 48)
+
+        # Attempt 2: Reconnection succeeds
+        mock_stripe_create.side_effect = None
+        mock_stripe_create.return_value = MagicMock(
+            id="cs_test_reconnect_104",
+            url="https://checkout.stripe.com/pay/cs_test_reconnect_104",
+        )
+
+        r2 = self.client.post(
+            "/checkout",
+            data={"name": "Alice", "email": "alice@example.com", "payment_method": "stripe", "checkout_token": token},
+            follow_redirects=False,
+        )
+        self.assertEqual(r2.status_code, 302)
+
+        with self.app.app_context():
+            orders = self.order_repo.get_all()
+            self.assertEqual(len(orders), 1)  # EXACT same order reused!
+            self.assertEqual(orders[0].stripe_session_id, "cs_test_reconnect_104")
+            self.assertEqual(self.product_repo.get_by_id(self.apple.id).stock_quantity, 48)
+
+    @patch("stripe.checkout.Session.create")
+    def test_existing_stripe_session_already_created_is_reconciled_and_reused(
+        self, mock_stripe_create
+    ) -> None:
+        """5. Reconciles existing session found on Stripe API when local DB record is missing session ID."""
+        with self.client.session_transaction() as sess:
+            sess["cart"] = {str(self.apple.id): 2}
+
+        self.client.get("/checkout")
+        with self.client.session_transaction() as sess:
+            token = sess["checkout_token"]
+
+        mock_existing = MagicMock(
+            id="cs_test_existing_cloud_105",
+            url="https://checkout.stripe.com/pay/cs_test_existing_cloud_105",
+            status="open",
+            payment_status="unpaid",
+            client_reference_id="1",
+        )
+
+        with patch.object(StripeService, "find_session_for_order", return_value=mock_existing):
+            r = self.client.post(
+                "/checkout",
+                data={"name": "Alice", "email": "alice@example.com", "payment_method": "stripe", "checkout_token": token},
+                follow_redirects=False,
+            )
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(r.location, "https://checkout.stripe.com/pay/cs_test_existing_cloud_105")
+            mock_stripe_create.assert_not_called()
+
+    @patch("stripe.checkout.Session.create")
+    def test_cart_or_customer_details_changed_between_attempts_cancels_old_and_starts_fresh(
+        self, mock_stripe_create
+    ) -> None:
+        """6. Changing customer details between attempts safely cancels old pending order and creates clean new one."""
+        # Attempt 1 encounters network timeout; order remains pending with preserved cart and token
+        mock_stripe_create.side_effect = stripe.APIConnectionError("Timeout")
+
+        with self.client.session_transaction() as sess:
+            sess["cart"] = {str(self.apple.id): 2}
+
+        self.client.get("/checkout")
+        with self.client.session_transaction() as sess:
+            token = sess["checkout_token"]
+
+        # Attempt 1 for Alice
+        r1 = self.client.post(
+            "/checkout",
+            data={"name": "Alice", "email": "alice@example.com", "payment_method": "stripe", "checkout_token": token},
+            follow_redirects=True,
+        )
+        self.assertEqual(r1.status_code, 200)
+
+        # Attempt 2: User changes name to Bob and email to bob@example.com and resubmits
+        mock_stripe_create.side_effect = None
+        mock_stripe_create.return_value = MagicMock(
+            id="cs_test_customer_mod_107",
+            url="https://checkout.stripe.com/pay/cs_test_customer_mod_107",
+        )
+        r2 = self.client.post(
+            "/checkout",
+            data={"name": "Bob", "email": "bob@example.com", "payment_method": "stripe", "checkout_token": token},
+            follow_redirects=False,
+        )
+        self.assertEqual(r2.status_code, 302)
+        self.assertEqual(r2.location, "https://checkout.stripe.com/pay/cs_test_customer_mod_107")
+
+        with self.app.app_context():
+            orders = self.order_repo.get_all()
+            self.assertEqual(len(orders), 2)
+            order1 = self.order_repo.get_by_id(1)
+            order2 = self.order_repo.get_by_id(2)
+            self.assertEqual(order1.status, OrderStatus.CANCELLED)
+            self.assertEqual(order2.status, OrderStatus.PENDING)
+            self.assertEqual(order2.customer_name, "Bob")
+            # Stock is exactly 48 (50 - 2), not decremented twice (46)
+            self.assertEqual(self.product_repo.get_by_id(self.apple.id).stock_quantity, 48)
+
+    @patch("stripe.checkout.Session.create")
+    def test_no_duplicate_orders_or_stock_reservations_on_rapid_retries(
+        self, mock_stripe_create
+    ) -> None:
+        """7. Rapid retries produce no duplicate orders or duplicate inventory decrements."""
+        mock_stripe_create.return_value = MagicMock(
+            id="cs_test_rapid_108",
+            url="https://checkout.stripe.com/pay/cs_test_rapid_108",
+            status="open",
+            payment_status="unpaid",
+        )
+
+        with self.client.session_transaction() as sess:
+            sess["cart"] = {str(self.apple.id): 3}
+
+        self.client.get("/checkout")
+        with self.client.session_transaction() as sess:
+            token = sess["checkout_token"]
+
+        for _ in range(3):
+            resp = self.client.post(
+                "/checkout",
+                data={"name": "Rapid User", "email": "rapid@example.com", "payment_method": "stripe", "checkout_token": token},
+                follow_redirects=False,
+            )
+            self.assertEqual(resp.status_code, 302)
+
+        with self.app.app_context():
+            orders = self.order_repo.get_all()
+            self.assertEqual(len(orders), 1)
+            # Stock decremented only once for 3 items (50 - 3 = 47)
+            self.assertEqual(self.product_repo.get_by_id(self.apple.id).stock_quantity, 47)
+
+    @patch("stripe.checkout.Session.create")
+    def test_concurrent_retries_handle_integrity_error_gracefully(
+        self, mock_stripe_create
+    ) -> None:
+        """8. Concurrent requests colliding on unique checkout_token safely resolve the created order."""
+        mock_stripe_create.return_value = MagicMock(
+            id="cs_test_concurrent_109",
+            url="https://checkout.stripe.com/pay/cs_test_concurrent_109",
+        )
+
+        with self.client.session_transaction() as sess:
+            sess["cart"] = {str(self.apple.id): 1}
+
+        self.client.get("/checkout")
+        with self.client.session_transaction() as sess:
+            token = sess["checkout_token"]
+
+        # First request creates order
+        resp1 = self.client.post(
+            "/checkout",
+            data={"name": "Thread1", "email": "t1@example.com", "payment_method": "stripe", "checkout_token": token},
+            follow_redirects=False,
+        )
+        self.assertEqual(resp1.status_code, 302)
+
+        # Second request encounters IntegrityError on checkout(), safely resolves existing order
+        resp2 = self.client.post(
+            "/checkout",
+            data={"name": "Thread1", "email": "t1@example.com", "payment_method": "stripe", "checkout_token": token},
+            follow_redirects=False,
+        )
+        self.assertEqual(resp2.status_code, 302)
+
+        with self.app.app_context():
+            orders = self.order_repo.get_all()
+            self.assertEqual(len(orders), 1)
+            self.assertEqual(self.product_repo.get_by_id(self.apple.id).stock_quantity, 49)
 

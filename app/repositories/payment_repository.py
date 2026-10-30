@@ -159,6 +159,19 @@ class PaymentRepository:
                 (stripe_session_id.strip(), now_str, payment_id),
             )
 
+    def update_idempotency_key(self, payment_id: int, new_idempotency_key: str) -> None:
+        """Update the idempotency key for a payment attempt upon controlled conflict recovery."""
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        with transaction(self.conn):
+            self.conn.execute(
+                """
+                UPDATE payments
+                SET idempotency_key = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (new_idempotency_key.strip(), now_str, payment_id),
+            )
+
     def update_status(
         self,
         payment_id: int,

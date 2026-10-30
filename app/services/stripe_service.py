@@ -210,7 +210,6 @@ class StripeService:
         try:
             stripe.api_key = secret_key
             session = stripe.checkout.Session.create(
-                payment_method_types=["card"],
                 mode="payment",
                 line_items=line_items,
                 customer_email=order.customer_email,
@@ -220,6 +219,82 @@ class StripeService:
                 cancel_url=cancel_url,
                 idempotency_key=idempotency_key,
             )
+        except (stripe.error.IdempotencyError, stripe.error.InvalidRequestError) as exc:
+            err_msg = str(exc).lower()
+            is_idempotency_conflict = (
+                isinstance(exc, stripe.error.IdempotencyError)
+                or "idempotent" in err_msg
+                or "idempotency" in err_msg
+            )
+            if not is_idempotency_conflict:
+                logger.error("Stripe Checkout Session creation failed for order %s: %s", order.id, exc)
+                user_msg = getattr(exc, "user_message", None) or str(exc)
+                raise StripeDefinitiveError(f"Stripe error: {user_msg}") from exc
+
+            logger.warning(
+                "Idempotency conflict detected for order %s with key %s: %s",
+                order.id,
+                idempotency_key,
+                exc,
+            )
+
+            # 1. Determine whether Stripe already created a valid session for this order
+            existing_session = self.find_session_for_order(order.id)
+            if existing_session and getattr(existing_session, "status", None) in ("open", "complete"):
+                logger.info(
+                    "Reconciled existing Stripe session %s for order %s after idempotency conflict.",
+                    existing_session.id,
+                    order.id,
+                )
+                if payment.id is not None:
+                    self.payment_repo.update_stripe_session_id(payment.id, existing_session.id)
+                if order.id is not None:
+                    self.order_repo.update_payment_status(
+                        order.id, PaymentStatus.PENDING, stripe_session_id=existing_session.id
+                    )
+                payment.stripe_session_id = existing_session.id
+                order.stripe_session_id = existing_session.id
+                self.validate_redirect_url(existing_session.url)
+                return existing_session
+
+            # 2. Previous attempt definitively failed without creating a usable session.
+            # Generate a controlled new idempotency key and retry with updated parameters.
+            new_idempotency_key = f"checkout_{order.id}_{payment.id}_{uuid.uuid4().hex[:12]}"
+            logger.info(
+                "Recovering from idempotency conflict on order %s: updating payment #%s key from %s to %s.",
+                order.id,
+                payment.id,
+                idempotency_key,
+                new_idempotency_key,
+            )
+            if payment.id is not None:
+                self.payment_repo.update_idempotency_key(payment.id, new_idempotency_key)
+            payment.idempotency_key = new_idempotency_key
+
+            try:
+                session = stripe.checkout.Session.create(
+                    mode="payment",
+                    line_items=line_items,
+                    customer_email=order.customer_email,
+                    client_reference_id=str(order.id),
+                    metadata=metadata,
+                    success_url=success_url,
+                    cancel_url=cancel_url,
+                    idempotency_key=new_idempotency_key,
+                )
+            except AMBIGUOUS_EXCEPTIONS as retry_exc:
+                logger.error("Timeout on idempotency retry for order %s: %s", order.id, retry_exc)
+                raise StripeAmbiguousOutcomeError(
+                    "A network timeout occurred while connecting to the payment provider. "
+                    "Your order reservation remains pending. Please retry to complete your payment."
+                ) from retry_exc
+            except stripe.StripeError as retry_exc:
+                logger.error("Stripe error on idempotency retry for order %s: %s", order.id, retry_exc)
+                user_msg = getattr(retry_exc, "user_message", None) or str(retry_exc)
+                raise StripeDefinitiveError(f"Stripe error: {user_msg}") from retry_exc
+            except Exception as retry_exc:
+                logger.error("Unexpected error on idempotency retry for order %s: %s", order.id, retry_exc)
+                raise StripeDefinitiveError(f"Payment gateway error: {retry_exc}") from retry_exc
         except AMBIGUOUS_EXCEPTIONS as exc:
             logger.error(
                 "Stripe Checkout Session connection timeout/network error for order %s: %s",
@@ -289,6 +364,65 @@ class StripeService:
             raise StripeDefinitiveError(f"Stripe error retrieving session: {exc}") from exc
         except Exception as exc:
             raise StripePaymentError(f"Error retrieving Stripe session: {exc}") from exc
+
+    def find_session_for_order(self, order_id: int) -> Optional[stripe.checkout.Session]:
+        """Look up an existing Stripe Checkout Session associated with an order.
+
+        Inspects local database associations first. If not yet recorded locally,
+        queries the Stripe API for active or completed sessions matching the order ID.
+        """
+        # 1. Check local order record
+        order = self.order_repo.get_by_id(order_id)
+        if order and order.stripe_session_id:
+            try:
+                session = self.retrieve_checkout_session(order.stripe_session_id)
+                if session and getattr(session, "status", None) in ("open", "complete"):
+                    return session
+            except Exception:
+                pass
+
+        # 2. Check local payment records for this order
+        payments = self.payment_repo.get_by_order_id(order_id)
+        for p in payments:
+            if p.stripe_session_id:
+                try:
+                    session = self.retrieve_checkout_session(p.stripe_session_id)
+                    if session and getattr(session, "status", None) in ("open", "complete"):
+                        return session
+                except Exception:
+                    pass
+
+        # 3. Query Stripe API directly for unrecorded sessions matching this order
+        try:
+            secret_key = self.get_secret_key()
+            stripe.api_key = secret_key
+            sessions = stripe.checkout.Session.list(limit=25)
+            target_str = str(order_id).strip()
+            for s in getattr(sessions, "data", []):
+                client_ref = str(getattr(s, "client_reference_id", "") or "").strip()
+                meta = getattr(s, "metadata", None) or {}
+                meta_dict = meta.to_dict() if hasattr(meta, "to_dict") else dict(meta) if isinstance(meta, dict) else {}
+                meta_order_id = str(meta_dict.get("order_id", "") or "").strip()
+                if client_ref == target_str or meta_order_id == target_str:
+                    status = getattr(s, "status", None)
+                    if status in ("open", "complete"):
+                        return s
+        except Exception as exc:
+            logger.warning("Error querying Stripe API for existing order #%s session: %s", order_id, exc)
+
+        return None
+
+    def expire_checkout_session(self, session_id: str) -> Optional[stripe.checkout.Session]:
+        """Explicitly expire an active Stripe Checkout Session on Stripe servers."""
+        if not session_id or not str(session_id).strip():
+            return None
+        secret_key = self.get_secret_key()
+        stripe.api_key = secret_key
+        try:
+            return stripe.checkout.Session.expire(str(session_id).strip())
+        except Exception as exc:
+            logger.warning("Error expiring Stripe session %s: %s", session_id, exc)
+            return None
 
     @staticmethod
     def validate_redirect_url(url: Optional[str]) -> None:

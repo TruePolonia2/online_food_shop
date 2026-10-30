@@ -7,7 +7,9 @@ import uuid
 from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
 
 from app.config import is_stripe_configured
+from app.database.connection import transaction
 from app.models.cart import Cart
+from app.models.order import OrderStatus
 from app.models.payment import Payment, PaymentMethod, PaymentStatus
 from app.repositories.order_repository import OrderRepository
 from app.repositories.payment_repository import PaymentRepository
@@ -60,6 +62,13 @@ def checkout_form():
     current_fingerprint = _compute_cart_fingerprint(cart)
     saved_token = session.get("checkout_token")
     saved_fingerprint = session.get("cart_fingerprint")
+
+    # If saved token references an order that is already completed or cancelled, rotate token
+    if saved_token:
+        order_service = OrderService()
+        existing_order = order_service.get_by_checkout_token(saved_token)
+        if existing_order and existing_order.status in (OrderStatus.CANCELLED, OrderStatus.CONFIRMED):
+            saved_token = None
 
     if not saved_token or saved_fingerprint != current_fingerprint:
         checkout_token = uuid.uuid4().hex
@@ -199,15 +208,67 @@ def process_checkout():
         # Check if an existing order was already initiated for this checkout attempt
         order = order_service.get_by_checkout_token(checkout_token) if is_valid_token else None
 
-        # Verify order total matches current cart total before reusing
-        if order is not None and order.total != cart.total:
-            # Cart contents or totals changed! Generate fresh token to prevent key collision
+        # A cancelled or confirmed order must NEVER be reused for a new checkout attempt
+        if order is not None and order.status in (OrderStatus.CANCELLED, OrderStatus.CONFIRMED):
             checkout_token = uuid.uuid4().hex
             session["checkout_token"] = checkout_token
             session["cart_fingerprint"] = current_fingerprint
             session.modified = True
             idempotency_key = f"checkout_{checkout_token}"
             order = None
+
+        # Verify order total, items, and customer details match before reusing pending order
+        if order is not None:
+            customer_changed = (
+                order.customer_name != name
+                or order.customer_email != email
+                or order.customer_phone != phone
+                or order.customer_address != address
+            )
+            cart_items_match = (
+                len(order.items) == len(cart.items)
+                and all(
+                    any(
+                        oi.product_id == ci.product.id
+                        and oi.quantity == ci.quantity
+                        and oi.unit_price == ci.product.price
+                        for ci in cart.items
+                    )
+                    for oi in order.items
+                )
+            )
+            if order.total != cart.total or customer_changed or not cart_items_match:
+                # Cart contents, totals, or customer details changed between attempts!
+                # Before replacing, check whether Stripe already created a Checkout Session
+                existing_session = stripe_service.find_session_for_order(order.id)
+                if existing_session and (
+                    getattr(existing_session, "payment_status", None) == "paid"
+                    or getattr(existing_session, "status", None) == "complete"
+                ):
+                    # Order was already paid! Reconcile and redirect to success
+                    clear_cart_session()
+                    session["last_order_id"] = order.id
+                    session["stripe_session_id"] = existing_session.id
+                    session.modified = True
+                    flash("Your order has already been paid and confirmed.", "info")
+                    return redirect(url_for("order.stripe_success", session_id=existing_session.id))
+                elif existing_session and getattr(existing_session, "status", None) == "open":
+                    # Expire old session at Stripe so customer cannot pay on outdated cart
+                    try:
+                        stripe_service.expire_checkout_session(existing_session.id)
+                    except Exception:
+                        pass
+                    order_service.cancel_order(order.id)
+                else:
+                    # No session at Stripe: safely cancel old pending order to release its reserved inventory
+                    order_service.cancel_order(order.id)
+
+                checkout_token = uuid.uuid4().hex
+                session["checkout_token"] = checkout_token
+                session["cart_fingerprint"] = current_fingerprint
+                session.modified = True
+                idempotency_key = f"checkout_{checkout_token}"
+                order = None
 
         cart_backup = dict(session.get("cart", {}))
 
@@ -237,6 +298,11 @@ def process_checkout():
 
         # Look up or create idempotent Payment attempt
         payment = payment_repo.get_by_idempotency_key(idempotency_key)
+        if payment is None and order is not None and order.id is not None:
+            existing_payments = payment_repo.get_by_order_id(order.id)
+            if existing_payments:
+                payment = existing_payments[0]
+
         if payment is None:
             try:
                 payment = payment_repo.create(
@@ -252,18 +318,40 @@ def process_checkout():
             except sqlite3.IntegrityError:
                 payment = payment_repo.get_by_idempotency_key(idempotency_key)
 
-        # If a Stripe session was already associated with this payment, reuse it
+        # Before calling create, check if a valid Stripe session is already associated or exists at Stripe
+        existing_session = None
         if payment and payment.stripe_session_id:
             try:
                 existing_session = stripe_service.retrieve_checkout_session(payment.stripe_session_id)
-                if existing_session and getattr(existing_session, "url", None):
-                    clear_cart_session()
-                    session["last_order_id"] = order.id
-                    session["stripe_session_id"] = existing_session.id
-                    session.modified = True
-                    return redirect(existing_session.url)
             except Exception:
-                pass  # Fall through to create_checkout_session with same idempotency key
+                existing_session = None
+
+        if not existing_session and order is not None and order.id is not None:
+            existing_session = stripe_service.find_session_for_order(order.id)
+
+        if existing_session and getattr(existing_session, "status", None) in ("open", "complete"):
+            if (
+                getattr(existing_session, "payment_status", None) == "paid"
+                or getattr(existing_session, "status", None) == "complete"
+            ):
+                with transaction(payment_repo.conn):
+                    if payment and payment.id is not None:
+                        payment_repo.update_status(payment.id, PaymentStatus.PAID)
+                    order_repo.update_payment_status(
+                        order.id, PaymentStatus.PAID, stripe_session_id=existing_session.id
+                    )
+                    order_repo.update_status(order.id, OrderStatus.CONFIRMED)
+                clear_cart_session()
+                session["last_order_id"] = order.id
+                session["stripe_session_id"] = existing_session.id
+                session.modified = True
+                return redirect(url_for("order.stripe_success", session_id=existing_session.id))
+            elif getattr(existing_session, "url", None):
+                clear_cart_session()
+                session["last_order_id"] = order.id
+                session["stripe_session_id"] = existing_session.id
+                session.modified = True
+                return redirect(existing_session.url)
 
         # Create Stripe Checkout Session (idempotent at Stripe API via idempotency_key)
         try:
@@ -274,6 +362,8 @@ def process_checkout():
                 payment_repo.update_status(payment.id, PaymentStatus.FAILED)
             order_service.cancel_order(order.id)
             session["cart"] = cart_backup
+            # Rotate checkout_token so subsequent retry does not reuse the cancelled order or failed idempotency key
+            session["checkout_token"] = uuid.uuid4().hex
             session.modified = True
             flash(f"Unable to initiate Stripe payment session: {exc}", "error")
             return redirect(url_for("order.checkout_form"))
@@ -302,6 +392,13 @@ def process_checkout():
         return redirect(checkout_session.url)
 
     # Standard (Pay on Delivery) checkout flow
+    existing_std_order = order_service.get_by_checkout_token(checkout_token) if is_valid_token else None
+    if existing_std_order is not None and existing_std_order.status in (OrderStatus.CANCELLED, OrderStatus.CONFIRMED):
+        checkout_token = uuid.uuid4().hex
+        session["checkout_token"] = checkout_token
+        session["cart_fingerprint"] = current_fingerprint
+        session.modified = True
+
     try:
         order = order_service.checkout(
             customer_id=customer.id,
