@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Checkout - Online Food Shop{% endblock %}
+{% block title %}{{ _('Checkout - Online Food Shop') }}{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-8">
     <div>
-        <h1 class="text-3xl font-extrabold text-stone-900 dark:text-slate-100 tracking-tight">Checkout</h1>
-        <p class="text-sm text-stone-600 dark:text-slate-400 mt-1">Please provide your details below to finalize your order.</p>
+        <h1 class="text-3xl font-extrabold text-stone-900 dark:text-slate-100 tracking-tight">{{ _('Checkout') }}</h1>
+        <p class="text-sm text-stone-600 dark:text-slate-400 mt-1">{{ _('Please provide your details below to finalize your order.') }}</p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <!-- Customer Information Form (2 columns) -->
         <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-3xl border border-stone-200/90 dark:border-slate-700 p-6 sm:p-8 shadow-xs transition-colors">
-            <h2 class="text-xl font-bold text-stone-900 dark:text-slate-100 mb-6 pb-2 border-b border-stone-100 dark:border-slate-700">Customer Information</h2>
+            <h2 class="text-xl font-bold text-stone-900 dark:text-slate-100 mb-6 pb-2 border-b border-stone-100 dark:border-slate-700">{{ _('Customer Information') }}</h2>
 
             <form action="{{ url_for('order.process_checkout') }}" method="post" class="space-y-5">
                 {% from "_macros.html" import csrf_input %}
@@ -23,7 +23,7 @@
 
                 <div>
                     <label for="name" class="block text-sm font-semibold text-stone-700 dark:text-slate-300 mb-1">
-                        Full Name <span class="text-red-500">*</span>
+                        {{ _('Full Name') }} <span class="text-red-500">*</span>
                     </label>
                     <input type="text"
                            id="name"
@@ -35,7 +35,7 @@
 
                 <div>
                     <label for="email" class="block text-sm font-semibold text-stone-700 dark:text-slate-300 mb-1">
-                        Email Address <span class="text-red-500">*</span>
+                        {{ _('Email Address') }} <span class="text-red-500">*</span>
                     </label>
                     <input type="email"
                            id="email"
@@ -47,7 +47,7 @@
 
                 <div>
                     <label for="phone" class="block text-sm font-semibold text-stone-700 dark:text-slate-300 mb-1">
-                        Phone Number
+                        {{ _('Phone Number') }}
                     </label>
                     <input type="tel"
                            id="phone"
@@ -58,7 +58,7 @@
 
                 <div>
                     <label for="address" class="block text-sm font-semibold text-stone-700 dark:text-slate-300 mb-1">
-                        Delivery Address
+                        {{ _('Delivery Address') }}
                     </label>
                     <textarea id="address"
                               name="address"
@@ -70,7 +70,7 @@
                 <!-- Payment Method Selection -->
                 <div class="pt-4 border-t border-stone-100 dark:border-slate-700">
                     <label class="block text-sm font-semibold text-stone-700 dark:text-slate-300 mb-3">
-                        Payment Method <span class="text-red-500">*</span>
+                        {{ _('Payment Method') }} <span class="text-red-500">*</span>
                     </label>
                     <div class="space-y-3">
                         <label class="flex items-start p-4 border rounded-2xl cursor-pointer hover:bg-amber-50/30 dark:hover:bg-slate-750 border-stone-200 dark:border-slate-700 transition">
@@ -80,8 +80,8 @@
                                    checked
                                    class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-stone-300 dark:border-slate-600">
                             <div class="ml-3">
-                                <span class="block text-sm font-semibold text-stone-900 dark:text-slate-100">Standard Checkout (Pay on Delivery)</span>
-                                <span class="block text-xs text-stone-500 dark:text-slate-400 mt-0.5">Pay with cash or debit card upon delivery.</span>
+                                <span class="block text-sm font-semibold text-stone-900 dark:text-slate-100">{{ _('Standard Checkout (Pay on Delivery)') }}</span>
+                                <span class="block text-xs text-stone-500 dark:text-slate-400 mt-0.5">{{ _('Pay with cash or debit card upon delivery.') }}</span>
                             </div>
                         </label>
 
@@ -93,13 +93,13 @@
                                    class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-stone-300 dark:border-slate-600">
                             <div class="ml-3 flex-1">
                                 <div class="flex items-center justify-between">
-                                    <span class="block text-sm font-semibold text-stone-900 dark:text-slate-100">Credit / Debit Card (Stripe)</span>
+                                    <span class="block text-sm font-semibold text-stone-900 dark:text-slate-100">{{ _('Credit / Debit Card (Stripe)') }}</span>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 dark:bg-orange-950/60 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
-                                        Test Mode Only
+                                        {{ _('Test Mode Only') }}
                                     </span>
                                 </div>
                                 <span class="block text-xs text-stone-500 dark:text-slate-400 mt-0.5">
-                                    Pay securely using Stripe's hosted checkout. No card details are entered or stored on our servers.
+                                    {{ _("Pay securely using Stripe's hosted checkout. No card details are entered or stored on our servers.") }}
                                 </span>
                             </div>
                         </label>
@@ -110,7 +110,7 @@
                 <div class="pt-4">
                     <button type="submit"
                             class="w-full inline-flex justify-center items-center gap-2 px-6 py-3.5 rounded-xl text-base font-semibold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 shadow-xs hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all">
-                        <span>Place Order ({{ cart.total | format_euro }})</span>
+                        <span>{{ _('Place Order') }} ({{ cart.total | format_euro }})</span>
                         <svg class="w-4 h-4" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
@@ -122,9 +122,9 @@
         <!-- Order Summary Sidebar (1 column) -->
         <div class="bg-white dark:bg-slate-800 rounded-3xl border border-stone-200/90 dark:border-slate-700 p-6 sm:p-7 shadow-xs space-y-5 transition-colors">
             <div class="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-slate-700">
-                <h2 class="text-lg font-bold text-stone-900 dark:text-slate-100">Order Summary</h2>
+                <h2 class="text-lg font-bold text-stone-900 dark:text-slate-100">{{ _('Order Summary') }}</h2>
                 <a href="{{ url_for('cart.view_cart') }}" class="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300">
-                    Edit Cart
+                    {{ _('Edit Cart') }}
                 </a>
             </div>
 
@@ -142,11 +142,11 @@
 
             <div class="pt-3 border-t border-stone-100 dark:border-slate-700 space-y-2 text-sm">
                 <div class="flex justify-between text-stone-600 dark:text-slate-400">
-                    <span>Shipping:</span>
-                    <span class="text-emerald-700 dark:text-emerald-400 font-medium">Free</span>
+                    <span>{{ _('Shipping') }}:</span>
+                    <span class="text-emerald-700 dark:text-emerald-400 font-medium">{{ _('Free') }}</span>
                 </div>
                 <div class="flex justify-between items-baseline pt-2 border-t border-stone-100 dark:border-slate-700">
-                    <span class="text-base font-bold text-stone-900 dark:text-slate-100">Total:</span>
+                    <span class="text-base font-bold text-stone-900 dark:text-slate-100">{{ _('Total') }}:</span>
                     <span class="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400">{{ cart.total | format_euro }}</span>
                 </div>
             </div>

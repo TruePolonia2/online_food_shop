@@ -1,44 +1,44 @@
 {% extends "base.html" %}
 {% from "components/badge.html" import status_badge %}
 
-{% block title %}Order #{{ order.id }} - Store Administration{% endblock %}
+{% block title %}{{ _('Order #%(id)s - Store Administration', id=order.id) }}{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto space-y-6">
     <!-- Breadcrumb & Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200 dark:border-slate-700">
         <div>
-            <nav class="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 mb-1" aria-label="Breadcrumb">
-                <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-700 dark:hover:text-slate-300">Store Administration</a>
+            <nav class="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 mb-1" aria-label="{{ _('Breadcrumb') }}">
+                <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-700 dark:hover:text-slate-300">{{ _('Store Administration') }}</a>
                 <span>&rsaquo;</span>
-                <a href="{{ url_for('admin.list_orders') }}" class="hover:text-gray-700 dark:hover:text-slate-300">Orders</a>
+                <a href="{{ url_for('admin.list_orders') }}" class="hover:text-gray-700 dark:hover:text-slate-300">{{ _('Orders') }}</a>
                 <span>&rsaquo;</span>
-                <span class="text-gray-900 dark:text-slate-100 font-semibold" aria-current="page">Order #{{ order.id }}</span>
+                <span class="text-gray-900 dark:text-slate-100 font-semibold" aria-current="page">{{ _('Order #%(id)s', id=order.id) }}</span>
             </nav>
             <div class="flex flex-wrap items-center gap-3 mt-1">
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">Order #{{ order.id }}</h1>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">{{ _('Order #%(id)s', id=order.id) }}</h1>
                 <!-- Status Badges -->
                 {{ status_badge(order.status.value, "order") }}
                 {% set p_status = order.payment_status.value if order.payment_status else 'unpaid' %}
                 {{ status_badge(p_status, "payment") }}
             </div>
             <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                Placed on {{ order.created_at.strftime('%B %d, %Y at %H:%M UTC') }}
+                {{ _('Placed on') }} {{ order.created_at.strftime('%Y-%m-%d %H:%M UTC') }}
             </p>
         </div>
         <div class="flex items-center gap-3">
             <a href="{{ url_for('admin.list_orders') }}" class="inline-flex items-center text-sm font-semibold text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded-md px-3 py-2">
-                &larr; Back to Orders
+                &larr; {{ _('Back to Orders') }}
             </a>
         </div>
     </div>
 
     <!-- Status Transition Card -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-6">
-        <h2 class="text-base font-bold text-gray-900 dark:text-slate-100 mb-2">Order Lifecycle & Status Management</h2>
+        <h2 class="text-base font-bold text-gray-900 dark:text-slate-100 mb-2">{{ _('Order Lifecycle & Status Management') }}</h2>
         <p class="text-xs text-gray-500 dark:text-slate-400 mb-4">
-            Current status is <span class="font-semibold text-gray-800 dark:text-slate-200">{{ order.status.value }}</span>.
-            Status updates are conditional and atomic to protect against concurrent modifications.
+            {{ _('Current status is %(status)s.', status=order.status.value) }}
+            {{ _('Status updates are conditional and atomic to protect against concurrent modifications.') }}
         </p>
 
         {% if allowed_transitions %}
@@ -55,7 +55,7 @@
                     <svg class="w-4 h-4 mr-1.5" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    Confirm Order
+                    {{ _('Confirm Order') }}
                 </button>
             </form>
             {% endif %}
@@ -68,12 +68,12 @@
                 <input type="hidden" name="new_status" value="cancelled">
                 <button type="submit"
                         id="btn-cancel-order"
-                        onclick="return confirm('Are you sure you want to cancel Order #{{ order.id }}? This action is permanent.');"
+                        onclick="return confirm('{{ _('Are you sure you want to cancel Order #%(id)s? This action is permanent.', id=order.id) }}');"
                         class="inline-flex items-center px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-semibold shadow-xs focus:outline-none focus:ring-2 focus:ring-rose-500 transition-colors">
                     <svg class="w-4 h-4 mr-1.5" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    Cancel Order
+                    {{ _('Cancel Order') }}
                 </button>
             </form>
             {% endif %}
@@ -81,12 +81,12 @@
         {% else %}
         <div class="bg-gray-50 dark:bg-slate-900 rounded-lg p-3 text-xs text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-700">
             {% if order.status.value == 'cancelled' %}
-            This order has been cancelled and has reached a permanent terminal status.
+            {{ _('This order has been cancelled and has reached a permanent terminal status.') }}
             {% elif order.status.value in ['paid', 'shipped', 'delivered'] %}
-            Manual status transitions from '{{ order.status.value }}' are disabled in this phase.
-            Fulfillment and payment transitions require external integration workflows.
+            {{ _('Manual status transitions from \'%(status)s\' are disabled in this phase.', status=order.status.value) }}
+            {{ _('Fulfillment and payment transitions require external integration workflows.') }}
             {% else %}
-            No further manual status transitions are available for this order.
+            {{ _('No further manual status transitions are available for this order.') }}
             {% endif %}
         </div>
         {% endif %}
@@ -98,17 +98,17 @@
         <div class="lg:col-span-2 space-y-6">
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs overflow-hidden">
                 <div class="p-4 sm:p-6 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
-                    <h2 class="text-base font-bold text-gray-900 dark:text-slate-100">Purchased Items</h2>
-                    <span class="text-xs text-gray-500 dark:text-slate-400">{{ order.items|length }} item{{ 's' if order.items|length != 1 else '' }}</span>
+                    <h2 class="text-base font-bold text-gray-900 dark:text-slate-100">{{ _('Purchased Items') }}</h2>
+                    <span class="text-xs text-gray-500 dark:text-slate-400">{{ order.items|length }} {{ _('items') }}</span>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm border-collapse" aria-label="Order Items Table">
+                    <table class="w-full text-left text-sm border-collapse" aria-label="{{ _('Order Items Table') }}">
                         <thead>
                             <tr class="bg-gray-50 dark:bg-slate-850/80 border-b border-gray-100 dark:border-slate-700 text-xs font-semibold uppercase text-gray-500 dark:text-slate-400">
-                                <th scope="col" class="py-3 px-4 sm:px-6">Product</th>
-                                <th scope="col" class="py-3 px-4 sm:px-6 text-center">Qty</th>
-                                <th scope="col" class="py-3 px-4 sm:px-6 text-right">Unit Price</th>
-                                <th scope="col" class="py-3 px-4 sm:px-6 text-right">Subtotal</th>
+                                <th scope="col" class="py-3 px-4 sm:px-6">{{ _('Product') }}</th>
+                                <th scope="col" class="py-3 px-4 sm:px-6 text-center">{{ _('Qty') }}</th>
+                                <th scope="col" class="py-3 px-4 sm:px-6 text-right">{{ _('Unit Price') }}</th>
+                                <th scope="col" class="py-3 px-4 sm:px-6 text-right">{{ _('Subtotal') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700/60">
@@ -132,7 +132,7 @@
                         <tfoot>
                             <tr class="bg-gray-50 dark:bg-slate-850/80 border-t-2 border-gray-200 dark:border-slate-700">
                                 <th scope="row" colspan="3" class="py-4 px-4 sm:px-6 text-right font-bold text-gray-900 dark:text-slate-100 text-sm">
-                                    Total Order Value:
+                                    {{ _('Total Order Value:') }}
                                 </th>
                                 <td class="py-4 px-4 sm:px-6 text-right font-extrabold text-gray-900 dark:text-slate-100 text-base whitespace-nowrap">
                                     {{ order.total | format_euro }}
@@ -149,33 +149,33 @@
             <!-- Payment Details Snapshot -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-6">
                 <h2 class="text-base font-bold text-gray-900 dark:text-slate-100 mb-4 pb-2 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
-                    <span>Payment Details</span>
-                    <span class="text-xs font-normal text-gray-400 dark:text-slate-500">Transaction Status</span>
+                    <span>{{ _('Payment Details') }}</span>
+                    <span class="text-xs font-normal text-gray-400 dark:text-slate-500">{{ _('Transaction Status') }}</span>
                 </h2>
 
                 <dl class="space-y-3 text-sm">
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Payment Method</dt>
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">{{ _('Payment Method') }}</dt>
                         <dd class="mt-0.5 text-gray-900 dark:text-slate-100 font-medium">
                             {% if order.payment_method == 'stripe' %}
-                                Stripe (Card)
+                                {{ _('Stripe (Card)') }}
                             {% elif order.payment_method == 'standard' %}
-                                Standard
+                                {{ _('Standard') }}
                             {% else %}
-                                {{ order.payment_method | capitalize if order.payment_method else 'Standard' }}
+                                {{ order.payment_method | capitalize if order.payment_method else _('Standard') }}
                             {% endif %}
                         </dd>
                     </div>
 
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Payment Status</dt>
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">{{ _('Payment Status') }}</dt>
                         <dd class="mt-0.5">
                             {{ status_badge(p_status, "payment") }}
                         </dd>
                     </div>
 
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Stripe Checkout Session ID</dt>
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">{{ _('Stripe Checkout Session ID') }}</dt>
                         <dd class="mt-0.5 text-gray-900 dark:text-slate-100 font-mono text-xs break-all">
                             {{ order.stripe_session_id or (latest_payment.stripe_session_id if latest_payment else None) or '—' }}
                         </dd>
@@ -183,7 +183,7 @@
 
                     {% if latest_payment and latest_payment.stripe_payment_intent_id %}
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Stripe Payment Intent ID</dt>
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">{{ _('Stripe Payment Intent ID') }}</dt>
                         <dd class="mt-0.5 text-gray-900 dark:text-slate-100 font-mono text-xs break-all">
                             {{ latest_payment.stripe_payment_intent_id }}
                         </dd>
@@ -195,28 +195,28 @@
             <!-- Delivery Details Snapshot -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-6">
                 <h2 class="text-base font-bold text-gray-900 dark:text-slate-100 mb-4 pb-2 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
-                    <span>Fulfillment Snapshot</span>
-                    <span class="text-xs font-normal text-gray-400 dark:text-slate-500">Captured at Checkout</span>
+                    <span>{{ _('Fulfillment Snapshot') }}</span>
+                    <span class="text-xs font-normal text-gray-400 dark:text-slate-500">{{ _('Captured at Checkout') }}</span>
                 </h2>
 
                 <dl class="space-y-3 text-sm">
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Recipient Name</dt>
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">{{ _('Recipient Name') }}</dt>
                         <dd class="mt-0.5 text-gray-900 dark:text-slate-100 font-medium">{{ order.customer_name or order.delivery_name or '—' }}</dd>
                     </div>
 
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Contact Email</dt>
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">{{ _('Contact Email') }}</dt>
                         <dd class="mt-0.5 text-gray-900 dark:text-slate-100 font-medium">{{ order.customer_email or order.delivery_email or '—' }}</dd>
                     </div>
 
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Contact Phone</dt>
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">{{ _('Contact Phone') }}</dt>
                         <dd class="mt-0.5 text-gray-900 dark:text-slate-100 font-medium">{{ order.customer_phone or order.delivery_phone or '—' }}</dd>
                     </div>
 
                     <div>
-                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Delivery Address</dt>
+                        <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">{{ _('Delivery Address') }}</dt>
                         <dd class="mt-0.5 text-gray-900 dark:text-slate-100 font-medium whitespace-pre-line">{{ order.customer_address or order.delivery_address or '—' }}</dd>
                     </div>
                 </dl>
@@ -225,31 +225,31 @@
             <!-- Customer Account Association -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-6">
                 <h2 class="text-base font-bold text-gray-900 dark:text-slate-100 mb-3 pb-2 border-b border-gray-100 dark:border-slate-700">
-                    Account Association
+                    {{ _('Account Association') }}
                 </h2>
 
                 {% if order.user_id %}
                 <div class="space-y-2 text-xs text-gray-600 dark:text-slate-400">
                     <p class="flex items-center gap-2">
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                            Registered Customer
+                            {{ _('Registered Customer') }}
                         </span>
-                        <span>User Account ID: <strong class="text-gray-900 dark:text-slate-100">#{{ order.user_id }}</strong></span>
+                        <span>{{ _('User Account ID:') }} <strong class="text-gray-900 dark:text-slate-100">#{{ order.user_id }}</strong></span>
                     </p>
                     <p class="text-gray-500 dark:text-slate-400">
-                        Associated with authenticated user account at checkout time.
+                        {{ _('Associated with authenticated user account at checkout time.') }}
                     </p>
                 </div>
                 {% else %}
                 <div class="space-y-2 text-xs text-gray-600 dark:text-slate-400">
                     <p class="flex items-center gap-2">
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-600">
-                            Guest Order
+                            {{ _('Guest Order') }}
                         </span>
-                        <span>No associated registered user</span>
+                        <span>{{ _('No associated registered user') }}</span>
                     </p>
                     <p class="text-gray-500 dark:text-slate-400">
-                        Placed via guest checkout. Guest orders remain permanently unlinked to customer accounts.
+                        {{ _('Placed via guest checkout. Guest orders remain permanently unlinked to customer accounts.') }}
                     </p>
                 </div>
                 {% endif %}

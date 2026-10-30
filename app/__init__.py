@@ -39,11 +39,13 @@ def create_app(config_class=None) -> Flask:
 
     from app.csrf import init_csrf
     from app.formatting import format_euro
+    from app.i18n import init_babel, locale_bp
     from app.oauth import init_oauth, is_google_auth_configured
     from app.services.email_sender import init_email
     from app.config import is_stripe_configured
 
     init_csrf(app)
+    init_babel(app)
     init_oauth(app)
     init_email(app)
     app.jinja_env.filters["format_euro"] = format_euro
@@ -78,5 +80,6 @@ def create_app(config_class=None) -> Flask:
     app.register_blueprint(admin_bp)
     app.register_blueprint(contact_bp)
     app.register_blueprint(webhook_bp)
+    app.register_blueprint(locale_bp)
 
     return app

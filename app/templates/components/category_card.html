@@ -2,7 +2,7 @@
 {% macro all_categories_pill(is_selected=False) %}
 <a href="{{ url_for('catalog.index') }}"
    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 {% if is_selected %}bg-emerald-700 text-white dark:bg-emerald-600 shadow-xs ring-2 ring-emerald-700/20 dark:ring-emerald-500/30 border border-emerald-700{% else %}bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-200 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:text-emerald-700 dark:hover:text-emerald-400 border border-stone-200 dark:border-slate-700{% endif %}">
-    <span>All Categories</span>
+    <span>{{ _('All Categories') }}</span>
 </a>
 {% endmacro %}
 

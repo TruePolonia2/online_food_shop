@@ -1,21 +1,21 @@
 {% extends "base.html" %}
 {% from 'components/empty_state.html' import empty_state %}
 
-{% block title %}Shopping Cart - Online Food Shop{% endblock %}
+{% block title %}{{ _('Shopping Cart - Online Food Shop') }}{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
     <div class="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-slate-800">
         <div>
-            <h1 class="text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">Your Shopping Cart</h1>
-            <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">Review your selected items and update quantities.</p>
+            <h1 class="text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">{{ _('Your Shopping Cart') }}</h1>
+            <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">{{ _('Review your selected items and update quantities.') }}</p>
         </div>
         {% if not cart.is_empty %}
         <form action="{{ url_for('cart.clear') }}" method="post">
             {% from "_macros.html" import csrf_input %}
             {{ csrf_input() }}
             <button type="submit" class="text-sm font-semibold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 focus:outline-none focus:underline transition-colors">
-                Clear Cart
+                {{ _('Clear Cart') }}
             </button>
         </form>
         {% endif %}
@@ -28,7 +28,7 @@
             <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" width="20" height="20" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                 <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
             </svg>
-            <span>Notice regarding your cart items:</span>
+            <span>{{ _('Notice regarding your cart items:') }}</span>
         </div>
         <ul class="list-disc list-inside text-sm space-y-1 ml-5">
             {% for err in validation_errors %}
@@ -41,10 +41,10 @@
     {% if cart.is_empty %}
     <!-- Empty Cart State -->
     {{ empty_state(
-        title="Your cart is empty",
-        description="Looks like you haven't added any fresh food or groceries to your cart yet.",
+        title=_("Your cart is empty"),
+        description=_("Looks like you haven't added any fresh food or groceries to your cart yet."),
         action_url=url_for('catalog.index'),
-        action_label="Continue Shopping",
+        action_label=_("Continue Shopping"),
         icon="cart"
     ) }}
     {% else %}
@@ -56,11 +56,11 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-stone-50 dark:bg-slate-900 border-b border-stone-200 dark:border-slate-700 text-xs font-semibold uppercase text-stone-500 dark:text-slate-400 tracking-wider">
-                            <th scope="col" class="py-3.5 px-4 sm:px-6">Product</th>
-                            <th scope="col" class="py-3.5 px-3">Unit Price</th>
-                            <th scope="col" class="py-3.5 px-3">Quantity</th>
-                            <th scope="col" class="py-3.5 px-3 text-right">Subtotal</th>
-                            <th scope="col" class="py-3.5 px-4 text-center">Actions</th>
+                            <th scope="col" class="py-3.5 px-4 sm:px-6">{{ _('Product') }}</th>
+                            <th scope="col" class="py-3.5 px-3">{{ _('Unit Price') }}</th>
+                            <th scope="col" class="py-3.5 px-3">{{ _('Quantity') }}</th>
+                            <th scope="col" class="py-3.5 px-3 text-right">{{ _('Subtotal') }}</th>
+                            <th scope="col" class="py-3.5 px-4 text-center">{{ _('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-stone-100 dark:divide-slate-700/80 text-sm">
@@ -79,7 +79,7 @@
                                     {% from "_macros.html" import csrf_input %}
                                     {{ csrf_input() }}
                                     <input type="hidden" name="product_id" value="{{ item.product.id }}">
-                                    <label for="qty-{{ item.product.id }}" class="sr-only">Quantity for {{ item.product.name }}</label>
+                                    <label for="qty-{{ item.product.id }}" class="sr-only">{{ _('Quantity for %(name)s', name=item.product.name) }}</label>
                                     <input id="qty-{{ item.product.id }}"
                                            type="number"
                                            name="quantity"
@@ -87,8 +87,8 @@
                                            min="0"
                                            max="{{ item.product.stock_quantity }}"
                                            class="w-16 px-2 py-1.5 border border-stone-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-stone-900 dark:text-slate-100 rounded-xl text-sm text-center font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-                                    <button type="submit" class="px-2 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-slate-800 rounded-lg border border-emerald-200 dark:border-emerald-800 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-colors" title="Update quantity">
-                                        Update
+                                    <button type="submit" class="px-2 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-slate-800 rounded-lg border border-emerald-200 dark:border-emerald-800 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-colors" title="{{ _('Update quantity') }}">
+                                        {{ _('Update') }}
                                     </button>
                                 </form>
                             </td>
@@ -101,7 +101,7 @@
                                     {{ csrf_input() }}
                                     <input type="hidden" name="product_id" value="{{ item.product.id }}">
                                     <button type="submit" class="text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500 rounded px-1.5 py-0.5" aria-label="Remove {{ item.product.name }} from cart">
-                                        Remove
+                                        {{ _('Remove') }}
                                     </button>
                                 </form>
                             </td>
@@ -114,32 +114,32 @@
 
         <!-- Order Summary & Checkout Action -->
         <div class="bg-white dark:bg-slate-800 rounded-3xl border border-stone-200/90 dark:border-slate-700 p-6 sm:p-7 shadow-xs space-y-6 transition-colors">
-            <h2 class="text-lg font-bold text-stone-900 dark:text-slate-100 pb-3 border-b border-stone-100 dark:border-slate-700">Order Summary</h2>
+            <h2 class="text-lg font-bold text-stone-900 dark:text-slate-100 pb-3 border-b border-stone-100 dark:border-slate-700">{{ _('Order Summary') }}</h2>
 
             <div class="space-y-3 text-sm">
                 <div class="flex justify-between text-stone-600 dark:text-slate-400">
-                    <span>Items ({{ cart.total_quantity }}):</span>
+                    <span>{{ _('Items') }} ({{ cart.total_quantity }}):</span>
                     <span class="font-medium text-stone-900 dark:text-slate-100">{{ cart.total | format_euro }}</span>
                 </div>
                 <div class="flex justify-between text-stone-600 dark:text-slate-400">
-                    <span>Shipping:</span>
-                    <span class="text-emerald-700 dark:text-emerald-400 font-medium">Free</span>
+                    <span>{{ _('Shipping') }}:</span>
+                    <span class="text-emerald-700 dark:text-emerald-400 font-medium">{{ _('Free') }}</span>
                 </div>
                 <div class="pt-3 border-t border-stone-100 dark:border-slate-700 flex justify-between items-baseline">
-                    <span class="text-base font-bold text-stone-900 dark:text-slate-100">Total:</span>
+                    <span class="text-base font-bold text-stone-900 dark:text-slate-100">{{ _('Total') }}:</span>
                     <span class="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400">{{ cart.total | format_euro }}</span>
                 </div>
             </div>
 
             <div class="space-y-3 pt-2">
                 <a href="{{ url_for('order.checkout_form') }}" class="w-full inline-flex justify-center items-center gap-2 px-6 py-3.5 rounded-xl text-base font-semibold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 shadow-xs hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all text-center">
-                    <span>Proceed to Checkout</span>
+                    <span>{{ _('Proceed to Checkout') }}</span>
                     <svg class="w-4 h-4" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
                 </a>
                 <a href="{{ url_for('catalog.index') }}" class="w-full inline-flex justify-center items-center px-4 py-2 text-sm font-medium text-stone-700 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors text-center">
-                    &larr; Continue Shopping
+                    &larr; {{ _('Continue Shopping') }}
                 </a>
             </div>
         </div>

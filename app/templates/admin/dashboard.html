@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Store Administration - Online Food Shop{% endblock %}
+{% block title %}{{ _('Store Administration - Online Food Shop') }}{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto space-y-8">
@@ -8,70 +8,70 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200 dark:border-slate-700">
         <div>
             <div class="flex items-center gap-3">
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">Store Administration</h1>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">{{ _('Store Administration') }}</h1>
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800" aria-label="Access role: Owner Access">
-                    Owner Access
+                    {{ _('Owner Access') }}
                 </span>
             </div>
-            <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">Store health overview, operational metrics, and administration tools.</p>
+            <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">{{ _('Store health overview, operational metrics, and administration tools.') }}</p>
         </div>
         <div>
             <a href="{{ url_for('catalog.index') }}" class="inline-flex items-center text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-md">
-                &larr; Return to Storefront
+                &larr; {{ _('Return to Storefront') }}
             </a>
         </div>
     </div>
 
     <!-- Summary Metrics -->
     <section aria-labelledby="metrics-heading">
-        <h2 id="metrics-heading" class="sr-only">Store Overview Metrics</h2>
+        <h2 id="metrics-heading" class="sr-only">{{ _('Store Overview Metrics') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
             <!-- Total Products Card -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-6 flex flex-col justify-between">
                 <div class="flex items-center justify-between text-gray-500 dark:text-slate-400 text-sm font-medium">
-                    <span>Total Products</span>
+                    <span>{{ _('Total Products') }}</span>
                     <svg class="w-5 h-5 text-gray-400 dark:text-slate-500" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                 </div>
                 <div class="mt-4">
                     <span id="metric-total-products" class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ stats.total_products }}</span>
-                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">Catalog items registered in store</p>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">{{ _('Catalog items registered in store') }}</p>
                 </div>
             </div>
 
             <!-- Active Products Card -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-6 flex flex-col justify-between">
                 <div class="flex items-center justify-between text-gray-500 dark:text-slate-400 text-sm font-medium">
-                    <span>Active Products</span>
+                    <span>{{ _('Active Products') }}</span>
                     <svg class="w-5 h-5 text-emerald-500" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
                 <div class="mt-4">
                     <span id="metric-active-products" class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ stats.active_products }}</span>
-                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">Listed and available for purchase</p>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">{{ _('Listed and available for purchase') }}</p>
                 </div>
             </div>
 
             <!-- Total Orders Card -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-6 flex flex-col justify-between">
                 <div class="flex items-center justify-between text-gray-500 dark:text-slate-400 text-sm font-medium">
-                    <span>Total Orders</span>
+                    <span>{{ _('Total Orders') }}</span>
                     <svg class="w-5 h-5 text-blue-500" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
                 </div>
                 <div class="mt-4">
                     <span id="metric-total-orders" class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ stats.total_orders }}</span>
-                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">All-time customer and guest orders</p>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">{{ _('All-time customer and guest orders') }}</p>
                 </div>
             </div>
 
             <!-- Total Recorded Order Value Card -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-6 flex flex-col justify-between">
                 <div class="flex items-center justify-between text-gray-500 dark:text-slate-400 text-sm font-medium">
-                    <span>Recorded Order Value</span>
+                    <span>{{ _('Recorded Order Value') }}</span>
                     <svg class="w-5 h-5 text-purple-500" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -79,7 +79,7 @@
                 <div class="mt-4">
                     <span id="metric-total-recorded-value" class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ stats.total_recorded_value | format_euro }}</span>
                     <p id="recorded-value-caption" class="text-xs text-amber-700 dark:text-amber-400 font-medium mt-1">
-                        Recorded order total (not verified or paid revenue)
+                        {{ _('Recorded order total (not verified or paid revenue)') }}
                     </p>
                 </div>
             </div>
@@ -87,14 +87,14 @@
             <!-- New Support Messages Card -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xs p-6 flex flex-col justify-between">
                 <div class="flex items-center justify-between text-gray-500 dark:text-slate-400 text-sm font-medium">
-                    <span>Support Inbox</span>
+                    <span>{{ _('Support Inbox') }}</span>
                     <svg class="w-5 h-5 text-amber-500" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                 </div>
                 <div class="mt-4">
                     <span id="metric-new-messages" class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ stats.new_messages_count }}</span>
-                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">New contact inquiries</p>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">{{ _('New contact inquiries') }}</p>
                 </div>
             </div>
         </div>

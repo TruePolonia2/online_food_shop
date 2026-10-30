@@ -554,6 +554,7 @@ def logout():
     """Terminate the authenticated session via CSRF-protected POST."""
     raw_cart = session.get(SESSION_CART_KEY)
     sanitized_cart = extract_sanitized_cart_data(raw_cart)
+    user_locale = session.get("locale")
 
     # Clear entire session to wipe all auth, order, and customer state (including last_order_id)
     session.clear()
@@ -564,6 +565,10 @@ def logout():
     # Restore validated guest cart
     if sanitized_cart:
         session[SESSION_CART_KEY] = sanitized_cart
+
+    # Restore language preference
+    if user_locale:
+        session["locale"] = user_locale
 
     session.modified = True
     flash("You have been logged out.", "info")

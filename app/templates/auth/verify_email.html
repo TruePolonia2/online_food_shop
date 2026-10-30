@@ -107,7 +107,7 @@
 </style>
 {% endblock %}
 
-{% block title %}Confirm Email Verification - Online Food Shop{% endblock %}
+{% block title %}{{ _('Confirm Email Verification - Online Food Shop') }}{% endblock %}
 
 {% block content %}
 <div class="max-w-md mx-auto py-12">
@@ -118,9 +118,9 @@
             </svg>
         </div>
 
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight mb-2 verification-title">Verify Your Email Address</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight mb-2 verification-title">{{ _('Verify Your Email Address') }}</h1>
         <p class="text-sm text-gray-600 dark:text-slate-400 mb-6 verification-desc">
-            Click the button below to confirm your verification request and activate your account.
+            {{ _('Click the button below to confirm your verification request and activate your account.') }}
         </p>
 
         <form method="POST" action="{{ url_for('auth.verify_email') }}">
@@ -129,13 +129,13 @@
 
             <button type="submit"
                     class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-emerald-700 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors verification-btn">
-                Confirm Verification
+                {{ _('Confirm Verification') }}
             </button>
         </form>
 
         <div class="mt-6 border-t border-gray-200 dark:border-slate-700 pt-4 text-center verification-footer">
             <a href="{{ url_for('catalog.index') }}" class="text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-400 underline focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded verification-link">
-                Return to home page
+                &larr; {{ _('Return to home page') }}
             </a>
         </div>
     </div>

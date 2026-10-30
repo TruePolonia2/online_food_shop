@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "_macros.html" import csrf_input %}
 
-{% block title %}Delete Account - Online Food Shop{% endblock %}
+{% block title %}{{ _('Delete Account - Online Food Shop') }}{% endblock %}
 
 {% block content %}
 <div class="max-w-xl mx-auto py-8">
@@ -13,18 +13,18 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
             </div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">Delete Your Account</h1>
-            <p class="text-sm text-red-600 dark:text-red-400 font-semibold mt-1">This action is permanent and cannot be undone.</p>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">{{ _('Delete Your Account') }}</h1>
+            <p class="text-sm text-red-600 dark:text-red-400 font-semibold mt-1">{{ _('This action is permanent and cannot be undone.') }}</p>
         </div>
 
         <!-- Explanatory Warning Box -->
         <div class="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-950 dark:text-red-200 text-sm space-y-2">
-            <p class="font-bold">Before deleting your account, please note:</p>
+            <p class="font-bold">{{ _('Before deleting your account, please note:') }}</p>
             <ul class="list-disc list-inside space-y-1 text-xs sm:text-sm text-red-900 dark:text-red-300">
-                <li>All login credentials, saved sessions, and linked Google accounts will be permanently erased.</li>
-                <li>You will permanently lose private access to your order history and receipt details.</li>
-                <li>Existing orders will be anonymized to preserve store accounting records while removing your personal details.</li>
-                <li>Your email address (<span class="font-semibold">{{ user.email }}</span>) will be freed immediately if you wish to register again in the future.</li>
+                <li>{{ _('All login credentials, saved sessions, and linked Google accounts will be permanently erased.') }}</li>
+                <li>{{ _('You will permanently lose private access to your order history and receipt details.') }}</li>
+                <li>{{ _('Existing orders will be anonymized to preserve store accounting records while removing your personal details.') }}</li>
+                <li>{{ _('Your email address (%(email)s) will be freed immediately if you wish to register again in the future.', email=user.email) }}</li>
             </ul>
         </div>
 
@@ -63,7 +63,7 @@
             {% if has_password and not google_reauthenticated %}
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                        Current Store Password <span class="text-red-600" aria-hidden="true">*</span>
+                        {{ _('Current Store Password') }} <span class="text-red-600" aria-hidden="true">*</span>
                     </label>
                     <input type="password"
                            id="password"
@@ -74,7 +74,7 @@
                            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
                            placeholder="Enter your current password">
                     <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                        Please enter your password to confirm identity before account deletion.
+                        {{ _('Please enter your password to confirm identity before account deletion.') }}
                     </p>
                 </div>
             {% endif %}
@@ -82,7 +82,7 @@
             {% if not has_password and not google_reauthenticated and has_google %}
                 <div class="p-4 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-center space-y-3">
                     <p class="text-sm text-gray-700 dark:text-slate-300 font-medium">
-                        Your account signs in using Google. Please re-authenticate with Google to confirm your identity.
+                        {{ _('Your account signs in using Google. Please re-authenticate with Google to confirm your identity.') }}
                     </p>
                     <a href="{{ url_for('account.delete_account_google') }}"
                        id="btn-google-reauth"
@@ -93,7 +93,7 @@
                             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                         </svg>
-                        <span>Verify with Google</span>
+                        <span>{{ _('Verify with Google') }}</span>
                     </a>
                 </div>
             {% endif %}
@@ -101,7 +101,7 @@
             {% if has_password and has_google and not google_reauthenticated %}
                 <div class="relative flex py-1 items-center">
                     <div class="flex-grow border-t border-gray-200 dark:border-slate-700"></div>
-                    <span class="flex-shrink mx-3 text-xs text-gray-400 dark:text-slate-500 font-medium">OR CONFIRM VIA</span>
+                    <span class="flex-shrink mx-3 text-xs text-gray-400 dark:text-slate-500 font-medium">{{ _('OR CONFIRM VIA') }}</span>
                     <div class="flex-grow border-t border-gray-200 dark:border-slate-700"></div>
                 </div>
 
@@ -115,7 +115,7 @@
                             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                         </svg>
-                        <span>Verify with Google instead</span>
+                        <span>{{ _('Verify with Google instead') }}</span>
                     </a>
                 </div>
             {% endif %}
@@ -125,13 +125,13 @@
                 <button type="submit"
                         id="btn-confirm-delete"
                         class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
-                    Permanently Delete My Account
+                    {{ _('Permanently Delete My Account') }}
                 </button>
                 {% else %}
                 <button type="button"
                         disabled
                         class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-gray-400 dark:text-slate-500 bg-gray-200 dark:bg-slate-700 cursor-not-allowed">
-                    Verification Required Before Deletion
+                    {{ _('Verification Required Before Deletion') }}
                 </button>
                 {% endif %}
             </div>
@@ -144,12 +144,12 @@
                 <button type="submit"
                         id="btn-cancel-delete"
                         class="text-sm font-semibold text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded p-1 bg-transparent border-0 cursor-pointer">
-                    &larr; Cancel and return to My Orders
+                    &larr; {{ _('Cancel and return to My Orders') }}
                 </button>
             </form>
             <a href="{{ url_for('catalog.index') }}"
                class="text-xs text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 underline focus:outline-none focus:ring-2 focus:ring-gray-500 rounded">
-                Continue Shopping
+                {{ _('Continue Shopping') }}
             </a>
         </div>
     </div>

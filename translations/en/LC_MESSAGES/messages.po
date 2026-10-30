@@ -1,0 +1,1793 @@
+# English translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-10-30 22:22+0000\n"
+"PO-Revision-Date: 2026-10-30 22:05+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: app/i18n.py:23
+msgid "Pending"
+msgstr ""
+
+#: app/i18n.py:24
+msgid "Confirmed"
+msgstr ""
+
+#: app/i18n.py:25
+msgid "Processing"
+msgstr ""
+
+#: app/i18n.py:26
+msgid "Shipped"
+msgstr ""
+
+#: app/i18n.py:27
+msgid "Delivered"
+msgstr ""
+
+#: app/i18n.py:28
+msgid "Cancelled"
+msgstr ""
+
+#: app/i18n.py:29
+msgid "Paid"
+msgstr ""
+
+#: app/i18n.py:30
+msgid "Unpaid"
+msgstr ""
+
+#: app/i18n.py:31
+msgid "Failed"
+msgstr ""
+
+#: app/i18n.py:32
+msgid "Refunded"
+msgstr ""
+
+#: app/templates/base.html:79
+msgid "Skip to main content"
+msgstr ""
+
+#: app/templates/base.html:87
+msgid "Account verification notice"
+msgstr ""
+
+#: app/templates/base.html:93
+msgid ""
+"Your email address is unverified. Please verify your email or request a "
+"new verification link."
+msgstr ""
+
+#: app/templates/base.html:96
+msgid "Resend link"
+msgstr ""
+
+#: app/templates/contact.html:4
+msgid "Contact Us - Online Food Shop"
+msgstr ""
+
+#: app/templates/contact.html:10
+msgid "Contact Customer Support"
+msgstr ""
+
+#: app/templates/contact.html:12
+msgid ""
+"Have questions about an order, our products, or store delivery? Send us a"
+" message and our support team will get back to you shortly."
+msgstr ""
+
+#: app/templates/contact.html:35
+msgid "Your Name"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:121 app/templates/contact.html:56
+#: app/templates/order/checkout.html:38
+#: app/templates/order/stripe_success.html:65
+msgid "Email Address"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:139
+#: app/templates/admin/messages/index.html:79 app/templates/contact.html:77
+msgid "Subject"
+msgstr ""
+
+#: app/templates/contact.html:98
+msgid "Message"
+msgstr ""
+
+#: app/templates/contact.html:121
+msgid "Send Message"
+msgstr ""
+
+#: app/templates/account/delete_account.html:4
+msgid "Delete Account - Online Food Shop"
+msgstr ""
+
+#: app/templates/account/delete_account.html:16
+msgid "Delete Your Account"
+msgstr ""
+
+#: app/templates/account/delete_account.html:17
+msgid "This action is permanent and cannot be undone."
+msgstr ""
+
+#: app/templates/account/delete_account.html:22
+msgid "Before deleting your account, please note:"
+msgstr ""
+
+#: app/templates/account/delete_account.html:24
+msgid ""
+"All login credentials, saved sessions, and linked Google accounts will be"
+" permanently erased."
+msgstr ""
+
+#: app/templates/account/delete_account.html:25
+msgid ""
+"You will permanently lose private access to your order history and "
+"receipt details."
+msgstr ""
+
+#: app/templates/account/delete_account.html:26
+msgid ""
+"Existing orders will be anonymized to preserve store accounting records "
+"while removing your personal details."
+msgstr ""
+
+#: app/templates/account/delete_account.html:27
+#, python-format
+msgid ""
+"Your email address (%(email)s) will be freed immediately if you wish to "
+"register again in the future."
+msgstr ""
+
+#: app/templates/account/delete_account.html:66
+msgid "Current Store Password"
+msgstr ""
+
+#: app/templates/account/delete_account.html:77
+msgid "Please enter your password to confirm identity before account deletion."
+msgstr ""
+
+#: app/templates/account/delete_account.html:85
+msgid ""
+"Your account signs in using Google. Please re-authenticate with Google to"
+" confirm your identity."
+msgstr ""
+
+#: app/templates/account/delete_account.html:96
+msgid "Verify with Google"
+msgstr ""
+
+#: app/templates/account/delete_account.html:104
+msgid "OR CONFIRM VIA"
+msgstr ""
+
+#: app/templates/account/delete_account.html:118
+msgid "Verify with Google instead"
+msgstr ""
+
+#: app/templates/account/delete_account.html:128
+msgid "Permanently Delete My Account"
+msgstr ""
+
+#: app/templates/account/delete_account.html:134
+msgid "Verification Required Before Deletion"
+msgstr ""
+
+#: app/templates/account/delete_account.html:147
+msgid "Cancel and return to My Orders"
+msgstr ""
+
+#: app/templates/account/delete_account.html:152
+#: app/templates/account/orders.html:15 app/templates/cart/view.html:47
+#: app/templates/cart/view.html:142 app/templates/order/stripe_success.html:97
+msgid "Continue Shopping"
+msgstr ""
+
+#: app/templates/account/order_detail.html:4
+#: app/templates/account/order_detail.html:20
+#: app/templates/admin/orders/detail.html:16
+#: app/templates/admin/orders/detail.html:19
+#: app/templates/order/confirmation.html:26
+#: app/templates/order/stripe_cancel.html:28
+#: app/templates/order/stripe_success.html:46
+#, python-format
+msgid "Order #%(id)s"
+msgstr ""
+
+#: app/templates/account/order_detail.html:11
+msgid "Back to My Orders"
+msgstr ""
+
+#: app/templates/account/order_detail.html:25
+#: app/templates/admin/orders/detail.html:26
+msgid "Placed on"
+msgstr ""
+
+#: app/templates/account/order_detail.html:29
+msgid "Total Amount"
+msgstr ""
+
+#: app/templates/account/order_detail.html:36
+msgid "Delivery Information Snapshot"
+msgstr ""
+
+#: app/templates/account/order_detail.html:40
+#: app/templates/admin/orders/detail.html:204
+msgid "Recipient Name"
+msgstr ""
+
+#: app/templates/account/order_detail.html:44
+#: app/templates/admin/orders/detail.html:209
+msgid "Contact Email"
+msgstr ""
+
+#: app/templates/account/order_detail.html:49
+#: app/templates/order/checkout.html:50
+msgid "Phone Number"
+msgstr ""
+
+#: app/templates/account/order_detail.html:55
+#: app/templates/admin/orders/detail.html:219
+#: app/templates/order/checkout.html:61
+#: app/templates/order/stripe_success.html:73
+msgid "Delivery Address"
+msgstr ""
+
+#: app/templates/account/order_detail.html:65
+msgid "Items Purchased"
+msgstr ""
+
+#: app/templates/account/order_detail.html:67
+msgid "Order Items"
+msgstr ""
+
+#: app/templates/account/order_detail.html:70
+#: app/templates/admin/orders/detail.html:108
+#: app/templates/admin/products/index.html:38 app/templates/cart/view.html:59
+msgid "Product"
+msgstr ""
+
+#: app/templates/account/order_detail.html:71 app/templates/cart/view.html:61
+#: app/templates/catalog/product_detail.html:68
+#: app/templates/order/confirmation.html:80
+msgid "Quantity"
+msgstr ""
+
+#: app/templates/account/order_detail.html:72
+#: app/templates/admin/orders/detail.html:110 app/templates/cart/view.html:60
+#: app/templates/order/confirmation.html:81
+msgid "Unit Price"
+msgstr ""
+
+#: app/templates/account/order_detail.html:73
+#: app/templates/admin/orders/detail.html:111 app/templates/cart/view.html:62
+#: app/templates/order/confirmation.html:82
+msgid "Subtotal"
+msgstr ""
+
+#: app/templates/account/order_detail.html:88
+#: app/templates/account/orders.html:30
+#: app/templates/admin/orders/index.html:74 app/templates/cart/view.html:129
+#: app/templates/order/checkout.html:149
+#: app/templates/order/confirmation.html:97
+msgid "Total"
+msgstr ""
+
+#: app/templates/account/orders.html:4
+msgid "My Orders - Online Food Shop"
+msgstr ""
+
+#: app/templates/account/orders.html:11 app/templates/components/navbar.html:78
+#: app/templates/components/navbar.html:154
+msgid "My Orders"
+msgstr ""
+
+#: app/templates/account/orders.html:12
+msgid "Review your past purchases and track order details."
+msgstr ""
+
+#: app/templates/account/orders.html:23
+msgid "Order History"
+msgstr ""
+
+#: app/templates/account/orders.html:26
+msgid "Order"
+msgstr ""
+
+#: app/templates/account/orders.html:27
+#: app/templates/admin/messages/index.html:77
+#: app/templates/admin/orders/index.html:70
+#: app/templates/order/confirmation.html:28
+msgid "Date"
+msgstr ""
+
+#: app/templates/account/orders.html:28
+#: app/templates/admin/categories/index.html:41
+#: app/templates/admin/messages/index.html:76
+#: app/templates/admin/orders/index.html:73
+#: app/templates/admin/products/index.html:42
+#: app/templates/order/confirmation.html:18
+msgid "Status"
+msgstr ""
+
+#: app/templates/account/orders.html:29 app/templates/cart/view.html:121
+msgid "Items"
+msgstr ""
+
+#: app/templates/account/orders.html:31
+#: app/templates/admin/categories/index.html:42
+#: app/templates/admin/messages/index.html:80
+#: app/templates/admin/orders/index.html:75
+#: app/templates/admin/products/index.html:43
+msgid "Action"
+msgstr ""
+
+#: app/templates/account/orders.html:59
+#: app/templates/admin/orders/index.html:120
+msgid "View Details"
+msgstr ""
+
+#: app/templates/account/orders.html:76
+msgid "No orders yet"
+msgstr ""
+
+#: app/templates/account/orders.html:78
+msgid ""
+"You haven't placed any orders with this account yet. When you check out "
+"while logged in, your purchases will appear here."
+msgstr ""
+
+#: app/templates/account/orders.html:82
+msgid "Browse Products"
+msgstr ""
+
+#: app/templates/account/orders.html:92
+msgid "Account Settings"
+msgstr ""
+
+#: app/templates/account/orders.html:93
+msgid ""
+"Manage your credentials, privacy settings, or delete your customer "
+"account."
+msgstr ""
+
+#: app/templates/account/orders.html:97
+msgid "Delete Account"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:3
+msgid "Store Administration - Online Food Shop"
+msgstr ""
+
+#: app/templates/admin/categories/form.html:4
+#: app/templates/admin/categories/form.html:12
+#: app/templates/admin/categories/index.html:11
+#: app/templates/admin/dashboard.html:11
+#: app/templates/admin/messages/detail.html:12
+#: app/templates/admin/messages/index.html:12
+#: app/templates/admin/orders/detail.html:12
+#: app/templates/admin/orders/index.html:12
+#: app/templates/admin/products/form.html:4
+#: app/templates/admin/products/form.html:12
+#: app/templates/admin/products/index.html:11
+msgid "Store Administration"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:13
+msgid "Owner Access"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:16
+msgid "Store health overview, operational metrics, and administration tools."
+msgstr ""
+
+#: app/templates/admin/dashboard.html:20
+msgid "Return to Storefront"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:27
+msgid "Store Overview Metrics"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:32
+msgid "Total Products"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:39
+msgid "Catalog items registered in store"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:46
+msgid "Active Products"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:53
+msgid "Listed and available for purchase"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:60
+msgid "Total Orders"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:67
+msgid "All-time customer and guest orders"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:74
+msgid "Recorded Order Value"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:82
+msgid "Recorded order total (not verified or paid revenue)"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:90
+msgid "Support Inbox"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:97
+msgid "New contact inquiries"
+msgstr ""
+
+#: app/templates/admin/categories/form.html:4
+#: app/templates/admin/categories/form.html:21
+#, python-format
+msgid "Edit Category: %(name)s"
+msgstr ""
+
+#: app/templates/admin/categories/form.html:4
+#: app/templates/admin/categories/form.html:17
+#: app/templates/admin/categories/index.html:26
+#: app/templates/admin/categories/index.html:90
+msgid "New Category"
+msgstr ""
+
+#: app/templates/admin/categories/form.html:11
+#: app/templates/admin/categories/index.html:10
+#: app/templates/admin/messages/detail.html:11
+#: app/templates/admin/messages/index.html:11
+#: app/templates/admin/orders/detail.html:11
+#: app/templates/admin/orders/index.html:11
+#: app/templates/admin/products/form.html:11
+#: app/templates/admin/products/index.html:10
+msgid "Breadcrumb"
+msgstr ""
+
+#: app/templates/admin/categories/form.html:14
+#: app/templates/admin/categories/index.html:13
+msgid "Categories"
+msgstr ""
+
+#: app/templates/admin/categories/form.html:17
+msgid "Edit Category"
+msgstr ""
+
+#: app/templates/admin/categories/form.html:21
+msgid "Create New Category"
+msgstr ""
+
+#: app/templates/admin/categories/form.html:23
+msgid "Configure catalog category details and store visibility."
+msgstr ""
+
+#: app/templates/admin/categories/form.html:35
+#: app/templates/admin/categories/index.html:38
+msgid "Category Name"
+msgstr ""
+
+#: app/templates/admin/categories/form.html:42
+msgid "e.g. Organic Produce"
+msgstr ""
+
+#: app/templates/admin/categories/form.html:44
+msgid "Must be unique across all categories."
+msgstr ""
+
+#: app/templates/admin/categories/form.html:50
+#: app/templates/admin/categories/index.html:39
+#: app/templates/admin/products/form.html:104
+#: app/templates/catalog/product_detail.html:54
+msgid "Description"
+msgstr ""
+
+#: app/templates/admin/categories/form.html:50
+#: app/templates/admin/products/form.html:86
+#: app/templates/admin/products/form.html:104
+#: app/templates/admin/products/form.html:116
+msgid "Optional"
+msgstr ""
+
+#: app/templates/admin/categories/form.html:55
+msgid "Brief description of the grocery category..."
+msgstr ""
+
+#: app/templates/admin/categories/form.html:72
+msgid "Category is Active"
+msgstr ""
+
+#: app/templates/admin/categories/form.html:75
+msgid ""
+"When inactive, this category and its products are hidden from the public "
+"catalog and cannot be purchased."
+msgstr ""
+
+#: app/templates/admin/categories/form.html:84
+#: app/templates/admin/products/form.html:152
+#: app/templates/auth/link_account.html:66
+msgid "Cancel"
+msgstr ""
+
+#: app/templates/admin/categories/form.html:87
+#: app/templates/admin/products/form.html:155
+msgid "Save Changes"
+msgstr ""
+
+#: app/templates/admin/categories/form.html:87
+msgid "Create Category"
+msgstr ""
+
+#: app/templates/admin/categories/index.html:3
+msgid "Category Management - Store Administration"
+msgstr ""
+
+#: app/templates/admin/categories/index.html:15
+msgid "Category Management"
+msgstr ""
+
+#: app/templates/admin/categories/index.html:16
+msgid "Organize and configure grocery catalog categories."
+msgstr ""
+
+#: app/templates/admin/categories/index.html:20
+#: app/templates/admin/messages/index.html:28
+#: app/templates/admin/orders/index.html:21
+#: app/templates/admin/products/index.html:20
+msgid "Dashboard"
+msgstr ""
+
+#: app/templates/admin/categories/index.html:35
+msgid "Categories Table"
+msgstr ""
+
+#: app/templates/admin/categories/index.html:40
+#: app/templates/admin/products/form.html:14
+#: app/templates/admin/products/index.html:13
+#: app/templates/components/footer.html:14
+#: app/templates/components/navbar.html:16
+#: app/templates/components/navbar.html:120
+msgid "Products"
+msgstr ""
+
+#: app/templates/admin/categories/index.html:62
+#: app/templates/admin/products/index.html:87
+msgid "Active"
+msgstr ""
+
+#: app/templates/admin/categories/index.html:66
+#: app/templates/admin/products/form.html:94
+#: app/templates/admin/products/index.html:91
+msgid "Inactive"
+msgstr ""
+
+#: app/templates/admin/categories/index.html:72
+#: app/templates/admin/products/index.html:97
+msgid "Edit"
+msgstr ""
+
+#: app/templates/admin/categories/index.html:86
+msgid "No categories created yet"
+msgstr ""
+
+#: app/templates/admin/categories/index.html:87
+msgid "Get started by creating your first catalog category."
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:4
+#, python-format
+msgid "Support Message #%(id)s - Store Administration"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:14
+#: app/templates/admin/messages/index.html:14
+msgid "Support Messages"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:16
+#: app/templates/admin/messages/detail.html:19
+#, python-format
+msgid "Support Message #%(id)s"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:23
+#: app/templates/admin/messages/index.html:47
+#: app/templates/admin/messages/index.html:89
+msgid "New"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:27
+#: app/templates/admin/messages/index.html:53
+#: app/templates/admin/messages/index.html:93
+msgid "Read"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:31
+#: app/templates/admin/messages/index.html:59
+#: app/templates/admin/messages/index.html:97
+msgid "Resolved"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:40
+msgid "Received on"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:45
+msgid "Back to Messages"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:52
+msgid "Message Lifecycle Actions"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:54
+#: app/templates/admin/orders/detail.html:40
+#, python-format
+msgid "Current status is %(status)s."
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:55
+msgid "Update the lifecycle state to keep customer support workflows organized."
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:65
+msgid "Reply via Email"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:79
+msgid "Mark as Resolved"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:92
+msgid "Mark as Read"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:105
+msgid "Mark as Unread (Reopen)"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:117
+msgid "Sender Name"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:127
+msgid "Received Timestamp"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:131
+msgid "Last Updated"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:132
+msgid "Not updated yet"
+msgstr ""
+
+#: app/templates/admin/messages/detail.html:143
+msgid "Message Body"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:4
+msgid "Customer Support Inbox - Store Administration"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:17
+msgid "Customer Support Inbox"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:20
+msgid "Unread"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:24
+msgid ""
+"Review inbound customer inquiries, track response status, and manage "
+"resolution."
+msgstr ""
+
+#: app/templates/admin/messages/index.html:36
+msgid "Filter messages by status"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:41
+msgid "All"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:65
+#: app/templates/admin/orders/index.html:58
+msgid "Showing"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:65
+#: app/templates/admin/messages/index.html:148
+#: app/templates/admin/orders/index.html:58
+#: app/templates/admin/orders/index.html:147
+msgid "of"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:65
+msgid "messages"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:73
+msgid "Customer Support Messages Table"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:78
+msgid "Sender"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:130
+msgid "Mark Read"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:135
+msgid "View Message"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:148
+#: app/templates/admin/orders/index.html:147
+msgid "Page"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:154
+#: app/templates/admin/orders/index.html:137
+#: app/templates/admin/orders/index.html:141
+msgid "Previous"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:160
+#: app/templates/admin/orders/index.html:155
+#: app/templates/admin/orders/index.html:159
+msgid "Next"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:173
+msgid "No messages found"
+msgstr ""
+
+#: app/templates/admin/messages/index.html:176
+#, python-format
+msgid "No support messages currently match the %(status)s status filter."
+msgstr ""
+
+#: app/templates/admin/messages/index.html:178
+msgid "No customer inquiries have been submitted yet."
+msgstr ""
+
+#: app/templates/admin/messages/index.html:184
+msgid "View All Messages"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:4
+#, python-format
+msgid "Order #%(id)s - Store Administration"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:14
+#: app/templates/admin/orders/index.html:14
+msgid "Orders"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:31
+msgid "Back to Orders"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:38
+msgid "Order Lifecycle & Status Management"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:41
+msgid ""
+"Status updates are conditional and atomic to protect against concurrent "
+"modifications."
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:58
+msgid "Confirm Order"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:71
+#, python-format
+msgid "Are you sure you want to cancel Order #%(id)s? This action is permanent."
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:76
+msgid "Cancel Order"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:84
+msgid "This order has been cancelled and has reached a permanent terminal status."
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:86
+#, python-format
+msgid "Manual status transitions from '%(status)s' are disabled in this phase."
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:87
+msgid ""
+"Fulfillment and payment transitions require external integration "
+"workflows."
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:89
+msgid "No further manual status transitions are available for this order."
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:101
+msgid "Purchased Items"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:102
+msgid "items"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:105
+msgid "Order Items Table"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:109
+msgid "Qty"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:135
+msgid "Total Order Value:"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:152
+msgid "Payment Details"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:153
+msgid "Transaction Status"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:158
+#: app/templates/order/checkout.html:73
+msgid "Payment Method"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:161
+msgid "Stripe (Card)"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:163
+#: app/templates/admin/orders/detail.html:165
+msgid "Standard"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:171
+msgid "Payment Status"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:178
+msgid "Stripe Checkout Session ID"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:186
+msgid "Stripe Payment Intent ID"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:198
+msgid "Fulfillment Snapshot"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:199
+msgid "Captured at Checkout"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:214
+msgid "Contact Phone"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:228
+msgid "Account Association"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:235
+msgid "Registered Customer"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:237
+msgid "User Account ID:"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:240
+msgid "Associated with authenticated user account at checkout time."
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:247
+msgid "Guest Order"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:249
+msgid "No associated registered user"
+msgstr ""
+
+#: app/templates/admin/orders/detail.html:252
+msgid ""
+"Placed via guest checkout. Guest orders remain permanently unlinked to "
+"customer accounts."
+msgstr ""
+
+#: app/templates/admin/orders/index.html:4
+msgid "Order Management - Store Administration"
+msgstr ""
+
+#: app/templates/admin/orders/index.html:16
+msgid "Order Management"
+msgstr ""
+
+#: app/templates/admin/orders/index.html:17
+msgid ""
+"Review orders, manage fulfillment workflows, and transition lifecycle "
+"statuses."
+msgstr ""
+
+#: app/templates/admin/orders/index.html:31
+msgid "Filter by Status:"
+msgstr ""
+
+#: app/templates/admin/orders/index.html:37
+msgid "All Orders"
+msgstr ""
+
+#: app/templates/admin/orders/index.html:46
+msgid "Apply Filter"
+msgstr ""
+
+#: app/templates/admin/orders/index.html:51
+msgid "Clear Filter"
+msgstr ""
+
+#: app/templates/admin/orders/index.html:58
+msgid "orders"
+msgstr ""
+
+#: app/templates/admin/orders/index.html:66
+msgid "Orders Management Table"
+msgstr ""
+
+#: app/templates/admin/orders/index.html:69
+msgid "Order ID"
+msgstr ""
+
+#: app/templates/admin/orders/index.html:71
+msgid "Account"
+msgstr ""
+
+#: app/templates/admin/orders/index.html:72
+#: app/templates/order/stripe_success.html:61
+msgid "Recipient"
+msgstr ""
+
+#: app/templates/admin/orders/index.html:92
+#, python-format
+msgid "Registered (ID #%(id)s)"
+msgstr ""
+
+#: app/templates/admin/orders/index.html:96
+msgid "Guest Checkout"
+msgstr ""
+
+#: app/templates/admin/orders/index.html:109
+msgid "Payment: "
+msgstr ""
+
+#: app/templates/admin/orders/index.html:168
+msgid "Empty order list"
+msgstr ""
+
+#: app/templates/admin/orders/index.html:174
+msgid "No Orders Found"
+msgstr ""
+
+#: app/templates/admin/orders/index.html:177
+#, python-format
+msgid "There are currently no orders with status %(status)s."
+msgstr ""
+
+#: app/templates/admin/orders/index.html:179
+msgid "No customer orders have been placed in the shop yet."
+msgstr ""
+
+#: app/templates/admin/orders/index.html:185
+msgid "Show All Orders"
+msgstr ""
+
+#: app/templates/admin/products/form.html:4
+#: app/templates/admin/products/form.html:21
+#, python-format
+msgid "Edit Product: %(name)s"
+msgstr ""
+
+#: app/templates/admin/products/form.html:4
+#: app/templates/admin/products/form.html:17
+#: app/templates/admin/products/index.html:26
+#: app/templates/admin/products/index.html:115
+msgid "New Product"
+msgstr ""
+
+#: app/templates/admin/products/form.html:17
+msgid "Edit Product"
+msgstr ""
+
+#: app/templates/admin/products/form.html:21
+msgid "Create New Product"
+msgstr ""
+
+#: app/templates/admin/products/form.html:23
+msgid "Configure catalog product pricing, inventory, and visibility."
+msgstr ""
+
+#: app/templates/admin/products/form.html:35
+msgid "Product Name"
+msgstr ""
+
+#: app/templates/admin/products/form.html:42
+msgid "e.g. Organic Gala Apples"
+msgstr ""
+
+#: app/templates/admin/products/form.html:51
+msgid "Price (€)"
+msgstr ""
+
+#: app/templates/admin/products/form.html:59
+msgid "e.g. 4.50"
+msgstr ""
+
+#: app/templates/admin/products/form.html:62
+msgid "Enter amount in euros (e.g. 4.50 or 4,50)."
+msgstr ""
+
+#: app/templates/admin/products/form.html:68
+msgid "Stock Quantity"
+msgstr ""
+
+#: app/templates/admin/products/form.html:79
+msgid "Available inventory units (whole numbers &ge; 0)."
+msgstr ""
+
+#: app/templates/admin/products/form.html:86
+#: app/templates/admin/products/index.html:39
+#: app/templates/catalog/index.html:61
+msgid "Category"
+msgstr ""
+
+#: app/templates/admin/products/form.html:91
+msgid "None (Uncategorized)"
+msgstr ""
+
+#: app/templates/admin/products/form.html:98
+msgid "Assign to an existing catalog category."
+msgstr ""
+
+#: app/templates/admin/products/form.html:109
+msgid "Detailed product description..."
+msgstr ""
+
+#: app/templates/admin/products/form.html:116
+msgid "Image Path or URL"
+msgstr ""
+
+#: app/templates/admin/products/form.html:122
+msgid "e.g. /static/images/apples.png or https://..."
+msgstr ""
+
+#: app/templates/admin/products/form.html:124
+msgid "Provide a local static asset path or secure HTTPS URL."
+msgstr ""
+
+#: app/templates/admin/products/form.html:140
+msgid "Product is Active"
+msgstr ""
+
+#: app/templates/admin/products/form.html:143
+msgid ""
+"When inactive, this product is hidden from storefront catalog browsing "
+"and cannot be added to carts."
+msgstr ""
+
+#: app/templates/admin/products/form.html:155
+msgid "Create Product"
+msgstr ""
+
+#: app/templates/admin/products/index.html:3
+msgid "Product Management - Store Administration"
+msgstr ""
+
+#: app/templates/admin/products/index.html:15
+msgid "Product Management"
+msgstr ""
+
+#: app/templates/admin/products/index.html:16
+msgid "Manage grocery catalog inventory, prices, and availability."
+msgstr ""
+
+#: app/templates/admin/products/index.html:35
+msgid "Products Table"
+msgstr ""
+
+#: app/templates/admin/products/index.html:40
+msgid "Price"
+msgstr ""
+
+#: app/templates/admin/products/index.html:41
+#: app/templates/components/product_card.html:39
+msgid "Stock"
+msgstr ""
+
+#: app/templates/admin/products/index.html:63
+msgid "Uncategorized"
+msgstr ""
+
+#: app/templates/admin/products/index.html:72
+msgid "Out of stock"
+msgstr ""
+
+#: app/templates/admin/products/index.html:76
+msgid "Low"
+msgstr ""
+
+#: app/templates/admin/products/index.html:111
+msgid "No products registered yet"
+msgstr ""
+
+#: app/templates/admin/products/index.html:112
+msgid "Get started by creating your first grocery product."
+msgstr ""
+
+#: app/templates/auth/forgot_password.html:3
+msgid "Reset Password - Online Food Shop"
+msgstr ""
+
+#: app/templates/auth/forgot_password.html:9
+msgid "Forgot Password"
+msgstr ""
+
+#: app/templates/auth/forgot_password.html:11
+msgid "Enter your account email to receive a password reset link."
+msgstr ""
+
+#: app/templates/auth/forgot_password.html:20 app/templates/auth/login.html:26
+#: app/templates/auth/register.html:25
+#: app/templates/auth/resend_verification.html:20
+msgid "Email address"
+msgstr ""
+
+#: app/templates/auth/forgot_password.html:35
+msgid "Send Reset Link"
+msgstr ""
+
+#: app/templates/auth/forgot_password.html:39
+msgid ""
+"Note: In this development environment, reset links are simulated in-"
+"memory and not dispatched across external networks."
+msgstr ""
+
+#: app/templates/auth/forgot_password.html:45
+#: app/templates/auth/resend_verification.html:44
+#: app/templates/auth/reset_password.html:62
+msgid "Back to sign in"
+msgstr ""
+
+#: app/templates/auth/link_account.html:3
+msgid "Link Google Account - Online Food Shop"
+msgstr ""
+
+#: app/templates/auth/link_account.html:15
+msgid "Confirm Password to Link Account"
+msgstr ""
+
+#: app/templates/auth/link_account.html:17
+#, python-format
+msgid "An existing store account was found for %(email)s."
+msgstr ""
+
+#: app/templates/auth/link_account.html:20
+msgid ""
+"Please enter your store password to confirm account ownership and link "
+"Google sign-in. This is a one-time verification."
+msgstr ""
+
+#: app/templates/auth/link_account.html:41
+msgid "Store Password"
+msgstr ""
+
+#: app/templates/auth/link_account.html:57
+msgid "Confirm and Link Google Account"
+msgstr ""
+
+#: app/templates/auth/link_account.html:70 app/templates/auth/login.html:44
+msgid "Forgot password?"
+msgstr ""
+
+#: app/templates/auth/login.html:3
+msgid "Sign In - Online Food Shop"
+msgstr ""
+
+#: app/templates/auth/login.html:16 app/templates/auth/login.html:58
+msgid "Sign In"
+msgstr ""
+
+#: app/templates/auth/login.html:17
+msgid "Sign in to your Online Food Shop account"
+msgstr ""
+
+#: app/templates/auth/login.html:41 app/templates/auth/register.html:39
+msgid "Password"
+msgstr ""
+
+#: app/templates/auth/login.html:70 app/templates/auth/register.html:82
+msgid "Or continue with"
+msgstr ""
+
+#: app/templates/auth/login.html:77 app/templates/auth/login.html:84
+#: app/templates/auth/register.html:89 app/templates/auth/register.html:96
+msgid "Continue with Google"
+msgstr ""
+
+#: app/templates/auth/login.html:92
+msgid "Don't have an account?"
+msgstr ""
+
+#: app/templates/auth/login.html:94
+msgid "Register here"
+msgstr ""
+
+#: app/templates/auth/login.html:98
+msgid "Need to verify your account?"
+msgstr ""
+
+#: app/templates/auth/login.html:100
+msgid "Resend verification link"
+msgstr ""
+
+#: app/templates/auth/register.html:3
+msgid "Create an Account - Online Food Shop"
+msgstr ""
+
+#: app/templates/auth/register.html:16
+msgid "Create an Account"
+msgstr ""
+
+#: app/templates/auth/register.html:17
+msgid "Join Online Food Shop to manage your profile"
+msgstr ""
+
+#: app/templates/auth/register.html:50
+msgid "Must be at least 8 characters."
+msgstr ""
+
+#: app/templates/auth/register.html:55
+msgid "Confirm password"
+msgstr ""
+
+#: app/templates/auth/register.html:70
+msgid "Create Account"
+msgstr ""
+
+#: app/templates/auth/register.html:104
+msgid "Already have an account?"
+msgstr ""
+
+#: app/templates/auth/register.html:106
+msgid "Sign in here"
+msgstr ""
+
+#: app/templates/auth/resend_verification.html:3
+msgid "Resend Verification Link - Online Food Shop"
+msgstr ""
+
+#: app/templates/auth/resend_verification.html:9
+msgid "Resend Verification Link"
+msgstr ""
+
+#: app/templates/auth/resend_verification.html:11
+msgid "Enter your account email to request a new verification link."
+msgstr ""
+
+#: app/templates/auth/resend_verification.html:34
+msgid "Request Verification Link"
+msgstr ""
+
+#: app/templates/auth/resend_verification.html:38
+msgid ""
+"Note: In this development environment, verification links are simulated "
+"in-memory and not dispatched across external networks."
+msgstr ""
+
+#: app/templates/auth/reset_password.html:7
+msgid "Set New Password - Online Food Shop"
+msgstr ""
+
+#: app/templates/auth/reset_password.html:13
+msgid "Set New Password"
+msgstr ""
+
+#: app/templates/auth/reset_password.html:14
+msgid "Please enter your new password below."
+msgstr ""
+
+#: app/templates/auth/reset_password.html:23
+msgid "New Password"
+msgstr ""
+
+#: app/templates/auth/reset_password.html:34
+msgid "Must be at least 8 characters long."
+msgstr ""
+
+#: app/templates/auth/reset_password.html:39
+msgid "Confirm New Password"
+msgstr ""
+
+#: app/templates/auth/reset_password.html:55
+msgid "Reset Password"
+msgstr ""
+
+#: app/templates/auth/verify_email.html:110
+msgid "Confirm Email Verification - Online Food Shop"
+msgstr ""
+
+#: app/templates/auth/verify_email.html:121
+msgid "Verify Your Email Address"
+msgstr ""
+
+#: app/templates/auth/verify_email.html:123
+msgid ""
+"Click the button below to confirm your verification request and activate "
+"your account."
+msgstr ""
+
+#: app/templates/auth/verify_email.html:132
+msgid "Confirm Verification"
+msgstr ""
+
+#: app/templates/auth/verify_email.html:138
+msgid "Return to home page"
+msgstr ""
+
+#: app/templates/cart/view.html:4
+msgid "Shopping Cart - Online Food Shop"
+msgstr ""
+
+#: app/templates/cart/view.html:10
+msgid "Your Shopping Cart"
+msgstr ""
+
+#: app/templates/cart/view.html:11
+msgid "Review your selected items and update quantities."
+msgstr ""
+
+#: app/templates/cart/view.html:18
+msgid "Clear Cart"
+msgstr ""
+
+#: app/templates/cart/view.html:31
+msgid "Notice regarding your cart items:"
+msgstr ""
+
+#: app/templates/cart/view.html:44
+msgid "Your cart is empty"
+msgstr ""
+
+#: app/templates/cart/view.html:45
+msgid "Looks like you haven't added any fresh food or groceries to your cart yet."
+msgstr ""
+
+#: app/templates/cart/view.html:63
+msgid "Actions"
+msgstr ""
+
+#: app/templates/cart/view.html:82
+#: app/templates/components/product_card.html:47
+#, python-format
+msgid "Quantity for %(name)s"
+msgstr ""
+
+#: app/templates/cart/view.html:90
+msgid "Update quantity"
+msgstr ""
+
+#: app/templates/cart/view.html:91
+msgid "Update"
+msgstr ""
+
+#: app/templates/cart/view.html:104
+msgid "Remove"
+msgstr ""
+
+#: app/templates/cart/view.html:117 app/templates/order/checkout.html:125
+msgid "Order Summary"
+msgstr ""
+
+#: app/templates/cart/view.html:125 app/templates/order/checkout.html:145
+msgid "Shipping"
+msgstr ""
+
+#: app/templates/cart/view.html:126 app/templates/order/checkout.html:146
+msgid "Free"
+msgstr ""
+
+#: app/templates/cart/view.html:136
+msgid "Proceed to Checkout"
+msgstr ""
+
+#: app/templates/catalog/index.html:6
+msgid "Product Catalog - Online Food Shop"
+msgstr ""
+
+#: app/templates/catalog/index.html:20
+msgid "Fresh & Wholesome Everyday"
+msgstr ""
+
+#: app/templates/catalog/index.html:23
+msgid "Farm-fresh food, savory steaks, eggs & artisan harvest"
+msgstr ""
+
+#: app/templates/catalog/index.html:26
+msgid ""
+"Explore fresh, locally sourced food, bakery items, and organic produce. "
+"Hand-selected for premium quality and delicious meals."
+msgstr ""
+
+#: app/templates/catalog/index.html:30
+msgid "Browse Catalog"
+msgstr ""
+
+#: app/templates/catalog/index.html:39
+msgid "Same-day fresh packing & safe checkout"
+msgstr ""
+
+#: app/templates/catalog/index.html:51
+msgid "Quality Guaranteed"
+msgstr ""
+
+#: app/templates/catalog/index.html:52
+msgid "Authentic Food Market"
+msgstr ""
+
+#: app/templates/catalog/index.html:61
+msgid "All Products"
+msgstr ""
+
+#: app/templates/catalog/index.html:65
+msgid "Clear filter"
+msgstr ""
+
+#: app/templates/catalog/index.html:87
+msgid "No products found."
+msgstr ""
+
+#: app/templates/catalog/index.html:88
+msgid "There are currently no products available in this category."
+msgstr ""
+
+#: app/templates/catalog/index.html:90
+msgid "View All Products"
+msgstr ""
+
+#: app/templates/catalog/product_detail.html:13
+msgid "Back to Products"
+msgstr ""
+
+#: app/templates/catalog/product_detail.html:39
+#, python-format
+msgid "In Stock (%(count)d available)"
+msgstr ""
+
+#: app/templates/catalog/product_detail.html:46
+msgid "Currently Out of Stock"
+msgstr ""
+
+#: app/templates/catalog/product_detail.html:84
+#: app/templates/components/product_card.html:62
+msgid "Add to Cart"
+msgstr ""
+
+#: app/templates/components/alert.html:24
+msgid "Error:"
+msgstr ""
+
+#: app/templates/components/alert.html:29
+msgid "Warning:"
+msgstr ""
+
+#: app/templates/components/alert.html:34
+msgid "Success:"
+msgstr ""
+
+#: app/templates/components/alert.html:39
+msgid "Info:"
+msgstr ""
+
+#: app/templates/components/category_card.html:5
+msgid "All Categories"
+msgstr ""
+
+#: app/templates/components/footer.html:9
+msgid "Fresh organic food & artisan groceries"
+msgstr ""
+
+#: app/templates/components/footer.html:15
+msgid "Contact Us"
+msgstr ""
+
+#: app/templates/components/footer.html:20
+msgid "All rights reserved."
+msgstr ""
+
+#: app/templates/components/footer.html:22
+msgid "Secure payment powered by Stripe (Test Mode)"
+msgstr ""
+
+#: app/templates/components/navbar.html:19
+#: app/templates/components/navbar.html:123
+msgid "Contact"
+msgstr ""
+
+#: app/templates/components/navbar.html:28
+msgid "Cart"
+msgstr ""
+
+#: app/templates/components/navbar.html:74
+msgid "Admin"
+msgstr ""
+
+#: app/templates/components/navbar.html:86
+#: app/templates/components/navbar.html:162
+msgid "Logout"
+msgstr ""
+
+#: app/templates/components/navbar.html:91
+#: app/templates/components/navbar.html:168
+msgid "Login"
+msgstr ""
+
+#: app/templates/components/navbar.html:94
+#: app/templates/components/navbar.html:171
+msgid "Register"
+msgstr ""
+
+#: app/templates/components/navbar.html:128
+msgid "Language"
+msgstr ""
+
+#: app/templates/components/navbar.html:150
+msgid "Admin Dashboard"
+msgstr ""
+
+#: app/templates/components/navbar.html:157
+msgid "Signed in as"
+msgstr ""
+
+#: app/templates/components/product_card.html:15
+msgid "In Stock"
+msgstr ""
+
+#: app/templates/components/product_card.html:20
+msgid "Out of Stock"
+msgstr ""
+
+#: app/templates/order/checkout.html:3
+msgid "Checkout - Online Food Shop"
+msgstr ""
+
+#: app/templates/order/checkout.html:8
+msgid "Checkout"
+msgstr ""
+
+#: app/templates/order/checkout.html:9
+msgid "Please provide your details below to finalize your order."
+msgstr ""
+
+#: app/templates/order/checkout.html:15
+msgid "Customer Information"
+msgstr ""
+
+#: app/templates/order/checkout.html:26
+msgid "Full Name"
+msgstr ""
+
+#: app/templates/order/checkout.html:83
+msgid "Standard Checkout (Pay on Delivery)"
+msgstr ""
+
+#: app/templates/order/checkout.html:84
+msgid "Pay with cash or debit card upon delivery."
+msgstr ""
+
+#: app/templates/order/checkout.html:96
+msgid "Credit / Debit Card (Stripe)"
+msgstr ""
+
+#: app/templates/order/checkout.html:98
+msgid "Test Mode Only"
+msgstr ""
+
+#: app/templates/order/checkout.html:102
+msgid ""
+"Pay securely using Stripe's hosted checkout. No card details are entered "
+"or stored on our servers."
+msgstr ""
+
+#: app/templates/order/checkout.html:113
+msgid "Place Order"
+msgstr ""
+
+#: app/templates/order/checkout.html:127
+msgid "Edit Cart"
+msgstr ""
+
+#: app/templates/order/confirmation.html:4
+msgid "Order Confirmation - Online Food Shop"
+msgstr ""
+
+#: app/templates/order/confirmation.html:15
+msgid "Order Confirmation"
+msgstr ""
+
+#: app/templates/order/confirmation.html:16
+msgid "Thank you for your order! Your purchase has been placed successfully."
+msgstr ""
+
+#: app/templates/order/confirmation.html:33
+msgid "Payment"
+msgstr ""
+
+#: app/templates/order/confirmation.html:46
+msgid "Customer & Delivery Details"
+msgstr ""
+
+#: app/templates/order/confirmation.html:49
+msgid "Name"
+msgstr ""
+
+#: app/templates/order/confirmation.html:53
+msgid "Email"
+msgstr ""
+
+#: app/templates/order/confirmation.html:58
+#: app/templates/order/stripe_success.html:69
+msgid "Phone"
+msgstr ""
+
+#: app/templates/order/confirmation.html:64
+msgid "Address"
+msgstr ""
+
+#: app/templates/order/confirmation.html:74
+#: app/templates/order/stripe_success.html:81
+msgid "Items Ordered"
+msgstr ""
+
+#: app/templates/order/confirmation.html:79
+msgid "Item"
+msgstr ""
+
+#: app/templates/order/confirmation.html:107
+msgid "Return to Shop"
+msgstr ""
+
+#: app/templates/order/confirmation.html:111
+#: app/templates/order/stripe_cancel.html:59
+msgid "View My Orders"
+msgstr ""
+
+#: app/templates/order/stripe_cancel.html:3
+#, python-format
+msgid "Payment Incomplete - Order #%(id)s - Online Food Shop"
+msgstr ""
+
+#: app/templates/order/stripe_cancel.html:14
+msgid "Payment Not Completed"
+msgstr ""
+
+#: app/templates/order/stripe_cancel.html:16
+msgid ""
+"You returned from the Stripe Checkout window before payment confirmation "
+"was finalized. Please note that closing or navigating away from the "
+"payment window does not prove that no charge occurred if payment details "
+"were already submitted."
+msgstr ""
+
+#: app/templates/order/stripe_cancel.html:19
+#, python-format
+msgid ""
+"Your Order #%(id)s reservation remains in Pending status. If your payment"
+" was completed, your order will automatically update to Confirmed once "
+"authoritative confirmation is received from Stripe."
+msgstr ""
+
+#: app/templates/order/stripe_cancel.html:27
+#: app/templates/order/stripe_success.html:45
+msgid "Order Reference"
+msgstr ""
+
+#: app/templates/order/stripe_cancel.html:32
+msgid "Payment Pending"
+msgstr ""
+
+#: app/templates/order/stripe_cancel.html:39
+msgid "Items in this Order"
+msgstr ""
+
+#: app/templates/order/stripe_cancel.html:64
+msgid "Return to Store"
+msgstr ""
+
+#: app/templates/order/stripe_cancel.html:68
+msgid "Need Help? Contact Us"
+msgstr ""
+
+#: app/templates/order/stripe_success.html:4
+#, python-format
+msgid "Payment Submitted - Order #%(id)s - Online Food Shop"
+msgstr ""
+
+#: app/templates/order/stripe_success.html:16
+msgid "Payment Confirmed"
+msgstr ""
+
+#: app/templates/order/stripe_success.html:18
+#, python-format
+msgid ""
+"Thank you for your order! Your payment of %(amount)s has been confirmed "
+"through Stripe."
+msgstr ""
+
+#: app/templates/order/stripe_success.html:21
+msgid "Payment has been verified server-side. Your order is confirmed."
+msgstr ""
+
+#: app/templates/order/stripe_success.html:31
+msgid "Payment Submitted — Pending Confirmation"
+msgstr ""
+
+#: app/templates/order/stripe_success.html:33
+#, python-format
+msgid ""
+"Thank you for your order! Your payment of %(amount)s has been submitted "
+"through Stripe and may still be processing."
+msgstr ""
+
+#: app/templates/order/stripe_success.html:36
+msgid ""
+"Payment confirmation is verified server-side. Your order status will "
+"update once confirmation is finalized."
+msgstr ""
+
+#: app/templates/order/stripe_success.html:51
+msgid "Stripe Card"
+msgstr ""
+
+#: app/templates/order/stripe_success.html:58
+msgid "Delivery Information"
+msgstr ""
+
+#~ msgid "100% Quality Guaranteed"
+#~ msgstr ""
+

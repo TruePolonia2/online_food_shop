@@ -1,26 +1,26 @@
 {% extends "base.html" %}
 
 {% block title %}
-    {% if category %}Edit Category: {{ category.name }}{% else %}New Category{% endif %} - Store Administration
+    {% if category %}{{ _('Edit Category: %(name)s', name=category.name) }}{% else %}{{ _('New Category') }}{% endif %} - {{ _('Store Administration') }}
 {% endblock %}
 
 {% block content %}
 <div class="max-w-2xl mx-auto space-y-6">
     <!-- Breadcrumb & Header -->
     <div>
-        <nav class="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 mb-1" aria-label="Breadcrumb">
-            <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-700 dark:hover:text-slate-300">Store Administration</a>
+        <nav class="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 mb-1" aria-label="{{ _('Breadcrumb') }}">
+            <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-700 dark:hover:text-slate-300">{{ _('Store Administration') }}</a>
             <span>&rsaquo;</span>
-            <a href="{{ url_for('admin.list_categories') }}" class="hover:text-gray-700 dark:hover:text-slate-300">Categories</a>
+            <a href="{{ url_for('admin.list_categories') }}" class="hover:text-gray-700 dark:hover:text-slate-300">{{ _('Categories') }}</a>
             <span>&rsaquo;</span>
             <span class="text-gray-900 dark:text-slate-100 font-semibold" aria-current="page">
-                {% if category %}Edit Category{% else %}New Category{% endif %}
+                {% if category %}{{ _('Edit Category') }}{% else %}{{ _('New Category') }}{% endif %}
             </span>
         </nav>
         <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">
-            {% if category %}Edit Category: {{ category.name }}{% else %}Create New Category{% endif %}
+            {% if category %}{{ _('Edit Category: %(name)s', name=category.name) }}{% else %}{{ _('Create New Category') }}{% endif %}
         </h1>
-        <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">Configure catalog category details and store visibility.</p>
+        <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">{{ _('Configure catalog category details and store visibility.') }}</p>
     </div>
 
     <!-- Form Card -->
@@ -32,27 +32,27 @@
             <!-- Category Name -->
             <div>
                 <label for="category-name" class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1">
-                    Category Name <span class="text-red-500">*</span>
+                    {{ _('Category Name') }} <span class="text-red-500">*</span>
                 </label>
                 <input type="text"
                        id="category-name"
                        name="name"
                        required
                        value="{{ form_data.name }}"
-                       placeholder="e.g. Organic Produce"
+                       placeholder="{{ _('e.g. Organic Produce') }}"
                        class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 shadow-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm">
-                <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">Must be unique across all categories.</p>
+                <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">{{ _('Must be unique across all categories.') }}</p>
             </div>
 
             <!-- Description -->
             <div>
                 <label for="category-description" class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1">
-                    Description <span class="text-gray-400 dark:text-slate-500 font-normal">(Optional)</span>
+                    {{ _('Description') }} <span class="text-gray-400 dark:text-slate-500 font-normal">({{ _('Optional') }})</span>
                 </label>
                 <textarea id="category-description"
                           name="description"
                           rows="3"
-                          placeholder="Brief description of the grocery category..."
+                          placeholder="{{ _('Brief description of the grocery category...') }}"
                           class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 shadow-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm">{{ form_data.description }}</textarea>
             </div>
 
@@ -69,10 +69,10 @@
                     </div>
                     <div class="text-sm">
                         <label for="category-is-active" class="font-medium text-gray-900 dark:text-slate-100 cursor-pointer">
-                            Category is Active
+                            {{ _('Category is Active') }}
                         </label>
                         <p class="text-xs text-gray-500 dark:text-slate-400">
-                            When inactive, this category and its products are hidden from the public catalog and cannot be purchased.
+                            {{ _('When inactive, this category and its products are hidden from the public catalog and cannot be purchased.') }}
                         </p>
                     </div>
                 </div>
@@ -81,10 +81,10 @@
             <!-- Form Actions -->
             <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-700">
                 <a href="{{ url_for('admin.list_categories') }}" class="px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600 rounded-lg shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
-                    Cancel
+                    {{ _('Cancel') }}
                 </a>
                 <button type="submit" id="btn-save-category" class="px-5 py-2.5 text-sm font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors">
-                    {% if category %}Save Changes{% else %}Create Category{% endif %}
+                    {% if category %}{{ _('Save Changes') }}{% else %}{{ _('Create Category') }}{% endif %}
                 </button>
             </div>
         </form>

@@ -12,12 +12,12 @@
             {% if product.is_in_stock %}
             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 shrink-0">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                In Stock
+                {{ _('In Stock') }}
             </span>
             {% else %}
             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800 shrink-0">
                 <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                Out of Stock
+                {{ _('Out of Stock') }}
             </span>
             {% endif %}
         </div>
@@ -36,7 +36,7 @@
     <div class="pt-4 border-t border-stone-100 dark:border-slate-700/80 mt-4">
         <div class="flex items-baseline justify-between mb-4">
             <span class="text-2xl font-extrabold text-stone-900 dark:text-slate-100 tracking-tight">{{ product.price | format_euro }}</span>
-            <span class="text-xs font-medium text-stone-500 dark:text-slate-400">Stock: {{ product.stock_quantity }}</span>
+            <span class="text-xs font-medium text-stone-500 dark:text-slate-400">{{ _('Stock') }}: {{ product.stock_quantity }}</span>
         </div>
 
         <form action="{{ url_for('cart.add_item') }}" method="post" class="space-y-3">
@@ -44,7 +44,7 @@
             {{ csrf_input() }}
             <input type="hidden" name="product_id" value="{{ product.id }}">
             <div class="flex items-center gap-2">
-                <label for="qty-{{ product.id }}" class="sr-only">Quantity for {{ product.name }}</label>
+                <label for="qty-{{ product.id }}" class="sr-only">{{ _('Quantity for %(name)s', name=product.name) }}</label>
                 <input id="qty-{{ product.id }}"
                        type="number"
                        name="quantity"
@@ -59,7 +59,7 @@
                     <svg class="w-4 h-4 shrink-0" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    <span>Add to Cart</span>
+                    <span>{{ _('Add to Cart') }}</span>
                 </button>
             </div>
         </form>

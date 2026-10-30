@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% from 'components/badge.html' import status_badge %}
 
-{% block title %}Order #{{ order.id }} - Online Food Shop{% endblock %}
+{% block title %}{{ _('Order #%(id)s', id=order.id) }} - Online Food Shop{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-6">
     <!-- Breadcrumb / Back Navigation -->
     <div>
         <a href="{{ url_for('account.order_history') }}" class="inline-flex items-center text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-md">
-            &larr; Back to My Orders
+            &larr; {{ _('Back to My Orders') }}
         </a>
     </div>
 
@@ -17,42 +17,42 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-stone-100 dark:border-slate-700">
             <div>
                 <div class="flex flex-wrap items-center gap-3">
-                    <h1 class="text-2xl sm:text-3xl font-extrabold text-stone-900 dark:text-slate-100 tracking-tight">Order #{{ order.id }}</h1>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-stone-900 dark:text-slate-100 tracking-tight">{{ _('Order #%(id)s', id=order.id) }}</h1>
                     {{ status_badge(order.status) }}
                     {{ status_badge(order.payment_status) }}
                 </div>
                 <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                    Placed on {{ order.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if order.created_at else '' }}
+                    {{ _('Placed on') }} {{ order.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if order.created_at else '' }}
                 </p>
             </div>
             <div class="text-left sm:text-right">
-                <span class="text-xs text-gray-500 dark:text-slate-400 block">Total Amount</span>
+                <span class="text-xs text-gray-500 dark:text-slate-400 block">{{ _('Total Amount') }}</span>
                 <span class="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400">{{ order.total | format_euro }}</span>
             </div>
         </div>
 
         <!-- Delivery Snapshot Section -->
         <div class="mt-6">
-            <h2 class="text-xs font-semibold uppercase text-gray-500 dark:text-slate-400 tracking-wider mb-3">Delivery Information Snapshot</h2>
+            <h2 class="text-xs font-semibold uppercase text-gray-500 dark:text-slate-400 tracking-wider mb-3">{{ _('Delivery Information Snapshot') }}</h2>
             <div class="bg-gray-50 dark:bg-slate-900 rounded-xl p-4 sm:p-5 border border-gray-100 dark:border-slate-800">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div>
-                        <span class="text-gray-500 dark:text-slate-400 block text-xs">Recipient Name</span>
+                        <span class="text-gray-500 dark:text-slate-400 block text-xs">{{ _('Recipient Name') }}</span>
                         <span class="font-medium text-gray-900 dark:text-slate-100">{{ order.customer_name or '—' }}</span>
                     </div>
                     <div>
-                        <span class="text-gray-500 dark:text-slate-400 block text-xs">Contact Email</span>
+                        <span class="text-gray-500 dark:text-slate-400 block text-xs">{{ _('Contact Email') }}</span>
                         <span class="font-medium text-gray-900 dark:text-slate-100">{{ order.customer_email or '—' }}</span>
                     </div>
                     {% if order.customer_phone %}
                     <div>
-                        <span class="text-gray-500 dark:text-slate-400 block text-xs">Phone Number</span>
+                        <span class="text-gray-500 dark:text-slate-400 block text-xs">{{ _('Phone Number') }}</span>
                         <span class="font-medium text-gray-900 dark:text-slate-100">{{ order.customer_phone }}</span>
                     </div>
                     {% endif %}
                     {% if order.customer_address %}
                     <div class="sm:col-span-2">
-                        <span class="text-gray-500 dark:text-slate-400 block text-xs">Delivery Address</span>
+                        <span class="text-gray-500 dark:text-slate-400 block text-xs">{{ _('Delivery Address') }}</span>
                         <span class="font-medium text-gray-900 dark:text-slate-100">{{ order.customer_address }}</span>
                     </div>
                     {% endif %}
@@ -62,15 +62,15 @@
 
         <!-- Ordered Items Section -->
         <div class="mt-8">
-            <h2 class="text-xs font-semibold uppercase text-gray-500 dark:text-slate-400 tracking-wider mb-3">Items Purchased</h2>
+            <h2 class="text-xs font-semibold uppercase text-gray-500 dark:text-slate-400 tracking-wider mb-3">{{ _('Items Purchased') }}</h2>
             <div class="overflow-x-auto border border-gray-100 dark:border-slate-700 rounded-xl">
-                <table class="w-full text-left text-sm border-collapse" aria-label="Order Items">
+                <table class="w-full text-left text-sm border-collapse" aria-label="{{ _('Order Items') }}">
                     <thead>
                         <tr class="bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 text-xs font-semibold uppercase text-gray-500 dark:text-slate-400">
-                            <th scope="col" class="py-3 px-4 sm:px-6">Product</th>
-                            <th scope="col" class="py-3 px-4 sm:px-6 text-center">Quantity</th>
-                            <th scope="col" class="py-3 px-4 sm:px-6 text-right">Unit Price</th>
-                            <th scope="col" class="py-3 px-4 sm:px-6 text-right">Subtotal</th>
+                            <th scope="col" class="py-3 px-4 sm:px-6">{{ _('Product') }}</th>
+                            <th scope="col" class="py-3 px-4 sm:px-6 text-center">{{ _('Quantity') }}</th>
+                            <th scope="col" class="py-3 px-4 sm:px-6 text-right">{{ _('Unit Price') }}</th>
+                            <th scope="col" class="py-3 px-4 sm:px-6 text-right">{{ _('Subtotal') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-slate-700/80 bg-white dark:bg-slate-800">
@@ -85,7 +85,7 @@
                     </tbody>
                     <tfoot>
                         <tr class="border-t-2 border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50">
-                            <td colspan="3" class="py-4 px-4 sm:px-6 text-base font-bold text-gray-900 dark:text-slate-100">Total</td>
+                            <td colspan="3" class="py-4 px-4 sm:px-6 text-base font-bold text-gray-900 dark:text-slate-100">{{ _('Total') }}</td>
                             <td class="py-4 px-4 sm:px-6 text-right text-xl font-extrabold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">{{ order.total | format_euro }}</td>
                         </tr>
                     </tfoot>

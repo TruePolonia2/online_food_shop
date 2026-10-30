@@ -1,26 +1,26 @@
 {% extends "base.html" %}
 
 {% block title %}
-    {% if product %}Edit Product: {{ product.name }}{% else %}New Product{% endif %} - Store Administration
+    {% if product %}{{ _('Edit Product: %(name)s', name=product.name) }}{% else %}{{ _('New Product') }}{% endif %} - {{ _('Store Administration') }}
 {% endblock %}
 
 {% block content %}
 <div class="max-w-2xl mx-auto space-y-6">
     <!-- Breadcrumb & Header -->
     <div>
-        <nav class="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 mb-1" aria-label="Breadcrumb">
-            <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-700 dark:hover:text-slate-300">Store Administration</a>
+        <nav class="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 mb-1" aria-label="{{ _('Breadcrumb') }}">
+            <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-700 dark:hover:text-slate-300">{{ _('Store Administration') }}</a>
             <span>&rsaquo;</span>
-            <a href="{{ url_for('admin.list_products') }}" class="hover:text-gray-700 dark:hover:text-slate-300">Products</a>
+            <a href="{{ url_for('admin.list_products') }}" class="hover:text-gray-700 dark:hover:text-slate-300">{{ _('Products') }}</a>
             <span>&rsaquo;</span>
             <span class="text-gray-900 dark:text-slate-100 font-semibold" aria-current="page">
-                {% if product %}Edit Product{% else %}New Product{% endif %}
+                {% if product %}{{ _('Edit Product') }}{% else %}{{ _('New Product') }}{% endif %}
             </span>
         </nav>
         <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">
-            {% if product %}Edit Product: {{ product.name }}{% else %}Create New Product{% endif %}
+            {% if product %}{{ _('Edit Product: %(name)s', name=product.name) }}{% else %}{{ _('Create New Product') }}{% endif %}
         </h1>
-        <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">Configure catalog product pricing, inventory, and visibility.</p>
+        <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">{{ _('Configure catalog product pricing, inventory, and visibility.') }}</p>
     </div>
 
     <!-- Form Card -->
@@ -32,14 +32,14 @@
             <!-- Product Name -->
             <div>
                 <label for="product-name" class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1">
-                    Product Name <span class="text-red-500">*</span>
+                    {{ _('Product Name') }} <span class="text-red-500">*</span>
                 </label>
                 <input type="text"
                        id="product-name"
                        name="name"
                        required
                        value="{{ form_data.name }}"
-                       placeholder="e.g. Organic Gala Apples"
+                       placeholder="{{ _('e.g. Organic Gala Apples') }}"
                        class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 shadow-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm">
             </div>
 
@@ -48,7 +48,7 @@
                 <!-- Price -->
                 <div>
                     <label for="product-price" class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1">
-                        Price (€) <span class="text-red-500">*</span>
+                        {{ _('Price (€)') }} <span class="text-red-500">*</span>
                     </label>
                     <div class="relative rounded-lg shadow-xs">
                         <input type="text"
@@ -56,16 +56,16 @@
                                name="price"
                                required
                                value="{{ form_data.price }}"
-                               placeholder="e.g. 4.50"
+                               placeholder="{{ _('e.g. 4.50') }}"
                                class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm">
                     </div>
-                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">Enter amount in euros (e.g. 4.50 or 4,50).</p>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">{{ _('Enter amount in euros (e.g. 4.50 or 4,50).') }}</p>
                 </div>
 
                 <!-- Stock Quantity -->
                 <div>
                     <label for="product-stock" class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1">
-                        Stock Quantity <span class="text-red-500">*</span>
+                        {{ _('Stock Quantity') }} <span class="text-red-500">*</span>
                     </label>
                     <input type="number"
                            id="product-stock"
@@ -76,52 +76,52 @@
                            value="{{ form_data.stock_quantity }}"
                            placeholder="0"
                            class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 shadow-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm">
-                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">Available inventory units (whole numbers &ge; 0).</p>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">{{ _('Available inventory units (whole numbers &ge; 0).') }}</p>
                 </div>
             </div>
 
             <!-- Category Assignment -->
             <div>
                 <label for="product-category" class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1">
-                    Category <span class="text-gray-400 dark:text-slate-500 font-normal">(Optional)</span>
+                    {{ _('Category') }} <span class="text-gray-400 dark:text-slate-500 font-normal">({{ _('Optional') }})</span>
                 </label>
                 <select id="product-category"
                         name="category_id"
                         class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 shadow-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm">
-                    <option value="" {% if not form_data.category_id %}selected{% endif %}>None (Uncategorized)</option>
+                    <option value="" {% if not form_data.category_id %}selected{% endif %}>{{ _('None (Uncategorized)') }}</option>
                     {% for cat in categories %}
                     <option value="{{ cat.id }}" {% if form_data.category_id == cat.id|string %}selected{% endif %}>
-                        {{ cat.name }}{% if not cat.is_active %} (Inactive){% endif %}
+                        {{ cat.name }}{% if not cat.is_active %} ({{ _('Inactive') }}){% endif %}
                     </option>
                     {% endfor %}
                 </select>
-                <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">Assign to an existing catalog category.</p>
+                <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">{{ _('Assign to an existing catalog category.') }}</p>
             </div>
 
             <!-- Description -->
             <div>
                 <label for="product-description" class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1">
-                    Description <span class="text-gray-400 dark:text-slate-500 font-normal">(Optional)</span>
+                    {{ _('Description') }} <span class="text-gray-400 dark:text-slate-500 font-normal">({{ _('Optional') }})</span>
                 </label>
                 <textarea id="product-description"
                           name="description"
                           rows="3"
-                          placeholder="Detailed product description..."
+                          placeholder="{{ _('Detailed product description...') }}"
                           class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 shadow-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm">{{ form_data.description }}</textarea>
             </div>
 
             <!-- Image URL / Static Path -->
             <div>
                 <label for="product-image-url" class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1">
-                    Image Path or URL <span class="text-gray-400 dark:text-slate-500 font-normal">(Optional)</span>
+                    {{ _('Image Path or URL') }} <span class="text-gray-400 dark:text-slate-500 font-normal">({{ _('Optional') }})</span>
                 </label>
                 <input type="text"
                        id="product-image-url"
                        name="image_url"
                        value="{{ form_data.image_url }}"
-                       placeholder="e.g. /static/images/apples.png or https://..."
+                       placeholder="{{ _('e.g. /static/images/apples.png or https://...') }}"
                        class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 shadow-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm">
-                <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">Provide a local static asset path or secure HTTPS URL.</p>
+                <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">{{ _('Provide a local static asset path or secure HTTPS URL.') }}</p>
             </div>
 
             <!-- Active Checkbox -->
@@ -137,10 +137,10 @@
                     </div>
                     <div class="text-sm">
                         <label for="product-is-active" class="font-medium text-gray-900 dark:text-slate-100 cursor-pointer">
-                            Product is Active
+                            {{ _('Product is Active') }}
                         </label>
                         <p class="text-xs text-gray-500 dark:text-slate-400">
-                            When inactive, this product is hidden from storefront catalog browsing and cannot be added to carts.
+                            {{ _('When inactive, this product is hidden from storefront catalog browsing and cannot be added to carts.') }}
                         </p>
                     </div>
                 </div>
@@ -149,10 +149,10 @@
             <!-- Form Actions -->
             <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-700">
                 <a href="{{ url_for('admin.list_products') }}" class="px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600 rounded-lg shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
-                    Cancel
+                    {{ _('Cancel') }}
                 </a>
                 <button type="submit" id="btn-save-product" class="px-5 py-2.5 text-sm font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-xs focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors">
-                    {% if product %}Save Changes{% else %}Create Product{% endif %}
+                    {% if product %}{{ _('Save Changes') }}{% else %}{{ _('Create Product') }}{% endif %}
                 </button>
             </div>
         </form>

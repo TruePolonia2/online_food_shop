@@ -306,6 +306,11 @@ class Config:
     TESTING = False
     CSRF_ENABLED = True
 
+    # Localization Configuration (Phase 11.0.2)
+    BABEL_DEFAULT_LOCALE = "en"
+    BABEL_SUPPORTED_LOCALES = ["en", "pt_PT"]
+    BABEL_TRANSLATION_DIRECTORIES = str(BASE_DIR / "translations")
+
     # Google OAuth 2.0 / OpenID Connect credentials
     GOOGLE_CLIENT_ID = _GoogleClientIdDescriptor()
     GOOGLE_CLIENT_SECRET = _GoogleClientSecretDescriptor()

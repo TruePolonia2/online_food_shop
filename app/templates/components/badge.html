@@ -2,7 +2,9 @@
 {% macro status_badge(status, type="order", prefix="") %}
 {% set s = (status.value if status is defined and status.value is defined else status) | string | lower %}
 {% set val = (status.value if status is defined and status.value is defined else status) | capitalize %}
-{% set label = (prefix ~ val) if prefix else val %}
+{% set translated_val = _(val) %}
+{% set translated_prefix = _(prefix) if prefix else "" %}
+{% set label = (translated_prefix ~ translated_val) if prefix else translated_val %}
 {% if s in ['paid', 'confirmed', 'delivered', 'active', 'in stock', 'in_stock'] %}
     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 shrink-0">
         {{ label }}

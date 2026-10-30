@@ -10,7 +10,7 @@
             <svg class="w-4 h-4" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            <span>Back to Products</span>
+            <span>{{ _('Back to Products') }}</span>
         </a>
     </nav>
 
@@ -36,14 +36,14 @@
                     <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                     </svg>
-                    In Stock ({{ product.stock_quantity }} available)
+                    {{ _('In Stock (%(count)d available)', count=product.stock_quantity) }}
                 </span>
                 {% else %}
                 <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/60 px-3 py-1 rounded-full border border-red-200 dark:border-red-800">
                     <svg class="w-4 h-4 text-red-600 dark:text-red-400" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                     </svg>
-                    Currently Out of Stock
+                    {{ _('Currently Out of Stock') }}
                 </span>
                 {% endif %}
             </div>
@@ -51,7 +51,7 @@
             <!-- Product Description -->
             {% if product.description %}
             <div>
-                <h2 class="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-slate-400 mb-2">Description</h2>
+                <h2 class="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-slate-400 mb-2">{{ _('Description') }}</h2>
                 <p class="text-base text-stone-700 dark:text-slate-300 leading-relaxed">{{ product.description }}</p>
             </div>
             {% endif %}
@@ -65,7 +65,7 @@
 
                     <div class="flex flex-col sm:flex-row sm:items-center gap-4">
                         <div class="flex items-center gap-3">
-                            <label for="quantity" class="text-sm font-semibold text-stone-700 dark:text-slate-300">Quantity:</label>
+                            <label for="quantity" class="text-sm font-semibold text-stone-700 dark:text-slate-300">{{ _('Quantity') }}:</label>
                             <input id="quantity"
                                    type="number"
                                    name="quantity"
@@ -81,7 +81,7 @@
                             <svg class="w-5 h-5 shrink-0" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
-                            <span>Add to Cart</span>
+                            <span>{{ _('Add to Cart') }}</span>
                         </button>
                     </div>
                 </form>
