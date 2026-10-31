@@ -83,13 +83,34 @@ The application follows the Flask application factory pattern (`create_app`) wit
 
 ## Running the Application
 
-### Windows Demonstration Mode (School Presentation)
+### One-Click Windows Launcher (Transfer Existing Website)
 
-For classroom demonstrations and school presentations on Windows, standalone batch scripts are provided:
+To run your existing website on another Windows PC with all original data, users, and orders preserved, use **`start_shop.bat`**:
 
-1. **One-Time Setup:** Run `setup_demo.bat` (checks Python, creates `.venv`, installs dependencies, and prepares the local environment).
-2. **Launch Application:** Run `start_demo.bat` (activates environment, starts the server bound to `127.0.0.1:5000` with debug mode disabled).
-3. **Comprehensive Guide:** See [WINDOWS_DEMO_GUIDE.md](WINDOWS_DEMO_GUIDE.md) for full instructions, owner creation, and offline demonstration workflows.
+1. **Stop the Website:** Ensure the Flask server is completely stopped on your computer before creating the ZIP.
+2. **Verify File Hydration:** If using OneDrive, right-click the project folder and choose *"Always keep on this device"* to ensure all files (especially `.env` and `instance/online_food_shop.sqlite3`) are fully downloaded to disk.
+3. **ZIP Project Folder:** Compress the entire project folder into a ZIP, ensuring `.env` and `instance/online_food_shop.sqlite3` are included.
+4. **Extract:** Extract the ZIP onto the second Windows PC.
+5. **Run:** Double-click **`start_shop.bat`**.
+   - It automatically checks for Python 3.10+ and verifies the virtual environment (`.venv`).
+   - If `.venv` is missing or was copied from another machine, it automatically recreates it and installs dependencies.
+   - It validates your existing `.env` and original `online_food_shop.sqlite3` database before launching.
+   - It checks that port 5000 is free, starts Flask bound to `127.0.0.1:5000` with debug disabled, and automatically opens your default browser once the server is responding.
+6. **Stop:** Simply close the command window or press `Ctrl + C` in the terminal to stop the server cleanly.
+
+> **Important Portability & Security Notes:**
+> - **Python Required:** Python 3.10 or newer must be installed on the target PC (with *"Add python.exe to PATH"* enabled during installation).
+> - **First-Run Internet:** An active internet connection is required during the first launch to download packages from `requirements.txt`. Subsequent launches run 100% offline.
+> - **Cloud Integrations:** Google OAuth, Stripe TEST MODE, and live SMTP require active internet. Offline, local authentication and standard checkout operate seamlessly.
+> - **Privacy & Confidentiality:** Because the ZIP contains your active `.env` and existing customer/order SQLite database, the ZIP file must remain strictly private and must **never** be uploaded to public repositories or shared publicly.
+
+### Optional Fictional Demo Setup (School Presentation Mode)
+
+For presenting a blank demo catalog or testing with fictional sample items:
+- **`setup_demo.bat`:** Prepares a separate local demo environment and generates an isolated demo database (`instance/demo_food_shop.sqlite3`).
+- **`start_demo.bat`:** Starts the demonstration server on `127.0.0.1:5000`.
+- **`flask seed-demo`:** Seeds fictional demonstration categories and products.
+- See [WINDOWS_DEMO_GUIDE.md](WINDOWS_DEMO_GUIDE.md) for full demo setup instructions.
 
 ### Development Mode
 
