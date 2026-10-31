@@ -83,6 +83,14 @@ The application follows the Flask application factory pattern (`create_app`) wit
 
 ## Running the Application
 
+### Windows Demonstration Mode (School Presentation)
+
+For classroom demonstrations and school presentations on Windows, standalone batch scripts are provided:
+
+1. **One-Time Setup:** Run `setup_demo.bat` (checks Python, creates `.venv`, installs dependencies, and prepares the local environment).
+2. **Launch Application:** Run `start_demo.bat` (activates environment, starts the server bound to `127.0.0.1:5000` with debug mode disabled).
+3. **Comprehensive Guide:** See [WINDOWS_DEMO_GUIDE.md](WINDOWS_DEMO_GUIDE.md) for full instructions, owner creation, and offline demonstration workflows.
+
 ### Development Mode
 
 Start the local development server:
@@ -307,6 +315,5 @@ python -m pytest -v -p no:cacheprovider
 ### Current Limitations & Unimplemented Features
 
 Features deferred to subsequent development phases:
-- Payment processing integration (Stripe, Phase 10.12).
-- Windows packaging and standalone launch scripts (`setup.bat`, `start.bat`, Phase 11.1).
 - Product catalog image file upload management.
+- Multi-currency rate conversion (currently EUR fixed).

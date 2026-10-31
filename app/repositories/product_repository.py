@@ -56,6 +56,23 @@ class ProductRepository:
         row = cursor.fetchone()
         return _row_to_product(row) if row else None
 
+    def get_by_name(self, name: str) -> Optional[Product]:
+        """Retrieve a product by its name (case-insensitive).
+
+        Args:
+            name: The product name to look up.
+
+        Returns:
+            The Product entity if found, None otherwise.
+        """
+        cursor = self.conn.execute(
+            """SELECT id, name, price, stock_quantity, description, category_id, is_active, image_url
+               FROM products WHERE lower(name) = lower(?)""",
+            (name.strip(),),
+        )
+        row = cursor.fetchone()
+        return _row_to_product(row) if row else None
+
     def get_all(self, include_inactive: bool = False) -> list[Product]:
         """Retrieve products from the catalog.
 
