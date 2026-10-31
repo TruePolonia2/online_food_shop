@@ -155,6 +155,44 @@
             }
         }
 
+        function toggleProfileDropdown() {
+            var menu = document.getElementById('profile-dropdown-menu');
+            var btn = document.getElementById('profile-dropdown-button');
+            if (menu && btn) {
+                var isExpanded = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', !isExpanded);
+                menu.classList.toggle('hidden');
+            }
+        }
+
+        function closeProfileDropdown() {
+            var menu = document.getElementById('profile-dropdown-menu');
+            var btn = document.getElementById('profile-dropdown-button');
+            if (menu && btn && btn.getAttribute('aria-expanded') === 'true') {
+                btn.setAttribute('aria-expanded', 'false');
+                menu.classList.add('hidden');
+                btn.focus();
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            var container = document.getElementById('profile-dropdown-container');
+            var menu = document.getElementById('profile-dropdown-menu');
+            var btn = document.getElementById('profile-dropdown-button');
+            if (container && menu && btn && !container.contains(event.target)) {
+                if (btn.getAttribute('aria-expanded') === 'true') {
+                    btn.setAttribute('aria-expanded', 'false');
+                    menu.classList.add('hidden');
+                }
+            }
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' || event.key === 'Esc') {
+                closeProfileDropdown();
+            }
+        });
+
         // Initialize theme icons on DOMContentLoaded
         document.addEventListener('DOMContentLoaded', function() {
             updateThemeIcons();

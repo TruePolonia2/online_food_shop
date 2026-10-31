@@ -9,6 +9,7 @@ from app.authorization import login_required
 from app.csrf import generate_csrf_token
 from app.models.user import UserRole
 from app.oauth import is_google_auth_configured, oauth
+from app.repositories.customer_repository import CustomerRepository
 from app.routes.auth import LoginRateLimiter, get_canonical_oauth_redirect_uri, get_current_user
 from app.services.auth_service import AuthService
 from app.services.order_service import OrderService
@@ -20,6 +21,54 @@ account_bp = Blueprint("account", __name__, url_prefix="/account")
 # Bounded in-memory sliding-window rate limiter for account deletion attempts
 delete_account_rate_limiter = LoginRateLimiter(max_attempts=5, window_seconds=300, max_keys=10000)
 SESSION_REAUTH_DELETE_KEY = "_reauth_delete_token"
+
+
+@account_bp.route("", methods=["GET"])
+@account_bp.route("/", methods=["GET"])
+@account_bp.route("/settings", methods=["GET"])
+@login_required
+def account_settings():
+    """Display authenticated user account details and settings overview."""
+    current_user = get_current_user()
+    if current_user is None or current_user.id is None:
+        abort(401)
+
+    customer_repo = CustomerRepository()
+    customer = customer_repo.get_by_email(current_user.email)
+
+    auth_service = AuthService()
+    google_identity = auth_service.external_identity_repo.get_by_user_and_provider(
+        current_user.id, "google"
+    )
+    is_google_linked = google_identity is not None
+
+    order_service = OrderService()
+    orders = order_service.get_user_orders(current_user.id)
+    recent_orders = orders[:3]
+    total_orders_count = len(orders)
+
+    is_owner = current_user.role == UserRole.OWNER or (
+        isinstance(current_user.role, str) and current_user.role == "owner"
+    )
+
+    display_name = None
+    if customer and customer.name:
+        display_name = customer.name.strip()
+    elif current_user.email:
+        local_part = current_user.email.split("@")[0].replace(".", " ").replace("_", " ").title()
+        display_name = local_part
+
+    return render_template(
+        "account/settings.html",
+        user=current_user,
+        customer=customer,
+        display_name=display_name,
+        is_google_linked=is_google_linked,
+        google_identity=google_identity,
+        is_owner=is_owner,
+        recent_orders=recent_orders,
+        total_orders_count=total_orders_count,
+    )
 
 
 @account_bp.route("/orders", methods=["GET"])

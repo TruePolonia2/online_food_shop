@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-30 22:22+0000\n"
+"POT-Creation-Date: 2026-10-30 23:11+0000\n"
 "PO-Revision-Date: 2026-10-30 22:05+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pt_PT\n"
@@ -67,10 +67,12 @@ msgid "Account verification notice"
 msgstr "Aviso de verificação de conta"
 
 #: app/templates/base.html:93
-msgid "Your email address is unverified. Please verify your email or request a new verification link."
+msgid ""
+"Your email address is unverified. Please verify your email or request a "
+"new verification link."
 msgstr ""
-"O seu endereço de email não está verificado. Por favor verifique o seu email ou solicite uma nova ligação de "
-"verificação."
+"O seu endereço de email não está verificado. Por favor verifique o seu "
+"email ou solicite uma nova ligação de verificação."
 
 #: app/templates/base.html:96
 msgid "Resend link"
@@ -86,22 +88,24 @@ msgstr "Contactar Apoio ao Cliente"
 
 #: app/templates/contact.html:12
 msgid ""
-"Have questions about an order, our products, or store delivery? Send us a message and our support team will get back "
-"to you shortly."
+"Have questions about an order, our products, or store delivery? Send us a"
+" message and our support team will get back to you shortly."
 msgstr ""
-"Tem dúvidas sobre uma encomenda, os nossos produtos ou entregas? Envie-nos uma mensagem e a nossa equipa de apoio "
-"responderá brevemente."
+"Tem dúvidas sobre uma encomenda, os nossos produtos ou entregas? Envie-"
+"nos uma mensagem e a nossa equipa de apoio responderá brevemente."
 
 #: app/templates/contact.html:35
 msgid "Your Name"
 msgstr "O Seu Nome"
 
-#: app/templates/admin/messages/detail.html:121 app/templates/contact.html:56 app/templates/order/checkout.html:38
+#: app/templates/admin/messages/detail.html:121 app/templates/contact.html:56
+#: app/templates/order/checkout.html:38
 #: app/templates/order/stripe_success.html:65
 msgid "Email Address"
 msgstr "Endereço de Email"
 
-#: app/templates/admin/messages/detail.html:139 app/templates/admin/messages/index.html:79 app/templates/contact.html:77
+#: app/templates/admin/messages/detail.html:139
+#: app/templates/admin/messages/index.html:79 app/templates/contact.html:77
 msgid "Subject"
 msgstr "Assunto"
 
@@ -130,25 +134,37 @@ msgid "Before deleting your account, please note:"
 msgstr "Antes de eliminar a sua conta, tenha em atenção:"
 
 #: app/templates/account/delete_account.html:24
-msgid "All login credentials, saved sessions, and linked Google accounts will be permanently erased."
+msgid ""
+"All login credentials, saved sessions, and linked Google accounts will be"
+" permanently erased."
 msgstr ""
-"Todas as credenciais de início de sessão, sessões guardadas e contas Google associadas serão eliminadas "
-"permanentemente."
+"Todas as credenciais de início de sessão, sessões guardadas e contas "
+"Google associadas serão eliminadas permanentemente."
 
 #: app/templates/account/delete_account.html:25
-msgid "You will permanently lose private access to your order history and receipt details."
-msgstr "Perderá permanentemente o acesso privado ao histórico das suas encomendas e aos detalhes dos recibos."
+msgid ""
+"You will permanently lose private access to your order history and "
+"receipt details."
+msgstr ""
+"Perderá permanentemente o acesso privado ao histórico das suas encomendas"
+" e aos detalhes dos recibos."
 
 #: app/templates/account/delete_account.html:26
-msgid "Existing orders will be anonymized to preserve store accounting records while removing your personal details."
+msgid ""
+"Existing orders will be anonymized to preserve store accounting records "
+"while removing your personal details."
 msgstr ""
-"As encomendas existentes serão anonimizadas para preservar os registos contabilísticos da loja, removendo os seus "
-"dados pessoais."
+"As encomendas existentes serão anonimizadas para preservar os registos "
+"contabilísticos da loja, removendo os seus dados pessoais."
 
 #: app/templates/account/delete_account.html:27
 #, python-format
-msgid "Your email address (%(email)s) will be freed immediately if you wish to register again in the future."
-msgstr "O seu endereço de email (%(email)s) ficará imediatamente disponível caso pretenda registar-se novamente no futuro."
+msgid ""
+"Your email address (%(email)s) will be freed immediately if you wish to "
+"register again in the future."
+msgstr ""
+"O seu endereço de email (%(email)s) ficará imediatamente disponível caso "
+"pretenda registar-se novamente no futuro."
 
 #: app/templates/account/delete_account.html:66
 msgid "Current Store Password"
@@ -156,13 +172,17 @@ msgstr "Palavra-passe Atual da Loja"
 
 #: app/templates/account/delete_account.html:77
 msgid "Please enter your password to confirm identity before account deletion."
-msgstr "Por favor introduza a sua palavra-passe para confirmar a sua identidade antes da eliminação da conta."
+msgstr ""
+"Por favor introduza a sua palavra-passe para confirmar a sua identidade "
+"antes da eliminação da conta."
 
 #: app/templates/account/delete_account.html:85
-msgid "Your account signs in using Google. Please re-authenticate with Google to confirm your identity."
+msgid ""
+"Your account signs in using Google. Please re-authenticate with Google to"
+" confirm your identity."
 msgstr ""
-"A sua conta inicia sessão através da Google. Por favor autentique-se novamente com a Google para confirmar a sua "
-"identidade."
+"A sua conta inicia sessão através da Google. Por favor autentique-se "
+"novamente com a Google para confirmar a sua identidade."
 
 #: app/templates/account/delete_account.html:96
 msgid "Verify with Google"
@@ -188,14 +208,19 @@ msgstr "Verificação Obrigatória Antes da Eliminação"
 msgid "Cancel and return to My Orders"
 msgstr "Cancelar e voltar às Minhas Encomendas"
 
-#: app/templates/account/delete_account.html:152 app/templates/account/orders.html:15 app/templates/cart/view.html:47
-#: app/templates/cart/view.html:142 app/templates/order/stripe_success.html:97
+#: app/templates/account/delete_account.html:152
+#: app/templates/account/orders.html:15 app/templates/account/settings.html:21
+#: app/templates/cart/view.html:47 app/templates/cart/view.html:142
+#: app/templates/order/stripe_success.html:97
 msgid "Continue Shopping"
 msgstr "Continuar a Comprar"
 
-#: app/templates/account/order_detail.html:4 app/templates/account/order_detail.html:20
-#: app/templates/admin/orders/detail.html:16 app/templates/admin/orders/detail.html:19
-#: app/templates/order/confirmation.html:26 app/templates/order/stripe_cancel.html:28
+#: app/templates/account/order_detail.html:4
+#: app/templates/account/order_detail.html:20
+#: app/templates/admin/orders/detail.html:16
+#: app/templates/admin/orders/detail.html:19
+#: app/templates/order/confirmation.html:26
+#: app/templates/order/stripe_cancel.html:28
 #: app/templates/order/stripe_success.html:46
 #, python-format
 msgid "Order #%(id)s"
@@ -205,7 +230,8 @@ msgstr "Encomenda #%(id)s"
 msgid "Back to My Orders"
 msgstr "Voltar às Minhas Encomendas"
 
-#: app/templates/account/order_detail.html:25 app/templates/admin/orders/detail.html:26
+#: app/templates/account/order_detail.html:25
+#: app/templates/admin/orders/detail.html:26
 msgid "Placed on"
 msgstr "Realizada a"
 
@@ -217,20 +243,25 @@ msgstr "Valor Total"
 msgid "Delivery Information Snapshot"
 msgstr "Resumo das Informações de Entrega"
 
-#: app/templates/account/order_detail.html:40 app/templates/admin/orders/detail.html:204
+#: app/templates/account/order_detail.html:40
+#: app/templates/admin/orders/detail.html:204
 msgid "Recipient Name"
 msgstr "Nome do Destinatário"
 
-#: app/templates/account/order_detail.html:44 app/templates/admin/orders/detail.html:209
+#: app/templates/account/order_detail.html:44
+#: app/templates/admin/orders/detail.html:209
 msgid "Contact Email"
 msgstr "Email de Contacto"
 
-#: app/templates/account/order_detail.html:49 app/templates/order/checkout.html:50
+#: app/templates/account/order_detail.html:49
+#: app/templates/order/checkout.html:50
 msgid "Phone Number"
 msgstr "Número de Telefone"
 
-#: app/templates/account/order_detail.html:55 app/templates/admin/orders/detail.html:219
-#: app/templates/order/checkout.html:61 app/templates/order/stripe_success.html:73
+#: app/templates/account/order_detail.html:55
+#: app/templates/admin/orders/detail.html:219
+#: app/templates/order/checkout.html:61
+#: app/templates/order/stripe_success.html:73
 msgid "Delivery Address"
 msgstr "Morada de Entrega"
 
@@ -242,28 +273,35 @@ msgstr "Artigos Comprados"
 msgid "Order Items"
 msgstr "Artigos da Encomenda"
 
-#: app/templates/account/order_detail.html:70 app/templates/admin/orders/detail.html:108
+#: app/templates/account/order_detail.html:70
+#: app/templates/admin/orders/detail.html:108
 #: app/templates/admin/products/index.html:38 app/templates/cart/view.html:59
 msgid "Product"
 msgstr "Produto"
 
-#: app/templates/account/order_detail.html:71 app/templates/cart/view.html:61 app/templates/catalog/product_detail.html:68
+#: app/templates/account/order_detail.html:71 app/templates/cart/view.html:61
+#: app/templates/catalog/product_detail.html:68
 #: app/templates/order/confirmation.html:80
 msgid "Quantity"
 msgstr "Quantidade"
 
-#: app/templates/account/order_detail.html:72 app/templates/admin/orders/detail.html:110 app/templates/cart/view.html:60
+#: app/templates/account/order_detail.html:72
+#: app/templates/admin/orders/detail.html:110 app/templates/cart/view.html:60
 #: app/templates/order/confirmation.html:81
 msgid "Unit Price"
 msgstr "Preço Unitário"
 
-#: app/templates/account/order_detail.html:73 app/templates/admin/orders/detail.html:111 app/templates/cart/view.html:62
+#: app/templates/account/order_detail.html:73
+#: app/templates/admin/orders/detail.html:111 app/templates/cart/view.html:62
 #: app/templates/order/confirmation.html:82
 msgid "Subtotal"
 msgstr "Subtotal"
 
-#: app/templates/account/order_detail.html:88 app/templates/account/orders.html:30 app/templates/admin/orders/index.html:74
-#: app/templates/cart/view.html:129 app/templates/order/checkout.html:149 app/templates/order/confirmation.html:97
+#: app/templates/account/order_detail.html:88
+#: app/templates/account/orders.html:30
+#: app/templates/admin/orders/index.html:74 app/templates/cart/view.html:129
+#: app/templates/order/checkout.html:149
+#: app/templates/order/confirmation.html:97
 msgid "Total"
 msgstr "Total"
 
@@ -271,15 +309,19 @@ msgstr "Total"
 msgid "My Orders - Online Food Shop"
 msgstr "As Minhas Encomendas - Online Food Shop"
 
-#: app/templates/account/orders.html:11 app/templates/components/navbar.html:78 app/templates/components/navbar.html:154
+#: app/templates/account/orders.html:11 app/templates/account/settings.html:286
+#: app/templates/components/navbar.html:132
+#: app/templates/components/navbar.html:238
 msgid "My Orders"
 msgstr "As Minhas Encomendas"
 
 #: app/templates/account/orders.html:12
 msgid "Review your past purchases and track order details."
-msgstr "Consulte as suas compras anteriores e acompanhe os detalhes das encomendas."
+msgstr ""
+"Consulte as suas compras anteriores e acompanhe os detalhes das "
+"encomendas."
 
-#: app/templates/account/orders.html:23
+#: app/templates/account/orders.html:23 app/templates/account/settings.html:308
 msgid "Order History"
 msgstr "Histórico de Encomendas"
 
@@ -287,14 +329,19 @@ msgstr "Histórico de Encomendas"
 msgid "Order"
 msgstr "Encomenda"
 
-#: app/templates/account/orders.html:27 app/templates/admin/messages/index.html:77 app/templates/admin/orders/index.html:70
+#: app/templates/account/orders.html:27
+#: app/templates/admin/messages/index.html:77
+#: app/templates/admin/orders/index.html:70
 #: app/templates/order/confirmation.html:28
 msgid "Date"
 msgstr "Data"
 
-#: app/templates/account/orders.html:28 app/templates/admin/categories/index.html:41
-#: app/templates/admin/messages/index.html:76 app/templates/admin/orders/index.html:73
-#: app/templates/admin/products/index.html:42 app/templates/order/confirmation.html:18
+#: app/templates/account/orders.html:28
+#: app/templates/admin/categories/index.html:41
+#: app/templates/admin/messages/index.html:76
+#: app/templates/admin/orders/index.html:73
+#: app/templates/admin/products/index.html:42
+#: app/templates/order/confirmation.html:18
 msgid "Status"
 msgstr "Estado"
 
@@ -302,13 +349,16 @@ msgstr "Estado"
 msgid "Items"
 msgstr "Artigos"
 
-#: app/templates/account/orders.html:31 app/templates/admin/categories/index.html:42
-#: app/templates/admin/messages/index.html:80 app/templates/admin/orders/index.html:75
+#: app/templates/account/orders.html:31
+#: app/templates/admin/categories/index.html:42
+#: app/templates/admin/messages/index.html:80
+#: app/templates/admin/orders/index.html:75
 #: app/templates/admin/products/index.html:43
 msgid "Action"
 msgstr "Ação"
 
-#: app/templates/account/orders.html:59 app/templates/admin/orders/index.html:120
+#: app/templates/account/orders.html:59
+#: app/templates/admin/orders/index.html:120
 msgid "View Details"
 msgstr "Ver Detalhes"
 
@@ -318,37 +368,232 @@ msgstr "Ainda sem encomendas"
 
 #: app/templates/account/orders.html:78
 msgid ""
-"You haven't placed any orders with this account yet. When you check out while logged in, your purchases will appear "
-"here."
+"You haven't placed any orders with this account yet. When you check out "
+"while logged in, your purchases will appear here."
 msgstr ""
-"Ainda não realizou nenhuma encomenda com esta conta. Quando finalizar uma compra com sessão iniciada, as suas compras"
-" aparecerão aqui."
+"Ainda não realizou nenhuma encomenda com esta conta. Quando finalizar uma"
+" compra com sessão iniciada, as suas compras aparecerão aqui."
 
 #: app/templates/account/orders.html:82
 msgid "Browse Products"
 msgstr "Explorar Produtos"
 
-#: app/templates/account/orders.html:92
+#: app/templates/account/orders.html:92 app/templates/account/settings.html:16
+#: app/templates/components/navbar.html:121
+#: app/templates/components/navbar.html:235
 msgid "Account Settings"
 msgstr "Definições da Conta"
 
 #: app/templates/account/orders.html:93
-msgid "Manage your credentials, privacy settings, or delete your customer account."
-msgstr "Faça a gestão das suas credenciais, definições de privacidade ou elimine a sua conta de cliente."
+msgid ""
+"Manage your credentials, privacy settings, or delete your customer "
+"account."
+msgstr ""
+"Faça a gestão das suas credenciais, definições de privacidade ou elimine "
+"a sua conta de cliente."
 
-#: app/templates/account/orders.html:97
+#: app/templates/account/orders.html:97 app/templates/account/settings.html:194
 msgid "Delete Account"
 msgstr "Eliminar Conta"
+
+#: app/templates/account/settings.html:4
+msgid "Account Settings - Online Food Shop"
+msgstr "Definições da Conta - Online Food Shop"
+
+#: app/templates/account/settings.html:12
+#: app/templates/admin/orders/index.html:71
+msgid "Account"
+msgstr "Conta"
+
+#: app/templates/account/settings.html:14
+msgid "Settings"
+msgstr "Definições"
+
+#: app/templates/account/settings.html:17
+msgid "Manage your personal details, security credentials, and order history."
+msgstr "Faça a gestão dos seus dados pessoais, credenciais de segurança e histórico de encomendas."
+
+#: app/templates/account/settings.html:40
+msgid "Profile Information"
+msgstr "Informações de Perfil"
+
+#: app/templates/account/settings.html:41
+msgid "Personal identification and member details"
+msgstr "Identificação pessoal e detalhes do membro"
+
+#: app/templates/account/settings.html:47
+msgid "Display Name"
+msgstr "Nome de Apresentação"
+
+#: app/templates/account/settings.html:49
+msgid "Not provided"
+msgstr "Não indicado"
+
+#: app/templates/account/settings.html:53
+msgid "Member Since"
+msgstr "Membro Desde"
+
+#: app/templates/account/settings.html:59
+#: app/templates/admin/orders/detail.html:214
+msgid "Contact Phone"
+msgstr "Telefone de Contacto"
+
+#: app/templates/account/settings.html:61
+#: app/templates/account/settings.html:67
+msgid "Not provided yet"
+msgstr "Ainda não indicado"
+
+#: app/templates/account/settings.html:65
+msgid "Shipping Address"
+msgstr "Morada de Envio"
+
+#: app/templates/account/settings.html:77
+msgid ""
+"Profile editing is not currently supported in this version. Shipping "
+"details are confirmed during checkout."
+msgstr ""
+"A edição de perfil não é atualmente suportada nesta versão. Os dados de "
+"envio são confirmados durante a finalização da compra."
+
+#: app/templates/account/settings.html:90
+msgid "Password & Credentials"
+msgstr "Palavra-passe e Credenciais"
+
+#: app/templates/account/settings.html:91
+msgid "Manage authentication credentials and sign-in methods"
+msgstr "Faça a gestão das credenciais de autenticação e métodos de início de sessão"
+
+#: app/templates/account/settings.html:98
+msgid "Password Status"
+msgstr "Estado da Palavra-passe"
+
+#: app/templates/account/settings.html:105
+msgid "Password Configured"
+msgstr "Palavra-passe Configurada"
+
+#: app/templates/account/settings.html:109
+msgid "No Password Configured (Google SSO Only)"
+msgstr "Sem Palavra-passe Configurada (Apenas Google SSO)"
+
+#: app/templates/account/settings.html:117
+msgid "Request Password Reset via Email"
+msgstr "Pedir Reposição de Palavra-passe por Email"
+
+#: app/templates/account/settings.html:126
+msgid ""
+"Direct in-app password changes are not supported in this version. To "
+"safely update your password, use the email password reset procedure."
+msgstr ""
+"A alteração direta de palavra-passe não é suportada nesta versão. Para "
+"atualizar a sua palavra-passe com segurança, utilize o procedimento de "
+"reposição por email."
+
+#: app/templates/account/settings.html:140
+msgid "Linked Google Account"
+msgstr "Conta Google Associada"
+
+#: app/templates/account/settings.html:141
+msgid "Single sign-on provider connection status"
+msgstr "Estado da ligação do fornecedor de autenticação única"
+
+#: app/templates/account/settings.html:160
+msgid "Connected to your store account"
+msgstr "Ligada à sua conta da loja"
+
+#: app/templates/account/settings.html:162
+msgid "Not currently linked"
+msgstr "Atualmente não associada"
+
+#: app/templates/account/settings.html:172
+msgid "Connected"
+msgstr "Ligada"
+
+#: app/templates/account/settings.html:177
+msgid "Not Linked"
+msgstr "Não Associada"
+
+#: app/templates/account/settings.html:195
+msgid "Irreversible account deletion"
+msgstr "Eliminação irreversível de conta"
+
+#: app/templates/account/settings.html:201
+msgid ""
+"Permanently delete your account, saved credentials, and linked sign-in "
+"providers. Once deleted, your account cannot be recovered."
+msgstr ""
+"Elimine definitivamente a sua conta, credenciais guardadas e fornecedores de "
+"início de sessão associados. Uma vez eliminada, a sua conta não poderá ser "
+"recuperada."
+
+#: app/templates/account/settings.html:205
+msgid "Proceed to Account Deletion"
+msgstr "Prosseguir para a Eliminação de Conta"
+
+#: app/templates/account/settings.html:220
+msgid "Store Owner Account Protection"
+msgstr "Proteção de Conta do Proprietário"
+
+#: app/templates/account/settings.html:221
+msgid ""
+"Store owner accounts are protected and cannot be deleted through customer"
+" self-service."
+msgstr ""
+"As contas de proprietário da loja estão protegidas e não podem ser "
+"eliminadas através do serviço de apoio ao cliente."
+
+#: app/templates/account/settings.html:250
+#: app/templates/components/navbar.html:107
+msgid "Store Owner"
+msgstr "Proprietário da Loja"
+
+#: app/templates/account/settings.html:254
+msgid "Customer"
+msgstr "Cliente"
+
+#: app/templates/account/settings.html:263
+msgid "Verified"
+msgstr "Verificado"
+
+#: app/templates/account/settings.html:267
+msgid "Unverified"
+msgstr "Não Verificado"
+
+#: app/templates/account/settings.html:274 app/templates/auth/login.html:100
+msgid "Resend verification link"
+msgstr "Reenviar ligação de verificação"
+
+#: app/templates/account/settings.html:297
+#: app/templates/components/navbar.html:144
+#: app/templates/components/navbar.html:231
+msgid "Admin Dashboard"
+msgstr "Painel de Administração"
+
+#: app/templates/account/settings.html:309
+msgid "order(s)"
+msgstr "encomenda(s)"
+
+#: app/templates/account/settings.html:331
+msgid "You have not placed any orders yet."
+msgstr "Ainda não realizou nenhuma encomenda."
+
+#: app/templates/account/settings.html:336
+msgid "View Complete Order History"
+msgstr "Ver Histórico Completo de Encomendas"
 
 #: app/templates/admin/dashboard.html:3
 msgid "Store Administration - Online Food Shop"
 msgstr "Administração da Loja - Online Food Shop"
 
-#: app/templates/admin/categories/form.html:4 app/templates/admin/categories/form.html:12
-#: app/templates/admin/categories/index.html:11 app/templates/admin/dashboard.html:11
-#: app/templates/admin/messages/detail.html:12 app/templates/admin/messages/index.html:12
-#: app/templates/admin/orders/detail.html:12 app/templates/admin/orders/index.html:12
-#: app/templates/admin/products/form.html:4 app/templates/admin/products/form.html:12
+#: app/templates/admin/categories/form.html:4
+#: app/templates/admin/categories/form.html:12
+#: app/templates/admin/categories/index.html:11
+#: app/templates/admin/dashboard.html:11
+#: app/templates/admin/messages/detail.html:12
+#: app/templates/admin/messages/index.html:12
+#: app/templates/admin/orders/detail.html:12
+#: app/templates/admin/orders/index.html:12
+#: app/templates/admin/products/form.html:4
+#: app/templates/admin/products/form.html:12
 #: app/templates/admin/products/index.html:11
 msgid "Store Administration"
 msgstr "Administração da Loja"
@@ -359,7 +604,9 @@ msgstr "Acesso do Proprietário"
 
 #: app/templates/admin/dashboard.html:16
 msgid "Store health overview, operational metrics, and administration tools."
-msgstr "Visão geral do estado da loja, métricas operacionais e ferramentas de administração."
+msgstr ""
+"Visão geral do estado da loja, métricas operacionais e ferramentas de "
+"administração."
 
 #: app/templates/admin/dashboard.html:20
 msgid "Return to Storefront"
@@ -409,24 +656,32 @@ msgstr "Caixa de Apoio ao Cliente"
 msgid "New contact inquiries"
 msgstr "Novos pedidos de contacto"
 
-#: app/templates/admin/categories/form.html:4 app/templates/admin/categories/form.html:21
+#: app/templates/admin/categories/form.html:4
+#: app/templates/admin/categories/form.html:21
 #, python-format
 msgid "Edit Category: %(name)s"
 msgstr "Editar Categoria: %(name)s"
 
-#: app/templates/admin/categories/form.html:4 app/templates/admin/categories/form.html:17
-#: app/templates/admin/categories/index.html:26 app/templates/admin/categories/index.html:90
+#: app/templates/admin/categories/form.html:4
+#: app/templates/admin/categories/form.html:17
+#: app/templates/admin/categories/index.html:26
+#: app/templates/admin/categories/index.html:90
 msgid "New Category"
 msgstr "Nova Categoria"
 
-#: app/templates/admin/categories/form.html:11 app/templates/admin/categories/index.html:10
-#: app/templates/admin/messages/detail.html:11 app/templates/admin/messages/index.html:11
-#: app/templates/admin/orders/detail.html:11 app/templates/admin/orders/index.html:11
-#: app/templates/admin/products/form.html:11 app/templates/admin/products/index.html:10
+#: app/templates/admin/categories/form.html:11
+#: app/templates/admin/categories/index.html:10
+#: app/templates/admin/messages/detail.html:11
+#: app/templates/admin/messages/index.html:11
+#: app/templates/admin/orders/detail.html:11
+#: app/templates/admin/orders/index.html:11
+#: app/templates/admin/products/form.html:11
+#: app/templates/admin/products/index.html:10
 msgid "Breadcrumb"
 msgstr "Navegação"
 
-#: app/templates/admin/categories/form.html:14 app/templates/admin/categories/index.html:13
+#: app/templates/admin/categories/form.html:14
+#: app/templates/admin/categories/index.html:13
 msgid "Categories"
 msgstr "Categorias"
 
@@ -442,7 +697,8 @@ msgstr "Criar Nova Categoria"
 msgid "Configure catalog category details and store visibility."
 msgstr "Configure os detalhes da categoria do catálogo e a visibilidade na loja."
 
-#: app/templates/admin/categories/form.html:35 app/templates/admin/categories/index.html:38
+#: app/templates/admin/categories/form.html:35
+#: app/templates/admin/categories/index.html:38
 msgid "Category Name"
 msgstr "Nome da Categoria"
 
@@ -454,13 +710,17 @@ msgstr "ex. Frutas e Legumes Biológicos"
 msgid "Must be unique across all categories."
 msgstr "Deve ser único em todas as categorias."
 
-#: app/templates/admin/categories/form.html:50 app/templates/admin/categories/index.html:39
-#: app/templates/admin/products/form.html:104 app/templates/catalog/product_detail.html:54
+#: app/templates/admin/categories/form.html:50
+#: app/templates/admin/categories/index.html:39
+#: app/templates/admin/products/form.html:104
+#: app/templates/catalog/product_detail.html:54
 msgid "Description"
 msgstr "Descrição"
 
-#: app/templates/admin/categories/form.html:50 app/templates/admin/products/form.html:86
-#: app/templates/admin/products/form.html:104 app/templates/admin/products/form.html:116
+#: app/templates/admin/categories/form.html:50
+#: app/templates/admin/products/form.html:86
+#: app/templates/admin/products/form.html:104
+#: app/templates/admin/products/form.html:116
 msgid "Optional"
 msgstr "Opcional"
 
@@ -473,15 +733,21 @@ msgid "Category is Active"
 msgstr "A Categoria está Ativa"
 
 #: app/templates/admin/categories/form.html:75
-msgid "When inactive, this category and its products are hidden from the public catalog and cannot be purchased."
-msgstr "Quando inativa, esta categoria e os respetivos produtos ficam ocultos do catálogo público e não podem ser comprados."
+msgid ""
+"When inactive, this category and its products are hidden from the public "
+"catalog and cannot be purchased."
+msgstr ""
+"Quando inativa, esta categoria e os respetivos produtos ficam ocultos do "
+"catálogo público e não podem ser comprados."
 
-#: app/templates/admin/categories/form.html:84 app/templates/admin/products/form.html:152
+#: app/templates/admin/categories/form.html:84
+#: app/templates/admin/products/form.html:152
 #: app/templates/auth/link_account.html:66
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: app/templates/admin/categories/form.html:87 app/templates/admin/products/form.html:155
+#: app/templates/admin/categories/form.html:87
+#: app/templates/admin/products/form.html:155
 msgid "Save Changes"
 msgstr "Guardar Alterações"
 
@@ -501,8 +767,10 @@ msgstr "Gestão de Categorias"
 msgid "Organize and configure grocery catalog categories."
 msgstr "Organize e configure as categorias do catálogo de mercearia."
 
-#: app/templates/admin/categories/index.html:20 app/templates/admin/messages/index.html:28
-#: app/templates/admin/orders/index.html:21 app/templates/admin/products/index.html:20
+#: app/templates/admin/categories/index.html:20
+#: app/templates/admin/messages/index.html:28
+#: app/templates/admin/orders/index.html:21
+#: app/templates/admin/products/index.html:20
 msgid "Dashboard"
 msgstr "Painel de Controlo"
 
@@ -510,22 +778,28 @@ msgstr "Painel de Controlo"
 msgid "Categories Table"
 msgstr "Tabela de Categorias"
 
-#: app/templates/admin/categories/index.html:40 app/templates/admin/products/form.html:14
-#: app/templates/admin/products/index.html:13 app/templates/components/footer.html:14
-#: app/templates/components/navbar.html:16 app/templates/components/navbar.html:120
+#: app/templates/admin/categories/index.html:40
+#: app/templates/admin/products/form.html:14
+#: app/templates/admin/products/index.html:13
+#: app/templates/components/footer.html:14
+#: app/templates/components/navbar.html:16
+#: app/templates/components/navbar.html:197
 msgid "Products"
 msgstr "Produtos"
 
-#: app/templates/admin/categories/index.html:62 app/templates/admin/products/index.html:87
+#: app/templates/admin/categories/index.html:62
+#: app/templates/admin/products/index.html:87
 msgid "Active"
 msgstr "Ativo"
 
-#: app/templates/admin/categories/index.html:66 app/templates/admin/products/form.html:94
+#: app/templates/admin/categories/index.html:66
+#: app/templates/admin/products/form.html:94
 #: app/templates/admin/products/index.html:91
 msgid "Inactive"
 msgstr "Inativo"
 
-#: app/templates/admin/categories/index.html:72 app/templates/admin/products/index.html:97
+#: app/templates/admin/categories/index.html:72
+#: app/templates/admin/products/index.html:97
 msgid "Edit"
 msgstr "Editar"
 
@@ -542,26 +816,31 @@ msgstr "Comece por criar a sua primeira categoria de catálogo."
 msgid "Support Message #%(id)s - Store Administration"
 msgstr "Mensagem de Apoio #%(id)s - Administração da Loja"
 
-#: app/templates/admin/messages/detail.html:14 app/templates/admin/messages/index.html:14
+#: app/templates/admin/messages/detail.html:14
+#: app/templates/admin/messages/index.html:14
 msgid "Support Messages"
 msgstr "Mensagens de Apoio"
 
-#: app/templates/admin/messages/detail.html:16 app/templates/admin/messages/detail.html:19
+#: app/templates/admin/messages/detail.html:16
+#: app/templates/admin/messages/detail.html:19
 #, python-format
 msgid "Support Message #%(id)s"
 msgstr "Mensagem de Apoio #%(id)s"
 
-#: app/templates/admin/messages/detail.html:23 app/templates/admin/messages/index.html:47
+#: app/templates/admin/messages/detail.html:23
+#: app/templates/admin/messages/index.html:47
 #: app/templates/admin/messages/index.html:89
 msgid "New"
 msgstr "Novo"
 
-#: app/templates/admin/messages/detail.html:27 app/templates/admin/messages/index.html:53
+#: app/templates/admin/messages/detail.html:27
+#: app/templates/admin/messages/index.html:53
 #: app/templates/admin/messages/index.html:93
 msgid "Read"
 msgstr "Lido"
 
-#: app/templates/admin/messages/detail.html:31 app/templates/admin/messages/index.html:59
+#: app/templates/admin/messages/detail.html:31
+#: app/templates/admin/messages/index.html:59
 #: app/templates/admin/messages/index.html:97
 msgid "Resolved"
 msgstr "Resolvido"
@@ -578,14 +857,17 @@ msgstr "Voltar às Mensagens"
 msgid "Message Lifecycle Actions"
 msgstr "Ações de Gestão da Mensagem"
 
-#: app/templates/admin/messages/detail.html:54 app/templates/admin/orders/detail.html:40
+#: app/templates/admin/messages/detail.html:54
+#: app/templates/admin/orders/detail.html:40
 #, python-format
 msgid "Current status is %(status)s."
 msgstr "O estado atual é %(status)s."
 
 #: app/templates/admin/messages/detail.html:55
 msgid "Update the lifecycle state to keep customer support workflows organized."
-msgstr "Atualize o estado do ciclo de vida para manter os fluxos de trabalho de apoio organizados."
+msgstr ""
+"Atualize o estado do ciclo de vida para manter os fluxos de trabalho de "
+"apoio organizados."
 
 #: app/templates/admin/messages/detail.html:65
 msgid "Reply via Email"
@@ -636,8 +918,12 @@ msgid "Unread"
 msgstr "Não Lidas"
 
 #: app/templates/admin/messages/index.html:24
-msgid "Review inbound customer inquiries, track response status, and manage resolution."
-msgstr "Reveja os pedidos de clientes recebidos, acompanhe o estado das respostas e faça a gestão das resoluções."
+msgid ""
+"Review inbound customer inquiries, track response status, and manage "
+"resolution."
+msgstr ""
+"Reveja os pedidos de clientes recebidos, acompanhe o estado das respostas"
+" e faça a gestão das resoluções."
 
 #: app/templates/admin/messages/index.html:36
 msgid "Filter messages by status"
@@ -647,12 +933,15 @@ msgstr "Filtrar mensagens por estado"
 msgid "All"
 msgstr "Todas"
 
-#: app/templates/admin/messages/index.html:65 app/templates/admin/orders/index.html:58
+#: app/templates/admin/messages/index.html:65
+#: app/templates/admin/orders/index.html:58
 msgid "Showing"
 msgstr "A apresentar"
 
-#: app/templates/admin/messages/index.html:65 app/templates/admin/messages/index.html:148
-#: app/templates/admin/orders/index.html:58 app/templates/admin/orders/index.html:147
+#: app/templates/admin/messages/index.html:65
+#: app/templates/admin/messages/index.html:148
+#: app/templates/admin/orders/index.html:58
+#: app/templates/admin/orders/index.html:147
 msgid "of"
 msgstr "de"
 
@@ -676,16 +965,19 @@ msgstr "Marcar Lido"
 msgid "View Message"
 msgstr "Ver Mensagem"
 
-#: app/templates/admin/messages/index.html:148 app/templates/admin/orders/index.html:147
+#: app/templates/admin/messages/index.html:148
+#: app/templates/admin/orders/index.html:147
 msgid "Page"
 msgstr "Página"
 
-#: app/templates/admin/messages/index.html:154 app/templates/admin/orders/index.html:137
+#: app/templates/admin/messages/index.html:154
+#: app/templates/admin/orders/index.html:137
 #: app/templates/admin/orders/index.html:141
 msgid "Previous"
 msgstr "Anterior"
 
-#: app/templates/admin/messages/index.html:160 app/templates/admin/orders/index.html:155
+#: app/templates/admin/messages/index.html:160
+#: app/templates/admin/orders/index.html:155
 #: app/templates/admin/orders/index.html:159
 msgid "Next"
 msgstr "Seguinte"
@@ -697,7 +989,9 @@ msgstr "Nenhuma mensagem encontrada"
 #: app/templates/admin/messages/index.html:176
 #, python-format
 msgid "No support messages currently match the %(status)s status filter."
-msgstr "Nenhuma mensagem de apoio corresponde atualmente ao filtro de estado %(status)s."
+msgstr ""
+"Nenhuma mensagem de apoio corresponde atualmente ao filtro de estado "
+"%(status)s."
 
 #: app/templates/admin/messages/index.html:178
 msgid "No customer inquiries have been submitted yet."
@@ -712,7 +1006,8 @@ msgstr "Ver Todas as Mensagens"
 msgid "Order #%(id)s - Store Administration"
 msgstr "Encomenda #%(id)s - Administração da Loja"
 
-#: app/templates/admin/orders/detail.html:14 app/templates/admin/orders/index.html:14
+#: app/templates/admin/orders/detail.html:14
+#: app/templates/admin/orders/index.html:14
 msgid "Orders"
 msgstr "Encomendas"
 
@@ -725,8 +1020,12 @@ msgid "Order Lifecycle & Status Management"
 msgstr "Ciclo de Vida e Gestão do Estado da Encomenda"
 
 #: app/templates/admin/orders/detail.html:41
-msgid "Status updates are conditional and atomic to protect against concurrent modifications."
-msgstr "As atualizações de estado são condicionais e atómicas para proteger contra modificações concorrentes."
+msgid ""
+"Status updates are conditional and atomic to protect against concurrent "
+"modifications."
+msgstr ""
+"As atualizações de estado são condicionais e atómicas para proteger "
+"contra modificações concorrentes."
 
 #: app/templates/admin/orders/detail.html:58
 msgid "Confirm Order"
@@ -735,7 +1034,9 @@ msgstr "Confirmar Encomenda"
 #: app/templates/admin/orders/detail.html:71
 #, python-format
 msgid "Are you sure you want to cancel Order #%(id)s? This action is permanent."
-msgstr "Tem a certeza de que pretende cancelar a Encomenda #%(id)s? Esta ação é definitiva."
+msgstr ""
+"Tem a certeza de que pretende cancelar a Encomenda #%(id)s? Esta ação é "
+"definitiva."
 
 #: app/templates/admin/orders/detail.html:76
 msgid "Cancel Order"
@@ -748,15 +1049,23 @@ msgstr "Esta encomenda foi cancelada e atingiu um estado terminal permanente."
 #: app/templates/admin/orders/detail.html:86
 #, python-format
 msgid "Manual status transitions from '%(status)s' are disabled in this phase."
-msgstr "As transições manuais de estado a partir de '%(status)s' estão desativadas nesta fase."
+msgstr ""
+"As transições manuais de estado a partir de '%(status)s' estão "
+"desativadas nesta fase."
 
 #: app/templates/admin/orders/detail.html:87
-msgid "Fulfillment and payment transitions require external integration workflows."
-msgstr "As transições de processamento e pagamento exigem fluxos de integração externa."
+msgid ""
+"Fulfillment and payment transitions require external integration "
+"workflows."
+msgstr ""
+"As transições de processamento e pagamento exigem fluxos de integração "
+"externa."
 
 #: app/templates/admin/orders/detail.html:89
 msgid "No further manual status transitions are available for this order."
-msgstr "Não existem mais transições manuais de estado disponíveis para esta encomenda."
+msgstr ""
+"Não existem mais transições manuais de estado disponíveis para esta "
+"encomenda."
 
 #: app/templates/admin/orders/detail.html:101
 msgid "Purchased Items"
@@ -786,7 +1095,8 @@ msgstr "Detalhes do Pagamento"
 msgid "Transaction Status"
 msgstr "Estado da Transação"
 
-#: app/templates/admin/orders/detail.html:158 app/templates/order/checkout.html:73
+#: app/templates/admin/orders/detail.html:158
+#: app/templates/order/checkout.html:73
 msgid "Payment Method"
 msgstr "Método de Pagamento"
 
@@ -794,7 +1104,8 @@ msgstr "Método de Pagamento"
 msgid "Stripe (Card)"
 msgstr "Stripe (Cartão)"
 
-#: app/templates/admin/orders/detail.html:163 app/templates/admin/orders/detail.html:165
+#: app/templates/admin/orders/detail.html:163
+#: app/templates/admin/orders/detail.html:165
 msgid "Standard"
 msgstr "Padrão"
 
@@ -818,10 +1129,6 @@ msgstr "Resumo do Processamento"
 msgid "Captured at Checkout"
 msgstr "Registado no Checkout"
 
-#: app/templates/admin/orders/detail.html:214
-msgid "Contact Phone"
-msgstr "Telefone de Contacto"
-
 #: app/templates/admin/orders/detail.html:228
 msgid "Account Association"
 msgstr "Associação de Conta"
@@ -836,7 +1143,9 @@ msgstr "ID de Conta de Utilizador:"
 
 #: app/templates/admin/orders/detail.html:240
 msgid "Associated with authenticated user account at checkout time."
-msgstr "Associado à conta de utilizador autenticada no momento da finalização da compra."
+msgstr ""
+"Associado à conta de utilizador autenticada no momento da finalização da "
+"compra."
 
 #: app/templates/admin/orders/detail.html:247
 msgid "Guest Order"
@@ -847,10 +1156,12 @@ msgid "No associated registered user"
 msgstr "Sem utilizador registado associado"
 
 #: app/templates/admin/orders/detail.html:252
-msgid "Placed via guest checkout. Guest orders remain permanently unlinked to customer accounts."
+msgid ""
+"Placed via guest checkout. Guest orders remain permanently unlinked to "
+"customer accounts."
 msgstr ""
-"Realizada via checkout de convidado. As encomendas de convidados permanecem permanentemente desvinculadas de contas "
-"de cliente."
+"Realizada via checkout de convidado. As encomendas de convidados "
+"permanecem permanentemente desvinculadas de contas de cliente."
 
 #: app/templates/admin/orders/index.html:4
 msgid "Order Management - Store Administration"
@@ -861,8 +1172,12 @@ msgid "Order Management"
 msgstr "Gestão de Encomendas"
 
 #: app/templates/admin/orders/index.html:17
-msgid "Review orders, manage fulfillment workflows, and transition lifecycle statuses."
-msgstr "Reveja encomendas, faça a gestão dos fluxos de entrega e altere estados do ciclo de vida."
+msgid ""
+"Review orders, manage fulfillment workflows, and transition lifecycle "
+"statuses."
+msgstr ""
+"Reveja encomendas, faça a gestão dos fluxos de entrega e altere estados "
+"do ciclo de vida."
 
 #: app/templates/admin/orders/index.html:31
 msgid "Filter by Status:"
@@ -892,11 +1207,8 @@ msgstr "Tabela de Gestão de Encomendas"
 msgid "Order ID"
 msgstr "ID da Encomenda"
 
-#: app/templates/admin/orders/index.html:71
-msgid "Account"
-msgstr "Conta"
-
-#: app/templates/admin/orders/index.html:72 app/templates/order/stripe_success.html:61
+#: app/templates/admin/orders/index.html:72
+#: app/templates/order/stripe_success.html:61
 msgid "Recipient"
 msgstr "Destinatário"
 
@@ -934,13 +1246,16 @@ msgstr "Ainda não foram realizadas encomendas de clientes na loja."
 msgid "Show All Orders"
 msgstr "Mostrar Todas as Encomendas"
 
-#: app/templates/admin/products/form.html:4 app/templates/admin/products/form.html:21
+#: app/templates/admin/products/form.html:4
+#: app/templates/admin/products/form.html:21
 #, python-format
 msgid "Edit Product: %(name)s"
 msgstr "Editar Produto: %(name)s"
 
-#: app/templates/admin/products/form.html:4 app/templates/admin/products/form.html:17
-#: app/templates/admin/products/index.html:26 app/templates/admin/products/index.html:115
+#: app/templates/admin/products/form.html:4
+#: app/templates/admin/products/form.html:17
+#: app/templates/admin/products/index.html:26
+#: app/templates/admin/products/index.html:115
 msgid "New Product"
 msgstr "Novo Produto"
 
@@ -984,7 +1299,9 @@ msgstr "Quantidade em Stock"
 msgid "Available inventory units (whole numbers &ge; 0)."
 msgstr "Unidades de inventário disponíveis (números inteiros &ge; 0)."
 
-#: app/templates/admin/products/form.html:86 app/templates/admin/products/index.html:39 app/templates/catalog/index.html:61
+#: app/templates/admin/products/form.html:86
+#: app/templates/admin/products/index.html:39
+#: app/templates/catalog/index.html:61
 msgid "Category"
 msgstr "Categoria"
 
@@ -1017,8 +1334,12 @@ msgid "Product is Active"
 msgstr "O Produto está Ativo"
 
 #: app/templates/admin/products/form.html:143
-msgid "When inactive, this product is hidden from storefront catalog browsing and cannot be added to carts."
-msgstr "Quando inativo, este produto fica oculto da navegação no catálogo e não pode ser adicionado ao carrinho."
+msgid ""
+"When inactive, this product is hidden from storefront catalog browsing "
+"and cannot be added to carts."
+msgstr ""
+"Quando inativo, este produto fica oculto da navegação no catálogo e não "
+"pode ser adicionado ao carrinho."
 
 #: app/templates/admin/products/form.html:155
 msgid "Create Product"
@@ -1034,7 +1355,9 @@ msgstr "Gestão de Produtos"
 
 #: app/templates/admin/products/index.html:16
 msgid "Manage grocery catalog inventory, prices, and availability."
-msgstr "Faça a gestão do inventário, preços e disponibilidade do catálogo de mercearia."
+msgstr ""
+"Faça a gestão do inventário, preços e disponibilidade do catálogo de "
+"mercearia."
 
 #: app/templates/admin/products/index.html:35
 msgid "Products Table"
@@ -1044,7 +1367,8 @@ msgstr "Tabela de Produtos"
 msgid "Price"
 msgstr "Preço"
 
-#: app/templates/admin/products/index.html:41 app/templates/components/product_card.html:39
+#: app/templates/admin/products/index.html:41
+#: app/templates/components/product_card.html:39
 msgid "Stock"
 msgstr "Stock"
 
@@ -1078,9 +1402,12 @@ msgstr "Recuperar Palavra-passe"
 
 #: app/templates/auth/forgot_password.html:11
 msgid "Enter your account email to receive a password reset link."
-msgstr "Introduza o email da sua conta para receber uma ligação de reposição da palavra-passe."
+msgstr ""
+"Introduza o email da sua conta para receber uma ligação de reposição da "
+"palavra-passe."
 
-#: app/templates/auth/forgot_password.html:20 app/templates/auth/login.html:26 app/templates/auth/register.html:25
+#: app/templates/auth/forgot_password.html:20 app/templates/auth/login.html:26
+#: app/templates/auth/register.html:25
 #: app/templates/auth/resend_verification.html:20
 msgid "Email address"
 msgstr "Endereço de email"
@@ -1091,13 +1418,14 @@ msgstr "Enviar Ligação de Reposição"
 
 #: app/templates/auth/forgot_password.html:39
 msgid ""
-"Note: In this development environment, reset links are simulated in-memory and not dispatched across external "
-"networks."
+"Note: In this development environment, reset links are simulated in-"
+"memory and not dispatched across external networks."
 msgstr ""
-"Nota: Neste ambiente de desenvolvimento, as ligações de reposição são simuladas em memória e não enviadas através de "
-"redes externas."
+"Nota: Neste ambiente de desenvolvimento, as ligações de reposição são "
+"simuladas em memória e não enviadas através de redes externas."
 
-#: app/templates/auth/forgot_password.html:45 app/templates/auth/resend_verification.html:44
+#: app/templates/auth/forgot_password.html:45
+#: app/templates/auth/resend_verification.html:44
 #: app/templates/auth/reset_password.html:62
 msgid "Back to sign in"
 msgstr "Voltar ao início de sessão"
@@ -1117,11 +1445,12 @@ msgstr "Foi encontrada uma conta de loja existente para %(email)s."
 
 #: app/templates/auth/link_account.html:20
 msgid ""
-"Please enter your store password to confirm account ownership and link Google sign-in. This is a one-time "
-"verification."
+"Please enter your store password to confirm account ownership and link "
+"Google sign-in. This is a one-time verification."
 msgstr ""
-"Por favor introduza a sua palavra-passe da loja para confirmar a titularidade da conta e associar o início de sessão "
-"com a Google. Esta é uma verificação única."
+"Por favor introduza a sua palavra-passe da loja para confirmar a "
+"titularidade da conta e associar o início de sessão com a Google. Esta é "
+"uma verificação única."
 
 #: app/templates/auth/link_account.html:41
 msgid "Store Password"
@@ -1155,8 +1484,8 @@ msgstr "Palavra-passe"
 msgid "Or continue with"
 msgstr "Ou continue com"
 
-#: app/templates/auth/login.html:77 app/templates/auth/login.html:84 app/templates/auth/register.html:89
-#: app/templates/auth/register.html:96
+#: app/templates/auth/login.html:77 app/templates/auth/login.html:84
+#: app/templates/auth/register.html:89 app/templates/auth/register.html:96
 msgid "Continue with Google"
 msgstr "Continuar com a Google"
 
@@ -1171,10 +1500,6 @@ msgstr "Registe-se aqui"
 #: app/templates/auth/login.html:98
 msgid "Need to verify your account?"
 msgstr "Precisa de verificar a sua conta?"
-
-#: app/templates/auth/login.html:100
-msgid "Resend verification link"
-msgstr "Reenviar ligação de verificação"
 
 #: app/templates/auth/register.html:3
 msgid "Create an Account - Online Food Shop"
@@ -1226,11 +1551,11 @@ msgstr "Pedir Ligação de Verificação"
 
 #: app/templates/auth/resend_verification.html:38
 msgid ""
-"Note: In this development environment, verification links are simulated in-memory and not dispatched across external "
-"networks."
+"Note: In this development environment, verification links are simulated "
+"in-memory and not dispatched across external networks."
 msgstr ""
-"Nota: Neste ambiente de desenvolvimento, as ligações de verificação são simuladas em memória e não enviadas através "
-"de redes externas."
+"Nota: Neste ambiente de desenvolvimento, as ligações de verificação são "
+"simuladas em memória e não enviadas através de redes externas."
 
 #: app/templates/auth/reset_password.html:7
 msgid "Set New Password - Online Food Shop"
@@ -1269,8 +1594,12 @@ msgid "Verify Your Email Address"
 msgstr "Verifique o Seu Endereço de Email"
 
 #: app/templates/auth/verify_email.html:123
-msgid "Click the button below to confirm your verification request and activate your account."
-msgstr "Clique no botão abaixo para confirmar o seu pedido de verificação e ativar a sua conta."
+msgid ""
+"Click the button below to confirm your verification request and activate "
+"your account."
+msgstr ""
+"Clique no botão abaixo para confirmar o seu pedido de verificação e "
+"ativar a sua conta."
 
 #: app/templates/auth/verify_email.html:132
 msgid "Confirm Verification"
@@ -1306,13 +1635,16 @@ msgstr "O seu carrinho está vazio"
 
 #: app/templates/cart/view.html:45
 msgid "Looks like you haven't added any fresh food or groceries to your cart yet."
-msgstr "Parece que ainda não adicionou alimentos frescos ou mercearias ao seu carrinho."
+msgstr ""
+"Parece que ainda não adicionou alimentos frescos ou mercearias ao seu "
+"carrinho."
 
 #: app/templates/cart/view.html:63
 msgid "Actions"
 msgstr "Ações"
 
-#: app/templates/cart/view.html:82 app/templates/components/product_card.html:47
+#: app/templates/cart/view.html:82
+#: app/templates/components/product_card.html:47
 #, python-format
 msgid "Quantity for %(name)s"
 msgstr "Quantidade para %(name)s"
@@ -1359,11 +1691,11 @@ msgstr "Alimentos frescos do campo, bifes suculentos, ovos e produtos artesanais
 
 #: app/templates/catalog/index.html:26
 msgid ""
-"Explore fresh, locally sourced food, bakery items, and organic produce. Hand-selected for premium quality and "
-"delicious meals."
+"Explore fresh, locally sourced food, bakery items, and organic produce. "
+"Hand-selected for premium quality and delicious meals."
 msgstr ""
-"Descubra alimentos frescos de origem local, padaria e produtos biológicos. Cuidadosamente selecionados para refeições"
-" de excelência."
+"Descubra alimentos frescos de origem local, padaria e produtos "
+"biológicos. Cuidadosamente selecionados para refeições de excelência."
 
 #: app/templates/catalog/index.html:30
 msgid "Browse Catalog"
@@ -1414,7 +1746,8 @@ msgstr "Em Stock (%(count)d disponíveis)"
 msgid "Currently Out of Stock"
 msgstr "Atualmente Esgotado"
 
-#: app/templates/catalog/product_detail.html:84 app/templates/components/product_card.html:62
+#: app/templates/catalog/product_detail.html:84
+#: app/templates/components/product_card.html:62
 msgid "Add to Cart"
 msgstr "Adicionar ao Carrinho"
 
@@ -1454,7 +1787,8 @@ msgstr "Todos os direitos reservados."
 msgid "Secure payment powered by Stripe (Test Mode)"
 msgstr "Pagamento seguro processado por Stripe (Modo de Teste)"
 
-#: app/templates/components/navbar.html:19 app/templates/components/navbar.html:123
+#: app/templates/components/navbar.html:19
+#: app/templates/components/navbar.html:200
 msgid "Contact"
 msgstr "Contacto"
 
@@ -1462,33 +1796,33 @@ msgstr "Contacto"
 msgid "Cart"
 msgstr "Carrinho"
 
-#: app/templates/components/navbar.html:74
-msgid "Admin"
-msgstr "Administração"
+#: app/templates/components/navbar.html:86
+msgid "My Account"
+msgstr "A Minha Conta"
 
-#: app/templates/components/navbar.html:86 app/templates/components/navbar.html:162
+#: app/templates/components/navbar.html:101
+#: app/templates/components/navbar.html:226
+msgid "Signed in as"
+msgstr "Sessão iniciada como"
+
+#: app/templates/components/navbar.html:160
+#: app/templates/components/navbar.html:243
 msgid "Logout"
 msgstr "Terminar Sessão"
 
-#: app/templates/components/navbar.html:91 app/templates/components/navbar.html:168
+#: app/templates/components/navbar.html:168
+#: app/templates/components/navbar.html:249
 msgid "Login"
 msgstr "Iniciar Sessão"
 
-#: app/templates/components/navbar.html:94 app/templates/components/navbar.html:171
+#: app/templates/components/navbar.html:171
+#: app/templates/components/navbar.html:252
 msgid "Register"
 msgstr "Criar Conta"
 
-#: app/templates/components/navbar.html:128
+#: app/templates/components/navbar.html:205
 msgid "Language"
 msgstr "Idioma"
-
-#: app/templates/components/navbar.html:150
-msgid "Admin Dashboard"
-msgstr "Painel de Administração"
-
-#: app/templates/components/navbar.html:157
-msgid "Signed in as"
-msgstr "Sessão iniciada como"
 
 #: app/templates/components/product_card.html:15
 msgid "In Stock"
@@ -1535,10 +1869,12 @@ msgid "Test Mode Only"
 msgstr "Apenas Modo de Teste"
 
 #: app/templates/order/checkout.html:102
-msgid "Pay securely using Stripe's hosted checkout. No card details are entered or stored on our servers."
+msgid ""
+"Pay securely using Stripe's hosted checkout. No card details are entered "
+"or stored on our servers."
 msgstr ""
-"Pague com segurança através do checkout alojado da Stripe. Nenhum dado do cartão é inserido ou armazenado nos nossos "
-"servidores."
+"Pague com segurança através do checkout alojado da Stripe. Nenhum dado do"
+" cartão é inserido ou armazenado nos nossos servidores."
 
 #: app/templates/order/checkout.html:113
 msgid "Place Order"
@@ -1576,7 +1912,8 @@ msgstr "Nome"
 msgid "Email"
 msgstr "Email"
 
-#: app/templates/order/confirmation.html:58 app/templates/order/stripe_success.html:69
+#: app/templates/order/confirmation.html:58
+#: app/templates/order/stripe_success.html:69
 msgid "Phone"
 msgstr "Telefone"
 
@@ -1584,7 +1921,8 @@ msgstr "Telefone"
 msgid "Address"
 msgstr "Morada"
 
-#: app/templates/order/confirmation.html:74 app/templates/order/stripe_success.html:81
+#: app/templates/order/confirmation.html:74
+#: app/templates/order/stripe_success.html:81
 msgid "Items Ordered"
 msgstr "Artigos Encomendados"
 
@@ -1596,7 +1934,8 @@ msgstr "Artigo"
 msgid "Return to Shop"
 msgstr "Voltar à Loja"
 
-#: app/templates/order/confirmation.html:111 app/templates/order/stripe_cancel.html:59
+#: app/templates/order/confirmation.html:111
+#: app/templates/order/stripe_cancel.html:59
 msgid "View My Orders"
 msgstr "Ver as Minhas Encomendas"
 
@@ -1611,24 +1950,29 @@ msgstr "Pagamento Não Concluído"
 
 #: app/templates/order/stripe_cancel.html:16
 msgid ""
-"You returned from the Stripe Checkout window before payment confirmation was finalized. Please note that closing or "
-"navigating away from the payment window does not prove that no charge occurred if payment details were already "
-"submitted."
+"You returned from the Stripe Checkout window before payment confirmation "
+"was finalized. Please note that closing or navigating away from the "
+"payment window does not prove that no charge occurred if payment details "
+"were already submitted."
 msgstr ""
-"Voltou da janela do Stripe Checkout antes de a confirmação do pagamento ter sido finalizada. Tenha em atenção que "
-"fechar ou sair da janela de pagamento não garante que não tenha ocorrido uma cobrança caso os dados de pagamento já "
-"tenham sido submetidos."
+"Voltou da janela do Stripe Checkout antes de a confirmação do pagamento "
+"ter sido finalizada. Tenha em atenção que fechar ou sair da janela de "
+"pagamento não garante que não tenha ocorrido uma cobrança caso os dados "
+"de pagamento já tenham sido submetidos."
 
 #: app/templates/order/stripe_cancel.html:19
 #, python-format
 msgid ""
-"Your Order #%(id)s reservation remains in Pending status. If your payment was completed, your order will "
-"automatically update to Confirmed once authoritative confirmation is received from Stripe."
+"Your Order #%(id)s reservation remains in Pending status. If your payment"
+" was completed, your order will automatically update to Confirmed once "
+"authoritative confirmation is received from Stripe."
 msgstr ""
-"A reserva da sua Encomenda #%(id)s mantém-se no estado Pendente. Se o seu pagamento foi concluído, a sua encomenda "
-"atualizar-se-á automaticamente para Confirmada assim que a confirmação fidedigna for recebida da Stripe."
+"A reserva da sua Encomenda #%(id)s mantém-se no estado Pendente. Se o seu"
+" pagamento foi concluído, a sua encomenda atualizar-se-á automaticamente "
+"para Confirmada assim que a confirmação fidedigna for recebida da Stripe."
 
-#: app/templates/order/stripe_cancel.html:27 app/templates/order/stripe_success.html:45
+#: app/templates/order/stripe_cancel.html:27
+#: app/templates/order/stripe_success.html:45
 msgid "Order Reference"
 msgstr "Referência da Encomenda"
 
@@ -1659,8 +2003,12 @@ msgstr "Pagamento Confirmado"
 
 #: app/templates/order/stripe_success.html:18
 #, python-format
-msgid "Thank you for your order! Your payment of %(amount)s has been confirmed through Stripe."
-msgstr "Obrigado pela sua encomenda! O seu pagamento de %(amount)s foi confirmado através da Stripe."
+msgid ""
+"Thank you for your order! Your payment of %(amount)s has been confirmed "
+"through Stripe."
+msgstr ""
+"Obrigado pela sua encomenda! O seu pagamento de %(amount)s foi confirmado"
+" através da Stripe."
 
 #: app/templates/order/stripe_success.html:21
 msgid "Payment has been verified server-side. Your order is confirmed."
@@ -1672,16 +2020,20 @@ msgstr "Pagamento Submetido — Aguarda Confirmação"
 
 #: app/templates/order/stripe_success.html:33
 #, python-format
-msgid "Thank you for your order! Your payment of %(amount)s has been submitted through Stripe and may still be processing."
+msgid ""
+"Thank you for your order! Your payment of %(amount)s has been submitted "
+"through Stripe and may still be processing."
 msgstr ""
-"Obrigado pela sua encomenda! O seu pagamento de %(amount)s foi submetido através da Stripe e poderá ainda estar em "
-"processamento."
+"Obrigado pela sua encomenda! O seu pagamento de %(amount)s foi submetido "
+"através da Stripe e poderá ainda estar em processamento."
 
 #: app/templates/order/stripe_success.html:36
-msgid "Payment confirmation is verified server-side. Your order status will update once confirmation is finalized."
+msgid ""
+"Payment confirmation is verified server-side. Your order status will "
+"update once confirmation is finalized."
 msgstr ""
-"A confirmação do pagamento é verificada no servidor. O estado da sua encomenda será atualizado assim que a "
-"confirmação for finalizada."
+"A confirmação do pagamento é verificada no servidor. O estado da sua "
+"encomenda será atualizado assim que a confirmação for finalizada."
 
 #: app/templates/order/stripe_success.html:51
 msgid "Stripe Card"
@@ -1690,4 +2042,7 @@ msgstr "Cartão Stripe"
 #: app/templates/order/stripe_success.html:58
 msgid "Delivery Information"
 msgstr "Informações de Entrega"
+
+#~ msgid "Admin"
+#~ msgstr "Administração"
 

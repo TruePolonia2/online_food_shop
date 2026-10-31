@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-30 22:22+0000\n"
+"POT-Creation-Date: 2026-10-30 23:11+0000\n"
 "PO-Revision-Date: 2026-10-30 22:05+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -193,8 +193,9 @@ msgid "Cancel and return to My Orders"
 msgstr ""
 
 #: app/templates/account/delete_account.html:152
-#: app/templates/account/orders.html:15 app/templates/cart/view.html:47
-#: app/templates/cart/view.html:142 app/templates/order/stripe_success.html:97
+#: app/templates/account/orders.html:15 app/templates/account/settings.html:21
+#: app/templates/cart/view.html:47 app/templates/cart/view.html:142
+#: app/templates/order/stripe_success.html:97
 msgid "Continue Shopping"
 msgstr ""
 
@@ -292,8 +293,9 @@ msgstr ""
 msgid "My Orders - Online Food Shop"
 msgstr ""
 
-#: app/templates/account/orders.html:11 app/templates/components/navbar.html:78
-#: app/templates/components/navbar.html:154
+#: app/templates/account/orders.html:11 app/templates/account/settings.html:286
+#: app/templates/components/navbar.html:132
+#: app/templates/components/navbar.html:238
 msgid "My Orders"
 msgstr ""
 
@@ -301,7 +303,7 @@ msgstr ""
 msgid "Review your past purchases and track order details."
 msgstr ""
 
-#: app/templates/account/orders.html:23
+#: app/templates/account/orders.html:23 app/templates/account/settings.html:308
 msgid "Order History"
 msgstr ""
 
@@ -356,7 +358,9 @@ msgstr ""
 msgid "Browse Products"
 msgstr ""
 
-#: app/templates/account/orders.html:92
+#: app/templates/account/orders.html:92 app/templates/account/settings.html:16
+#: app/templates/components/navbar.html:121
+#: app/templates/components/navbar.html:235
 msgid "Account Settings"
 msgstr ""
 
@@ -366,8 +370,182 @@ msgid ""
 "account."
 msgstr ""
 
-#: app/templates/account/orders.html:97
+#: app/templates/account/orders.html:97 app/templates/account/settings.html:194
 msgid "Delete Account"
+msgstr ""
+
+#: app/templates/account/settings.html:4
+msgid "Account Settings - Online Food Shop"
+msgstr ""
+
+#: app/templates/account/settings.html:12
+#: app/templates/admin/orders/index.html:71
+msgid "Account"
+msgstr ""
+
+#: app/templates/account/settings.html:14
+msgid "Settings"
+msgstr ""
+
+#: app/templates/account/settings.html:17
+msgid "Manage your personal details, security credentials, and order history."
+msgstr ""
+
+#: app/templates/account/settings.html:40
+msgid "Profile Information"
+msgstr ""
+
+#: app/templates/account/settings.html:41
+msgid "Personal identification and member details"
+msgstr ""
+
+#: app/templates/account/settings.html:47
+msgid "Display Name"
+msgstr ""
+
+#: app/templates/account/settings.html:49
+msgid "Not provided"
+msgstr ""
+
+#: app/templates/account/settings.html:53
+msgid "Member Since"
+msgstr ""
+
+#: app/templates/account/settings.html:59
+#: app/templates/admin/orders/detail.html:214
+msgid "Contact Phone"
+msgstr ""
+
+#: app/templates/account/settings.html:61
+#: app/templates/account/settings.html:67
+msgid "Not provided yet"
+msgstr ""
+
+#: app/templates/account/settings.html:65
+msgid "Shipping Address"
+msgstr ""
+
+#: app/templates/account/settings.html:77
+msgid ""
+"Profile editing is not currently supported in this version. Shipping "
+"details are confirmed during checkout."
+msgstr ""
+
+#: app/templates/account/settings.html:90
+msgid "Password & Credentials"
+msgstr ""
+
+#: app/templates/account/settings.html:91
+msgid "Manage authentication credentials and sign-in methods"
+msgstr ""
+
+#: app/templates/account/settings.html:98
+msgid "Password Status"
+msgstr ""
+
+#: app/templates/account/settings.html:105
+msgid "Password Configured"
+msgstr ""
+
+#: app/templates/account/settings.html:109
+msgid "No Password Configured (Google SSO Only)"
+msgstr ""
+
+#: app/templates/account/settings.html:117
+msgid "Request Password Reset via Email"
+msgstr ""
+
+#: app/templates/account/settings.html:126
+msgid ""
+"Direct in-app password changes are not supported in this version. To "
+"safely update your password, use the email password reset procedure."
+msgstr ""
+
+#: app/templates/account/settings.html:140
+msgid "Linked Google Account"
+msgstr ""
+
+#: app/templates/account/settings.html:141
+msgid "Single sign-on provider connection status"
+msgstr ""
+
+#: app/templates/account/settings.html:160
+msgid "Connected to your store account"
+msgstr ""
+
+#: app/templates/account/settings.html:162
+msgid "Not currently linked"
+msgstr ""
+
+#: app/templates/account/settings.html:172
+msgid "Connected"
+msgstr ""
+
+#: app/templates/account/settings.html:177
+msgid "Not Linked"
+msgstr ""
+
+#: app/templates/account/settings.html:195
+msgid "Irreversible account deletion"
+msgstr ""
+
+#: app/templates/account/settings.html:201
+msgid ""
+"Permanently delete your account, saved credentials, and linked sign-in "
+"providers. Once deleted, your account cannot be recovered."
+msgstr ""
+
+#: app/templates/account/settings.html:205
+msgid "Proceed to Account Deletion"
+msgstr ""
+
+#: app/templates/account/settings.html:220
+msgid "Store Owner Account Protection"
+msgstr ""
+
+#: app/templates/account/settings.html:221
+msgid ""
+"Store owner accounts are protected and cannot be deleted through customer"
+" self-service."
+msgstr ""
+
+#: app/templates/account/settings.html:250
+#: app/templates/components/navbar.html:107
+msgid "Store Owner"
+msgstr ""
+
+#: app/templates/account/settings.html:254
+msgid "Customer"
+msgstr ""
+
+#: app/templates/account/settings.html:263
+msgid "Verified"
+msgstr ""
+
+#: app/templates/account/settings.html:267
+msgid "Unverified"
+msgstr ""
+
+#: app/templates/account/settings.html:274 app/templates/auth/login.html:100
+msgid "Resend verification link"
+msgstr ""
+
+#: app/templates/account/settings.html:297
+#: app/templates/components/navbar.html:144
+#: app/templates/components/navbar.html:231
+msgid "Admin Dashboard"
+msgstr ""
+
+#: app/templates/account/settings.html:309
+msgid "order(s)"
+msgstr ""
+
+#: app/templates/account/settings.html:331
+msgid "You have not placed any orders yet."
+msgstr ""
+
+#: app/templates/account/settings.html:336
+msgid "View Complete Order History"
 msgstr ""
 
 #: app/templates/admin/dashboard.html:3
@@ -569,7 +747,7 @@ msgstr ""
 #: app/templates/admin/products/index.html:13
 #: app/templates/components/footer.html:14
 #: app/templates/components/navbar.html:16
-#: app/templates/components/navbar.html:120
+#: app/templates/components/navbar.html:197
 msgid "Products"
 msgstr ""
 
@@ -899,10 +1077,6 @@ msgstr ""
 msgid "Captured at Checkout"
 msgstr ""
 
-#: app/templates/admin/orders/detail.html:214
-msgid "Contact Phone"
-msgstr ""
-
 #: app/templates/admin/orders/detail.html:228
 msgid "Account Association"
 msgstr ""
@@ -973,10 +1147,6 @@ msgstr ""
 
 #: app/templates/admin/orders/index.html:69
 msgid "Order ID"
-msgstr ""
-
-#: app/templates/admin/orders/index.html:71
-msgid "Account"
 msgstr ""
 
 #: app/templates/admin/orders/index.html:72
@@ -1262,10 +1432,6 @@ msgstr ""
 msgid "Need to verify your account?"
 msgstr ""
 
-#: app/templates/auth/login.html:100
-msgid "Resend verification link"
-msgstr ""
-
 #: app/templates/auth/register.html:3
 msgid "Create an Account - Online Food Shop"
 msgstr ""
@@ -1545,7 +1711,7 @@ msgid "Secure payment powered by Stripe (Test Mode)"
 msgstr ""
 
 #: app/templates/components/navbar.html:19
-#: app/templates/components/navbar.html:123
+#: app/templates/components/navbar.html:200
 msgid "Contact"
 msgstr ""
 
@@ -1553,35 +1719,32 @@ msgstr ""
 msgid "Cart"
 msgstr ""
 
-#: app/templates/components/navbar.html:74
-msgid "Admin"
+#: app/templates/components/navbar.html:86
+msgid "My Account"
 msgstr ""
 
-#: app/templates/components/navbar.html:86
-#: app/templates/components/navbar.html:162
+#: app/templates/components/navbar.html:101
+#: app/templates/components/navbar.html:226
+msgid "Signed in as"
+msgstr ""
+
+#: app/templates/components/navbar.html:160
+#: app/templates/components/navbar.html:243
 msgid "Logout"
 msgstr ""
 
-#: app/templates/components/navbar.html:91
 #: app/templates/components/navbar.html:168
+#: app/templates/components/navbar.html:249
 msgid "Login"
 msgstr ""
 
-#: app/templates/components/navbar.html:94
 #: app/templates/components/navbar.html:171
+#: app/templates/components/navbar.html:252
 msgid "Register"
 msgstr ""
 
-#: app/templates/components/navbar.html:128
+#: app/templates/components/navbar.html:205
 msgid "Language"
-msgstr ""
-
-#: app/templates/components/navbar.html:150
-msgid "Admin Dashboard"
-msgstr ""
-
-#: app/templates/components/navbar.html:157
-msgid "Signed in as"
 msgstr ""
 
 #: app/templates/components/product_card.html:15
@@ -1789,5 +1952,8 @@ msgid "Delivery Information"
 msgstr ""
 
 #~ msgid "100% Quality Guaranteed"
+#~ msgstr ""
+
+#~ msgid "Admin"
 #~ msgstr ""
 
